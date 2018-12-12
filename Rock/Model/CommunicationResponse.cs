@@ -38,10 +38,10 @@ namespace Rock.Model
         public int? RelatedCommunicationId { get; set; }
 
         [DataMember]
-        public int RelatedTransportId { get; set; }
+        public int RelatedTransportEntityTypeId { get; set; }
 
         [DataMember]
-        public int RelatedMediumId { get; set; }
+        public int RelatedMediumEntityTypeId { get; set; }
 
         [DataMember]
         public string Response { get; set; }
@@ -78,8 +78,8 @@ namespace Rock.Model
             this.HasOptional( r => r.PersonAlias ).WithMany().HasForeignKey( r => r.FromPersonAliasId ).WillCascadeOnDelete( false );
             this.HasOptional( r => r.PersonAlias ).WithMany().HasForeignKey( r => r.ToPersonAliasId ).WillCascadeOnDelete( false );
             this.HasOptional( c => c.RelatedCommunication ).WithMany().HasForeignKey( c => c.RelatedCommunicationId ).WillCascadeOnDelete( false );
-            this.HasRequired( c => c.ReleatedMedium ).WithMany().HasForeignKey( c => c.RelatedMediumId ).WillCascadeOnDelete( false );
-            this.HasRequired( c => c.RelatedTransport ).WithMany().HasForeignKey( c => c.RelatedTransportId ).WillCascadeOnDelete( false );
+            this.HasRequired( c => c.ReleatedMedium ).WithMany().HasForeignKey( c => c.RelatedMediumEntityTypeId ).WillCascadeOnDelete( false );
+            this.HasRequired( c => c.RelatedTransport ).WithMany().HasForeignKey( c => c.RelatedTransportEntityTypeId ).WillCascadeOnDelete( false );
 
         }
 
