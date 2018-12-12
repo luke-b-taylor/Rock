@@ -220,8 +220,10 @@ namespace Rock.Communication.Medium
                 Response = message
             };
 
-            //rockContext.CommunicationResponse.Add( communicationResponse );
-            //rockContext.SaveChanges();
+            //CommunicationResponseService communicationResponseService = new CommunicationResponseService( rockContext );
+
+            rockContext.CommunicationResponses.Add( communicationResponse );
+            rockContext.SaveChanges();
         }
 
         private int? GetCommunicationId( DefinedValueCache fromPhone )

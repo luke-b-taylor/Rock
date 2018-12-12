@@ -94,9 +94,15 @@ namespace Rock.Model
                 return false;
             }  
  
-            if ( new Service<CommunicationRecipient>( Context ).Queryable().Any( a => a.MediumEntityTypeId == item.Id ) )
+            if ( new Service<CommunicationResponse>( Context ).Queryable().Any( a => a.RelatedMediumEntityTypeId == item.Id ) )
             {
-                errorMessage = string.Format( "This {0} is assigned to a {1}.", EntityType.FriendlyTypeName, CommunicationRecipient.FriendlyTypeName );
+                errorMessage = string.Format( "This {0} is assigned to a {1}.", EntityType.FriendlyTypeName, CommunicationResponse.FriendlyTypeName );
+                return false;
+            }  
+ 
+            if ( new Service<CommunicationResponse>( Context ).Queryable().Any( a => a.RelatedTransportEntityTypeId == item.Id ) )
+            {
+                errorMessage = string.Format( "This {0} is assigned to a {1}.", EntityType.FriendlyTypeName, CommunicationResponse.FriendlyTypeName );
                 return false;
             }  
  
