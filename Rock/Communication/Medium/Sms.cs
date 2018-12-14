@@ -18,6 +18,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.Composition;
+using System.Data.Entity;
 using System.Linq;
 using System.Text.RegularExpressions;
 
@@ -179,7 +180,7 @@ namespace Rock.Communication.Medium
         private void CreateCommunication( int fromPersonAliasId, string fromPersonName, int toPersonAliasId, string message, DefinedValueCache fromPhone, string responseCode, Rock.Data.RockContext rockContext )
         {
             // See if this should go to a phone or to the DB. Default is to the phone so if for some reason we get a null here then just send it to the phone.
-            var enableMobileConversations = DefinedTypeCache.Get( SystemGuid.DefinedType.COMMUNICATION_SMS_FROM ).GetAttributeValue( "EnableMobileConversations" ).AsBooleanOrNull() ?? true;
+            var enableMobileConversations = fromPhone.GetAttributeValue( "EnableMobileConversations" ).AsBooleanOrNull() ?? true;
 
             if ( enableMobileConversations )
             {
@@ -205,8 +206,7 @@ namespace Rock.Communication.Medium
         {
             var smsMedium = EntityTypeCache.Get( SystemGuid.EntityType.COMMUNICATION_MEDIUM_SMS );
             var smsTransport = this.Transport.Id;
-
-            int? communicationId = GetCommunicationId( fromPhone );
+            int? communicationId = GetCommunicationId( fromPhone, toPersonAliasId, 2 );
 
             var communicationResponse = new CommunicationResponse
             {
@@ -220,18 +220,51 @@ namespace Rock.Communication.Medium
                 Response = message
             };
 
-            //CommunicationResponseService communicationResponseService = new CommunicationResponseService( rockContext );
-
-            rockContext.CommunicationResponses.Add( communicationResponse );
+            var communicationResposeService = new CommunicationResponseService( rockContext );
+            communicationResposeService.Add( communicationResponse );
             rockContext.SaveChanges();
         }
 
-        private int? GetCommunicationId( DefinedValueCache fromPhone )
+        /// <summary>
+        /// Gets the latest communication ID for the SMSFromDefinedValueId to the recipient within daysPastToSearch to present
+        /// </summary>
+        /// <param name="fromPhone">From phone.</param>
+        /// <param name="toPersonAliasId">To person alias identifier.</param>
+        /// <param name="daysPastToSearch">The days past to search.</param>
+        /// <returns></returns>
+        private int? GetCommunicationId( DefinedValueCache fromPhone, int toPersonAliasId, int daysPastToSearch )
         {
-            // This is the last communication from the SMSFromDefinedValueId to the recipient withing 48 hours.
+            int? communicationId = null;
 
+            // This is the last communication .
+            using ( var rockContext = new RockContext() )
+            {
+                var recipientService = new CommunicationRecipientService( rockContext );
+                int? latestRecipientCommunicationId = recipientService
+                    .Queryable()
+                    .AsNoTracking()
+                    .Where( r => r.PersonAliasId == toPersonAliasId )
+                    .Where( r => r.CreatedDateTime > RockDateTime.Now.AddDays( -daysPastToSearch ) )
+                    .OrderByDescending( c => c.CreatedDateTime )
+                    .Select( r => r.CommunicationId )
+                    .First();
 
-            return null;
+                if ( !latestRecipientCommunicationId.HasValue)
+                {
+                    return null;
+                }
+
+                var communicationService = new CommunicationService( rockContext );
+                communicationId = communicationService
+                    .Queryable( "CommunicationRecipient" )
+                    .AsNoTracking()
+                    .Where( c => c.SMSFromDefinedValueId == fromPhone.Id )
+                    .Where( c => c.Id == latestRecipientCommunicationId )
+                    .Select( c => c.Id )
+                    .First();
+            }
+
+            return communicationId;
         }
 
         /// <summary>
