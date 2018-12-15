@@ -33,6 +33,7 @@ namespace Rock.Migrations
             AddCommunicationRecipientSentMessageUp();
             UpdateDefinedType_COMMUNICATION_SMS_FROM_Up();
             AddUpdateDefinedValuesFor_COMMUNICATION_SMS_FROM_Up();
+            PagesAndBlocksUp();
         }
         
         /// <summary>
@@ -40,69 +41,73 @@ namespace Rock.Migrations
         /// </summary>
         public override void Down()
         {
-            CreateCommunicationResponseDown();
-            AddCommunicationRecipientSentMessageDown();
-            UpdateDefinedType_COMMUNICATION_SMS_FROM_Down();
+            PagesAndBlocksDown();
             AddUpdateDefinedValuesFor_COMMUNICATION_SMS_FROM_Down();
+            UpdateDefinedType_COMMUNICATION_SMS_FROM_Down();
+            AddCommunicationRecipientSentMessageDown();
+            CreateCommunicationResponseDown();
         }
 
         private void CreateCommunicationResponseUp()
         {
-
             CreateTable(
                 "dbo.CommunicationResponse",
                 c => new
-                {
-                    Id = c.Int( nullable: false, identity: true ),
-                    FromPersonAliasId = c.Int(),
-                    ToPersonAliasId = c.Int(),
-                    IsRead = c.Boolean( nullable: false ),
-                    RelatedSmsFromDefinedValueId = c.Int(),
-                    RelatedCommunicationId = c.Int(),
-                    RelatedTransportEntityTypeId = c.Int( nullable: false ),
-                    RelatedMediumEntityTypeId = c.Int( nullable: false ),
-                    Response = c.String(),
-                    CreatedDateTime = c.DateTime(),
-                    ModifiedDateTime = c.DateTime(),
-                    CreatedByPersonAliasId = c.Int(),
-                    ModifiedByPersonAliasId = c.Int(),
-                    Guid = c.Guid( nullable: false ),
-                    ForeignId = c.Int(),
-                    ForeignGuid = c.Guid(),
-                    ForeignKey = c.String( maxLength: 100 ),
-                } )
-                .PrimaryKey( t => t.Id )
-                .ForeignKey( "dbo.PersonAlias", t => t.CreatedByPersonAliasId )
-                .ForeignKey( "dbo.PersonAlias", t => t.ModifiedByPersonAliasId )
-                .ForeignKey( "dbo.PersonAlias", t => t.ToPersonAliasId )
-                .ForeignKey( "dbo.Communication", t => t.RelatedCommunicationId )
-                .ForeignKey( "dbo.EntityType", t => t.RelatedTransportEntityTypeId )
-                .ForeignKey( "dbo.EntityType", t => t.RelatedMediumEntityTypeId )
-                .Index( t => t.ToPersonAliasId )
-                .Index( t => t.RelatedCommunicationId )
-                .Index( t => t.RelatedTransportEntityTypeId )
-                .Index( t => t.RelatedMediumEntityTypeId )
-                .Index( t => t.CreatedByPersonAliasId )
-                .Index( t => t.ModifiedByPersonAliasId )
-                .Index( t => t.Guid, unique: true );
+                    {
+                        Id = c.Int(nullable: false, identity: true),
+                        FromPersonAliasId = c.Int(),
+                        ToPersonAliasId = c.Int(),
+                        IsRead = c.Boolean(nullable: false),
+                        RelatedSmsFromDefinedValueId = c.Int(),
+                        RelatedCommunicationId = c.Int(),
+                        RelatedTransportEntityTypeId = c.Int(nullable: false),
+                        RelatedMediumEntityTypeId = c.Int(nullable: false),
+                        Response = c.String(),
+                        CreatedDateTime = c.DateTime(),
+                        ModifiedDateTime = c.DateTime(),
+                        CreatedByPersonAliasId = c.Int(),
+                        ModifiedByPersonAliasId = c.Int(),
+                        Guid = c.Guid(nullable: false),
+                        ForeignId = c.Int(),
+                        ForeignGuid = c.Guid(),
+                        ForeignKey = c.String(maxLength: 100),
+                    })
+                .PrimaryKey(t => t.Id)
+                .ForeignKey("dbo.PersonAlias", t => t.CreatedByPersonAliasId)
+                .ForeignKey("dbo.PersonAlias", t => t.FromPersonAliasId)
+                .ForeignKey("dbo.PersonAlias", t => t.ModifiedByPersonAliasId)
+                .ForeignKey("dbo.Communication", t => t.RelatedCommunicationId)
+                .ForeignKey("dbo.EntityType", t => t.RelatedTransportEntityTypeId)
+                .ForeignKey("dbo.EntityType", t => t.RelatedMediumEntityTypeId)
+                .ForeignKey("dbo.PersonAlias", t => t.ToPersonAliasId)
+                .Index(t => t.FromPersonAliasId)
+                .Index(t => t.ToPersonAliasId)
+                .Index(t => t.RelatedCommunicationId)
+                .Index(t => t.RelatedTransportEntityTypeId)
+                .Index(t => t.RelatedMediumEntityTypeId)
+                .Index(t => t.CreatedByPersonAliasId)
+                .Index(t => t.ModifiedByPersonAliasId)
+                .Index(t => t.Guid, unique: true);
         }
 
         private void CreateCommunicationResponseDown()
         {
-            DropForeignKey( "dbo.CommunicationResponse", "RelatedMediumId", "dbo.EntityType" );
-            DropForeignKey( "dbo.CommunicationResponse", "RelatedTransportId", "dbo.EntityType" );
-            DropForeignKey( "dbo.CommunicationResponse", "RelatedCommunicationId", "dbo.Communication" );
-            DropForeignKey( "dbo.CommunicationResponse", "ToPersonAliasId", "dbo.PersonAlias" );
-            DropForeignKey( "dbo.CommunicationResponse", "ModifiedByPersonAliasId", "dbo.PersonAlias" );
-            DropForeignKey( "dbo.CommunicationResponse", "CreatedByPersonAliasId", "dbo.PersonAlias" );
-            DropIndex( "dbo.CommunicationResponse", new[] { "Guid" } );
-            DropIndex( "dbo.CommunicationResponse", new[] { "ModifiedByPersonAliasId" } );
-            DropIndex( "dbo.CommunicationResponse", new[] { "CreatedByPersonAliasId" } );
-            DropIndex( "dbo.CommunicationResponse", new[] { "RelatedMediumId" } );
-            DropIndex( "dbo.CommunicationResponse", new[] { "RelatedTransportId" } );
-            DropIndex( "dbo.CommunicationResponse", new[] { "RelatedCommunicationId" } );
-            DropIndex( "dbo.CommunicationResponse", new[] { "ToPersonAliasId" } );
-            DropTable( "dbo.CommunicationResponse" );
+            DropForeignKey("dbo.CommunicationResponse", "ToPersonAliasId", "dbo.PersonAlias");
+            DropForeignKey("dbo.CommunicationResponse", "RelatedMediumEntityTypeId", "dbo.EntityType");
+            DropForeignKey("dbo.CommunicationResponse", "RelatedTransportEntityTypeId", "dbo.EntityType");
+            DropForeignKey("dbo.CommunicationResponse", "RelatedCommunicationId", "dbo.Communication");
+            DropForeignKey("dbo.CommunicationResponse", "ModifiedByPersonAliasId", "dbo.PersonAlias");
+            DropForeignKey("dbo.CommunicationResponse", "FromPersonAliasId", "dbo.PersonAlias");
+            DropForeignKey("dbo.CommunicationResponse", "CreatedByPersonAliasId", "dbo.PersonAlias");
+            DropIndex("dbo.CommunicationResponse", new[] { "Guid" });
+            DropIndex("dbo.CommunicationResponse", new[] { "ModifiedByPersonAliasId" });
+            DropIndex("dbo.CommunicationResponse", new[] { "CreatedByPersonAliasId" });
+            DropIndex("dbo.CommunicationResponse", new[] { "RelatedMediumEntityTypeId" });
+            DropIndex("dbo.CommunicationResponse", new[] { "RelatedTransportEntityTypeId" });
+            DropIndex("dbo.CommunicationResponse", new[] { "RelatedCommunicationId" });
+            DropIndex("dbo.CommunicationResponse", new[] { "ToPersonAliasId" });
+            DropIndex("dbo.CommunicationResponse", new[] { "FromPersonAliasId" });
+            DropTable("dbo.CommunicationResponse");
         }
 
         private void AddCommunicationRecipientSentMessageUp()
@@ -198,6 +203,22 @@ namespace Rock.Migrations
             // Add DT Attribute LaunchWorkflowOnResponseReceived 
             RockMigrationHelper.DeleteAttribute( "49C7A5A3-D711-4E41-86E4-06408ED6C1BD" );
 
+        }
+
+        private void PagesAndBlocksUp()
+        {
+            RockMigrationHelper.AddPage( true, "7F79E512-B9DB-4780-9887-AD6D63A39050","D65F783D-87A9-4CC9-8110-E83466A0EADB","SMS Conversations","","275A5175-60E0-40A2-8C63-4E9D9CD39036","fa fa-comments"); // Site:Rock RMS
+            RockMigrationHelper.UpdateBlockType("Communication > Sms Conversations","","~/Blocks/Communication/SmsConversations.ascx","","3497603B-3BE6-4262-B7E9-EC01FC7140EB");
+            // Add Block to Page: SMS Conversations Site: Rock RMS
+            RockMigrationHelper.AddBlock( true, "275A5175-60E0-40A2-8C63-4E9D9CD39036".AsGuid(),null,"C2D29296-6A87-47A9-A753-EE4E9159C4C4".AsGuid(),"3497603B-3BE6-4262-B7E9-EC01FC7140EB".AsGuid(), "Sms Conversations","Main",@"",@"",0,"24CAFC0B-3C23-45EB-B69C-BEC68BB21B97"); 
+        }
+
+        private void PagesAndBlocksDown()
+        {
+            // Remove Block: Sms Conversations, from Page: SMS Conversations, Site: Rock RMS
+            RockMigrationHelper.DeleteBlock("24CAFC0B-3C23-45EB-B69C-BEC68BB21B97");
+            RockMigrationHelper.DeleteBlockType("3497603B-3BE6-4262-B7E9-EC01FC7140EB"); // Communication > Sms Conversations
+            RockMigrationHelper.DeletePage("275A5175-60E0-40A2-8C63-4E9D9CD39036"); //  Page: SMS Conversations, Layout: Full Width, Site: Rock RMS
         }
     }
 }

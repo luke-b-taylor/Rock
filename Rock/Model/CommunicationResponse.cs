@@ -50,7 +50,9 @@ namespace Rock.Model
 
         #region Virtual Properties
 
-        public virtual PersonAlias PersonAlias { get; set; }
+        public virtual PersonAlias FromPersonAlias { get; set; }
+
+        public virtual PersonAlias ToPersonAlias { get; set; }
 
         public virtual Communication RelatedCommunication { get; set; }
 
@@ -75,8 +77,8 @@ namespace Rock.Model
     {
         public CommunicationResponseConfiguration()
         {
-            this.HasOptional( r => r.PersonAlias ).WithMany().HasForeignKey( r => r.FromPersonAliasId ).WillCascadeOnDelete( false );
-            this.HasOptional( r => r.PersonAlias ).WithMany().HasForeignKey( r => r.ToPersonAliasId ).WillCascadeOnDelete( false );
+            this.HasOptional( r => r.FromPersonAlias ).WithMany().HasForeignKey( r => r.FromPersonAliasId ).WillCascadeOnDelete( false );
+            this.HasOptional( r => r.ToPersonAlias ).WithMany().HasForeignKey( r => r.ToPersonAliasId ).WillCascadeOnDelete( false );
             this.HasOptional( c => c.RelatedCommunication ).WithMany().HasForeignKey( c => c.RelatedCommunicationId ).WillCascadeOnDelete( false );
             this.HasRequired( c => c.ReleatedMedium ).WithMany().HasForeignKey( c => c.RelatedMediumEntityTypeId ).WillCascadeOnDelete( false );
             this.HasRequired( c => c.RelatedTransport ).WithMany().HasForeignKey( c => c.RelatedTransportEntityTypeId ).WillCascadeOnDelete( false );

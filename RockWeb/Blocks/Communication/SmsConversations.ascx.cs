@@ -54,13 +54,35 @@ namespace RockWeb.Blocks.Communication
             if ( !IsPostBack )
             {
                 LoadPhoneNumbers();
+                LoadResponseListing();
             }
 
             // handle custom postback events
             if ( !string.IsNullOrWhiteSpace( postbackArgs ) )
             {
                 // Grab the ID of the selected response to show the conversation history in the right pane.
+                string[] args = postbackArgs.Split( new char[] { '?' } );
+                foreach ( string arg in args )
+                {
+                    string[] nameValue = arg.Split( new char[] { ':' } );
+                    string eventParam = nameValue[0];
 
+                    switch ( eventParam )
+                    {
+                        case "recipient-id":
+                            int recipientId;
+                            if ( !int.TryParse( nameValue[1], out recipientId ) )
+                            {
+                                break;
+                            }
+
+                            hfSelectedRecipientId.Value = nameValue[1];
+                            LoadResponsesForRecipient( recipientId );
+                            break;
+                        default:
+                            break;
+                    }
+                }
             }
         }
 
@@ -72,7 +94,7 @@ namespace RockWeb.Blocks.Communication
 
             var SmsNumbers = DefinedTypeCache.Get( Rock.SystemGuid.DefinedType.COMMUNICATION_SMS_FROM.AsGuid() )
                 .DefinedValues
-                .Where( v => v.GetAttributeValue( "EnableMobileConversations").AsBooleanOrNull() ?? true == false )
+                .Where( v => v.GetAttributeValue( "EnableMobileConversations").AsBoolean( true ) == false )
                 .ToList();
 
             ddlSmsNumbers.DataSource = SmsNumbers;
@@ -83,6 +105,10 @@ namespace RockWeb.Blocks.Communication
 
         private void LoadResponseListing()
         {
+            // NOTE: The FromPersonAliasId is the person who sent a text from a mobile device to Rock.
+            // This person is also referred to as the Recipient because they are responding to a
+            // communication from Rock. Restated the the response is from the recipient of a communication.
+
             int? smsPhoneDefinedValueId = ddlSmsNumbers.SelectedValue.AsIntegerOrNull();
 
             if(smsPhoneDefinedValueId == null )
@@ -92,12 +118,13 @@ namespace RockWeb.Blocks.Communication
 
             using ( var rockContext = new RockContext() )
             {
+                rockContext.SqlLogging( true );
                 var responses = new CommunicationResponseService( rockContext )
                     .Queryable()
                     .AsNoTracking()
                     .Where( r => r.RelatedSmsFromDefinedValueId == smsPhoneDefinedValueId )
-                    .GroupBy( r => new { r.RelatedCommunicationId, r.ToPersonAliasId } )
-                    .Select( g => g.OrderByDescending( r => r.CreatedDateTime ).First() )
+                    .GroupBy( r => new { r.FromPersonAliasId } )
+                    .Select( g => g.OrderByDescending( r => r.CreatedDateTime ).FirstOrDefault() )
                     .ToList();
 
                 if ( responses == null )
@@ -108,23 +135,28 @@ namespace RockWeb.Blocks.Communication
                 var responseListItems = responses
                     .Select( r => new ResponseListItem
                     {
-                        FullName = r.PersonAlias.Person.FullName,
+                        RecipientId = r.FromPersonAliasId,
+                        FullName = r.FromPersonAlias.Person.FullName,
                         CreatedDateTime = r.CreatedDateTime,
                         LastMessagePart = r.Response.Truncate(25),
                         IsRead = r.IsRead
                     } )
                     .ToList();
-
+                rockContext.SqlLogging( false );
                 rptRecipients.DataSource = responseListItems;
                 rptRecipients.DataBind();
             }
         }
 
+        private void LoadResponsesForRecipient( int recipientId )
+        {
 
+        }
 
 
         protected class ResponseListItem
         {
+            public int? RecipientId { get; set; }
             public string FullName { get; set; }
             public DateTime? CreatedDateTime { get; set; }
             public string LastMessagePart { get; set; }
@@ -140,7 +172,7 @@ namespace RockWeb.Blocks.Communication
 
         protected void ddlSmsNumbers_SelectedIndexChanged( object sender, EventArgs e )
         {
-
+            LoadResponseListing();
         }
 
         protected void tglShowRead_CheckedChanged( object sender, EventArgs e )
@@ -152,6 +184,10 @@ namespace RockWeb.Blocks.Communication
         {
 
         }
+        
+
+
         #endregion Control Events
+
     }
 }

@@ -13,7 +13,7 @@ namespace Rock.Migrations
         
         string IMigrationMetadata.Id
         {
-            get { return "201812121829447_SmsConversations"; }
+            get { return "201812142320250_SmsConversations"; }
         }
         
         string IMigrationMetadata.Source
