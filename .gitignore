@@ -35,3 +35,4 @@ Packages/*
 # javascript deps
 node_modules
 *.map
+/packages/
