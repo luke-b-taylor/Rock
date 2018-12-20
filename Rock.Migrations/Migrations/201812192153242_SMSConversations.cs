@@ -22,7 +22,7 @@ namespace Rock.Migrations
     /// <summary>
     ///
     /// </summary>
-    public partial class SmsConversations : Rock.Migrations.RockMigration
+    public partial class SMSConversations : Rock.Migrations.RockMigration
     {
         /// <summary>
         /// Operations to be performed during the upgrade process.
@@ -55,6 +55,7 @@ namespace Rock.Migrations
                 c => new
                     {
                         Id = c.Int(nullable: false, identity: true),
+                        MessageKey = c.String(nullable: false, maxLength: 1000),
                         FromPersonAliasId = c.Int(),
                         ToPersonAliasId = c.Int(),
                         IsRead = c.Boolean(nullable: false),
@@ -88,6 +89,7 @@ namespace Rock.Migrations
                 .Index(t => t.CreatedByPersonAliasId)
                 .Index(t => t.ModifiedByPersonAliasId)
                 .Index(t => t.Guid, unique: true);
+            
         }
 
         private void CreateCommunicationResponseDown()
@@ -112,12 +114,12 @@ namespace Rock.Migrations
 
         private void AddCommunicationRecipientSentMessageUp()
         {
-            AddColumn( "dbo.CommunicationRecipient", "SentMessage", c => c.String() );
+            AddColumn("dbo.CommunicationRecipient", "SentMessage", c => c.String());
         }
 
         private void AddCommunicationRecipientSentMessageDown()
         {
-            DropColumn( "dbo.CommunicationRecipient", "SentMessage" );
+            DropColumn("dbo.CommunicationRecipient", "SentMessage");
         }
 
         /// <summary>

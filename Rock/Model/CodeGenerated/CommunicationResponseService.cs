@@ -92,6 +92,7 @@ namespace Rock.Model
             target.ForeignKey = source.ForeignKey;
             target.FromPersonAliasId = source.FromPersonAliasId;
             target.IsRead = source.IsRead;
+            target.MessageKey = source.MessageKey;
             target.RelatedCommunicationId = source.RelatedCommunicationId;
             target.RelatedMediumEntityTypeId = source.RelatedMediumEntityTypeId;
             target.RelatedSmsFromDefinedValueId = source.RelatedSmsFromDefinedValueId;

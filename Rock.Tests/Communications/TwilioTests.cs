@@ -13,14 +13,28 @@ namespace Rock.Tests.Communications
     public class TwilioTests
     {
         [Fact]
-        public void ProcessResponseTest()
+        public void ProcessResponseTestToRockWithKnownNumbers()
         {
             string toPhone = "+16237777794";
             string fromPhone = "+16128750967";
             string message = "Message sent on " + RockDateTime.Now.ToString();
             string errorMessage = "";
 
-            new Sms().ProcessResponse( toPhone, fromPhone, message, out errorMessage );
+            var sms = new Sms();
+            sms.ProcessResponse( toPhone, fromPhone, message, out errorMessage );
         }
+
+        [Fact]
+        public void ProcessResponseTestToRockWithUnknownSenderNumber()
+        {
+            string toPhone = "+16237777794";
+            string fromPhone = "+16128750960";
+            string message = "Message sent on " + RockDateTime.Now.ToString();
+            string errorMessage = "";
+
+            var sms = new Sms();
+            sms.ProcessResponse( toPhone, fromPhone, message, out errorMessage );
+        }
+
     }
 }

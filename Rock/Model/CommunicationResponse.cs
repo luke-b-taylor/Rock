@@ -21,6 +21,18 @@ namespace Rock.Model
     public partial class CommunicationResponse : Model<CommunicationResponse>
     {
         #region Entity Properties
+        /// <summary>
+        /// This is the address of the sender communication medium. e.g. A phone number or email address.
+        /// It is used when an incoming message cannot be identified with a person, this can be used to
+        /// link it up later.
+        /// </summary>
+        /// <value>
+        /// The message key.
+        /// </value>
+        [Required]
+        [MaxLength( 1000 )]
+        [DataMember( IsRequired = true )]
+        public string MessageKey { get; set; }
 
         [DataMember]
         public int? FromPersonAliasId { get; set; }

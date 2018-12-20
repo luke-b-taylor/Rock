@@ -46,6 +46,9 @@ namespace Rock.Client
         /// <summary />
         public bool IsRead { get; set; }
 
+        /// <summary />
+        public string MessageKey { get; set; }
+
         /// <summary>
         /// If the ModifiedByPersonAliasId is being set manually and should not be overwritten with current user when saved, set this value to true
         /// </summary>
@@ -106,6 +109,7 @@ namespace Rock.Client
             this.ForeignKey = source.ForeignKey;
             this.FromPersonAliasId = source.FromPersonAliasId;
             this.IsRead = source.IsRead;
+            this.MessageKey = source.MessageKey;
             this.ModifiedAuditValuesAlreadyUpdated = source.ModifiedAuditValuesAlreadyUpdated;
             this.RelatedCommunicationId = source.RelatedCommunicationId;
             this.RelatedMediumEntityTypeId = source.RelatedMediumEntityTypeId;

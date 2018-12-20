@@ -78,6 +78,7 @@ namespace RockWeb.Blocks.Communication
 
                             hfSelectedRecipientId.Value = nameValue[1];
                             LoadResponsesForRecipient( recipientId );
+                            UpdateReadProperty( recipientId );
                             break;
                         default:
                             break;
@@ -88,6 +89,7 @@ namespace RockWeb.Blocks.Communication
 
         #endregion Control Overrides
 
+        #region private/protected Methods
         private void LoadPhoneNumbers()
         {
             // ddlSmsNumbers and select the first (newest communication?) number
@@ -118,7 +120,6 @@ namespace RockWeb.Blocks.Communication
 
             using ( var rockContext = new RockContext() )
             {
-                rockContext.SqlLogging( true );
                 var responses = new CommunicationResponseService( rockContext )
                     .Queryable()
                     .AsNoTracking()
@@ -142,7 +143,6 @@ namespace RockWeb.Blocks.Communication
                         IsRead = r.IsRead
                     } )
                     .ToList();
-                rockContext.SqlLogging( false );
                 rptRecipients.DataSource = responseListItems;
                 rptRecipients.DataBind();
             }
@@ -150,9 +150,31 @@ namespace RockWeb.Blocks.Communication
 
         private void LoadResponsesForRecipient( int recipientId )
         {
+            int? smsPhoneDefinedValueId = ddlSmsNumbers.SelectedValue.AsIntegerOrNull();
 
+            if(smsPhoneDefinedValueId == null )
+            {
+                return;
+            }
+
+            var communicationResponseService = new CommunicationResponseService( new RockContext() );
+            var responses = communicationResponseService.GetConversation( recipientId, smsPhoneDefinedValueId.Value );
+
+            rptConversation.DataSource = responses.Tables[0];
+            rptConversation.DataBind();
         }
 
+        private void UpdateReadProperty( int recipientId )
+        {
+            int? smsPhoneDefinedValueId = ddlSmsNumbers.SelectedValue.AsIntegerOrNull();
+
+            if(smsPhoneDefinedValueId == null )
+            {
+                return;
+            }
+
+            new CommunicationResponseService( new RockContext() ).UpdateReadPropertyByFromPersonAliasId( recipientId, smsPhoneDefinedValueId.Value );
+        }
 
         protected class ResponseListItem
         {
@@ -162,6 +184,9 @@ namespace RockWeb.Blocks.Communication
             public string LastMessagePart { get; set; }
             public bool IsRead { get; set; }
         }
+
+
+        #endregion private/protected Methods
 
 
         #region Control Events
@@ -184,10 +209,79 @@ namespace RockWeb.Blocks.Communication
         {
 
         }
-        
 
+        protected void btnSend_Click( object sender, EventArgs e )
+        {
+            string smsMessage = tbNewMessage.Text.Trim();
+
+            if (smsMessage.Length == 0 )
+            {
+                return;
+            }
+
+            // Create the SMS message and send it.
+
+            var mergeFields = Rock.Lava.LavaHelper.GetCommonMergeFields( null );
+            int personAliasId = hfSelectedRecipientId.ValueAsInt();
+            var personAliasService = new PersonAliasService( new RockContext() );
+
+            var phoneNumber = personAliasService
+                .Queryable()
+                .AsNoTracking()
+                .Where( a => a.Id == personAliasId )
+                .SelectMany( a => a.Person.PhoneNumbers )
+                .Where( p => p.IsMessagingEnabled )
+                .FirstOrDefault();
+
+            string smsNumber = phoneNumber.Number;
+            if ( !string.IsNullOrWhiteSpace( phoneNumber.CountryCode ) )
+            {
+                smsNumber = "+" + phoneNumber.CountryCode + phoneNumber.Number;
+            }
+
+            var recipient = new RecipientData( smsNumber, mergeFields );
+
+            var person = personAliasService.GetPerson( personAliasId );
+            if ( person != null )
+            {
+                recipient.MergeFields.Add( "Person", person );
+            }
+
+            var fromNumberDefinedValueCache = DefinedValueCache.Get( ddlSmsNumbers.SelectedValue.AsInteger() );
+
+            var rockSMSMessage = new RockSMSMessage
+            {
+                CreateCommunicationRecord = true,
+                Message = smsMessage,
+                FromNumber = fromNumberDefinedValueCache
+            };
+
+            rockSMSMessage.AddRecipient( recipient );
+            rockSMSMessage.Send();
+
+            // create a communicationResponse to track the conversation
+            //string errorMessage = string.Empty;
+            //var sms = new Rock.Communication.Medium.Sms();
+            //sms.ProcessResponse( smsNumber, fromNumberDefinedValueCache.Value, smsMessage, out errorMessage );
+
+            //tbNewMessage.Text = string.Empty;
+
+            LoadResponsesForRecipient( personAliasId );
+        }
 
         #endregion Control Events
 
+
+
+
+        protected void mdNewMessage_SaveClick( object sender, EventArgs e )
+        {
+
+        }
+
+        protected void mdLinkConversation_SaveClick( object sender, EventArgs e )
+        {
+
+        }
     }
 }

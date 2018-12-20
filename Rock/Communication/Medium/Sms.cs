@@ -89,8 +89,6 @@ namespace Rock.Communication.Medium
         {
             errorMessage = string.Empty;
             
-            string transportPhone = string.Empty;
-
             using ( var rockContext = new RockContext() )
             {
                 Person toPerson = null;
@@ -111,7 +109,7 @@ namespace Rock.Communication.Medium
                     .FirstOrDefault();
 
                 // get recipient from defined value
-                var rockSmsFromPhoneDv = FindFromPhoneDefinedValue( toPhone );
+                var rockSmsFromPhoneDv = FindRockSMSPhoneDefinedValue( toPhone );
                 if ( rockSmsFromPhoneDv != null )
                 {
                     var toPersonAliasGuid = rockSmsFromPhoneDv.GetAttributeValue( "ResponseRecipient" ).AsGuidOrNull();
@@ -142,12 +140,12 @@ namespace Rock.Communication.Medium
 
                             if ( recipient != null && recipient.Communication.SenderPersonAliasId.HasValue )
                             {
-                                CreateCommunication( fromPerson.PrimaryAliasId.Value, fromPerson.FullName, recipient.Communication.SenderPersonAliasId.Value, message.Replace( responseCode, "" ), rockSmsFromPhoneDv, "", rockContext );
+                                CreateCommunication( fromPerson.PrimaryAliasId.Value, fromPerson.FullName, fromPhone, recipient.Communication.SenderPersonAliasId.Value, message.Replace( responseCode, "" ), rockSmsFromPhoneDv, "", rockContext );
                             }
                             else // send a warning message back to the medium recipient
                             {
                                 string warningMessage = string.Format( "A conversation could not be found with the response token {0}.", responseCode );
-                                CreateCommunication( fromPerson.PrimaryAliasId.Value, fromPerson.FullName, fromPerson.PrimaryAliasId.Value, warningMessage, rockSmsFromPhoneDv, "", rockContext );
+                                CreateCommunication( fromPerson.PrimaryAliasId.Value, fromPerson.FullName, fromPhone, fromPerson.PrimaryAliasId.Value, warningMessage, rockSmsFromPhoneDv, "", rockContext );
                             }
                         }
                     }
@@ -156,7 +154,7 @@ namespace Rock.Communication.Medium
                         string messageId = GenerateResponseCode( rockContext );
                         message = string.Format( "-{0}-\n{1}\n( {2} )", fromPerson.FullName, message, messageId );
                         int? toPersonPrimaryAliasId = toPerson != null ? toPerson.PrimaryAliasId : null;
-                        CreateCommunication( fromPerson.PrimaryAliasId.Value, fromPerson.FullName, toPersonPrimaryAliasId, message, rockSmsFromPhoneDv, messageId, rockContext );
+                        CreateCommunication( fromPerson.PrimaryAliasId.Value, fromPerson.FullName, fromPhone, toPersonPrimaryAliasId, message, rockSmsFromPhoneDv, messageId, rockContext );
                     }
                 }
                 else
@@ -179,18 +177,19 @@ namespace Rock.Communication.Medium
         /// <param name="rockSmsFromPhoneDv">From phone.</param>
         /// <param name="responseCode">The reponseCode to use for tracking the conversation.</param>
         /// <param name="rockContext">A context to use for database calls.</param>
-        private void CreateCommunication( int fromPersonAliasId, string fromPersonName, int? toPersonAliasId, string message, DefinedValueCache rockSmsFromPhoneDv, string responseCode, Rock.Data.RockContext rockContext )
+        private void CreateCommunication( int fromPersonAliasId, string fromPersonName, string messageKey, int? toPersonAliasId, string message, DefinedValueCache rockSmsFromPhoneDv, string responseCode, Rock.Data.RockContext rockContext )
         {
             // See if this should go to a phone or to the DB. Default is to the phone so if for some reason we get a null here then just send it to the phone.
             var enableMobileConversations = rockSmsFromPhoneDv.GetAttributeValue( "EnableMobileConversations" ).AsBooleanOrNull() ?? true;
 
             if ( enableMobileConversations )
             {
-                CreateCommunicationMobile( fromPersonAliasId, fromPersonName, toPersonAliasId ?? 0, message, rockSmsFromPhoneDv, responseCode, rockContext  );
+                CreateCommunicationMobile( fromPersonAliasId, fromPersonName, toPersonAliasId.Value, message, rockSmsFromPhoneDv, responseCode, rockContext  );
             }
             else
             {
-                CreateCommunicationResponse( fromPersonAliasId, fromPersonName, toPersonAliasId, message, rockSmsFromPhoneDv, responseCode, rockContext );
+                // To and from person can be null and the response linked to a person later.
+                CreateCommunicationResponse( fromPersonAliasId, fromPersonName, messageKey, toPersonAliasId, message, rockSmsFromPhoneDv, responseCode, rockContext );
             }
         }
 
@@ -204,7 +203,7 @@ namespace Rock.Communication.Medium
         /// <param name="rockSmsFromPhoneDv">From phone.</param>
         /// <param name="responseCode">The response code.</param>
         /// <param name="rockContext">The rock context.</param>
-        private void CreateCommunicationResponse( int fromPersonAliasId, string fromPersonName, int? toPersonAliasId, string message, DefinedValueCache rockSmsFromPhoneDv, string responseCode, Rock.Data.RockContext rockContext )
+        private void CreateCommunicationResponse( int fromPersonAliasId, string fromPersonName, string messageKey, int? toPersonAliasId, string message, DefinedValueCache rockSmsFromPhoneDv, string responseCode, Rock.Data.RockContext rockContext )
         {
             var smsMedium = EntityTypeCache.Get( SystemGuid.EntityType.COMMUNICATION_MEDIUM_SMS );
             var smsTransport = this.Transport.EntityType.Id;
@@ -212,11 +211,12 @@ namespace Rock.Communication.Medium
 
             var communicationResponse = new CommunicationResponse
             {
+                MessageKey = messageKey,
                 FromPersonAliasId = fromPersonAliasId,
                 ToPersonAliasId = toPersonAliasId,
                 IsRead = false,
                 RelatedSmsFromDefinedValueId = rockSmsFromPhoneDv.Id,
-                RelatedCommunicationId = communicationId.Value,
+                RelatedCommunicationId = communicationId,
                 RelatedTransportEntityTypeId = smsTransport,
                 RelatedMediumEntityTypeId = smsMedium.Id,
                 Response = message
@@ -236,37 +236,38 @@ namespace Rock.Communication.Medium
         /// <returns></returns>
         private int? GetCommunicationId( DefinedValueCache fromPhone, int fromPersonAliasId, int daysPastToSearch )
         {
-            int? communicationId = null;
-
-            // This is the last communication .
+            // This is the last communication
             using ( var rockContext = new RockContext() )
             {
                 var recipientService = new CommunicationRecipientService( rockContext );
-                int? latestRecipientCommunicationId = recipientService
+                var latestRecipientCommunication = recipientService
                     .Queryable()
                     .AsNoTracking()
                     .Where( r => r.PersonAliasId == fromPersonAliasId )
                     .Where( r => r.CreatedDateTime >= DbFunctions.AddDays( RockDateTime.Now, -daysPastToSearch ) )
                     .OrderByDescending( c => c.CreatedDateTime )
-                    .Select( r => r.CommunicationId )
-                    .First();
+                    .FirstOrDefault();
 
-                if ( !latestRecipientCommunicationId.HasValue)
+                if ( latestRecipientCommunication == null )
                 {
                     return null;
                 }
 
                 var communicationService = new CommunicationService( rockContext );
-                communicationId = communicationService
-                    .Queryable( "CommunicationRecipient" )
+                var communication = communicationService
+                    .Queryable()
                     .AsNoTracking()
                     .Where( c => c.SMSFromDefinedValueId == fromPhone.Id )
-                    .Where( c => c.Id == latestRecipientCommunicationId )
-                    .Select( c => c.Id )
-                    .First();
-            }
+                    .Where( c => c.Id == latestRecipientCommunication.Id )
+                    .FirstOrDefault();
 
-            return communicationId;
+                if (communication != null)
+                {
+                    return communication.Id;
+                }
+
+                return null;
+            }
         }
 
         /// <summary>
@@ -402,7 +403,7 @@ namespace Rock.Communication.Medium
         /// </summary>
         /// <param name="phoneNumber">The phone number.</param>
         /// <returns></returns>
-        public static DefinedValueCache FindFromPhoneDefinedValue( string phoneNumber )
+        public static DefinedValueCache FindRockSMSPhoneDefinedValue( string phoneNumber )
         {
             var definedType = DefinedTypeCache.Get( SystemGuid.DefinedType.COMMUNICATION_SMS_FROM.AsGuid() );
             if ( definedType != null )
