@@ -42,48 +42,55 @@ namespace RockWeb.Blocks.Communication
 {
     [DisplayName( "SMS Conversations" )]
     [Category( "Core" )]
-    [Description( "SMS Conversations between a SMS enabled phoen and a Rock SMS Phone number that does not have 'Enable Mobile Conversations' set to true." )]
+    [Description( "SMS Conversations between an SMS enabled phone and a Rock SMS Phone number that has 'Enable Mobile Conversations' set to false." )]
+    [DefinedValueField( definedTypeGuid: Rock.SystemGuid.DefinedType.COMMUNICATION_SMS_FROM,
+        name: "Allowed SMS Numbers",
+        description: "Set the allowed FROM numbers to appear when in SMS mode (if none are selected all numbers will be included). ",
+        required: false,
+        allowMultiple: true,
+        order: 1,
+        key: "AllowedSMSNumbers" )]
+    [BooleanField( "Show only personal SMS number",
+        description: "Only SMS Numbers tied to the current individual will be shown. Those with ADMIN rights will see all SMS Numbers.",
+        defaultValue: false,
+        order: 2,
+        key: "ShowOnlyPersonalSmsNumber" )]
+    [BooleanField( "Hide personal SMS numbers",
+        description: "Only SMS Numbers that are not associated with a person. The numbers without a 'ResponseRecipient' attribute value.",
+        defaultValue: false,
+        order: 3,
+        key: "HidePersonalSmsNumbers" )]
+    [BooleanField( "Enable SMS Send",
+        description: "Allow SMS messages to be sent from the block.",
+        defaultValue: true,
+        order: 4,
+        key: "EnableSmsSend" )]
+    [IntegerField( "Character Limit",
+        description: "Set this to show a character limit countdown for SMS communications. Set to 0 to disable",
+        required: false,
+        defaultValue: 160,
+        order: 5,
+        key: "CharacterLimit" )]
     public partial class SmsConversations : RockBlock
     {
         #region Control Overrides
 
+        protected override void OnInit( EventArgs e )
+        {
+            base.OnInit( e );
+            hfSMSCharLimit.Value = ( this.GetAttributeValue( "CharacterLimit" ).AsIntegerOrNull() ?? 160 ).ToString();
+        }
+
         protected void Page_Load( object sender, EventArgs e )
         {
-            string postbackArgs = Request.Params["__EVENTARGUMENT"];
-
             if ( !IsPostBack )
             {
                 LoadPhoneNumbers();
                 LoadResponseListing();
             }
-
-            // handle custom postback events
-            if ( !string.IsNullOrWhiteSpace( postbackArgs ) )
+            else
             {
-                // Grab the ID of the selected response to show the conversation history in the right pane.
-                string[] args = postbackArgs.Split( new char[] { '?' } );
-                foreach ( string arg in args )
-                {
-                    string[] nameValue = arg.Split( new char[] { ':' } );
-                    string eventParam = nameValue[0];
-
-                    switch ( eventParam )
-                    {
-                        case "recipient-id":
-                            int recipientId;
-                            if ( !int.TryParse( nameValue[1], out recipientId ) )
-                            {
-                                break;
-                            }
-
-                            hfSelectedRecipientId.Value = nameValue[1];
-                            LoadResponsesForRecipient( recipientId );
-                            UpdateReadProperty( recipientId );
-                            break;
-                        default:
-                            break;
-                    }
-                }
+                ShowDialog();
             }
         }
 
@@ -92,14 +99,44 @@ namespace RockWeb.Blocks.Communication
         #region private/protected Methods
         private void LoadPhoneNumbers()
         {
-            // ddlSmsNumbers and select the first (newest communication?) number
-
+            // First load up all of the available numbers
             var SmsNumbers = DefinedTypeCache.Get( Rock.SystemGuid.DefinedType.COMMUNICATION_SMS_FROM.AsGuid() )
                 .DefinedValues
                 .Where( v => v.GetAttributeValue( "EnableMobileConversations").AsBoolean( true ) == false )
-                .ToList();
+                .ToList();// probably do this last, keep here for testing
 
-            ddlSmsNumbers.DataSource = SmsNumbers;
+            var selectedNumberGuids = GetAttributeValue( "AllowedSMSNumbers" ).SplitDelimitedValues( true ).AsGuidList();
+            if ( selectedNumberGuids.Any() )
+            {
+                SmsNumbers = SmsNumbers.Where( v => selectedNumberGuids.Contains( v.Guid ) ).ToList();
+            }
+
+            // show only current persons number
+            if ( GetAttributeValue( "ShowOnlyPersonalSmsNumber" ).AsBoolean() )
+            {
+                var currentPersonSMSNumber = this.CurrentPerson.PhoneNumbers.FirstOrDefault( a => a.IsMessagingEnabled );
+                SmsNumbers = SmsNumbers.Where( v => v.Value == currentPersonSMSNumber.Number ).ToList();
+            }
+
+            var filteredNumbers = new List<DefinedValueCache>();
+
+            // hide personal numbers
+            if ( GetAttributeValue( "HidePersonalSmsNumbers" ).AsBoolean() )
+            {
+                foreach( var number in SmsNumbers )
+                {
+                    if( number.GetAttributeValue( "ResponseRecipient" ).IsNullOrWhiteSpace() )
+                    {
+                        filteredNumbers.Add( number );
+                    }
+                }
+                ddlSmsNumbers.DataSource = filteredNumbers;
+            }
+            else
+            {
+                ddlSmsNumbers.DataSource = SmsNumbers;
+            }
+
             ddlSmsNumbers.DataValueField = "Id";
             ddlSmsNumbers.DataTextField = "Value";
             ddlSmsNumbers.DataBind();
@@ -118,33 +155,43 @@ namespace RockWeb.Blocks.Communication
                 return;
             }
 
+            bool showRead = tglShowRead.Checked;
+
             using ( var rockContext = new RockContext() )
             {
                 var responses = new CommunicationResponseService( rockContext )
                     .Queryable()
                     .AsNoTracking()
-                    .Where( r => r.RelatedSmsFromDefinedValueId == smsPhoneDefinedValueId )
-                    .GroupBy( r => new { r.FromPersonAliasId } )
+                    .Where( r => r.RelatedSmsFromDefinedValueId == smsPhoneDefinedValueId );
+
+                if ( !showRead )
+                {
+                    responses = responses.Where( r => r.IsRead == false );
+                }
+
+                var filteredresponses = responses.GroupBy( r => new { r.FromPersonAliasId } )
                     .Select( g => g.OrderByDescending( r => r.CreatedDateTime ).FirstOrDefault() )
                     .ToList();
 
-                if ( responses == null )
+                if ( filteredresponses == null )
                 {
                     return;
                 }
 
-                var responseListItems = responses
+                var responseListItems = filteredresponses
                     .Select( r => new ResponseListItem
                     {
                         RecipientId = r.FromPersonAliasId,
+                        MessageKey = r.MessageKey,
                         FullName = r.FromPersonAlias.Person.FullName,
                         CreatedDateTime = r.CreatedDateTime,
                         LastMessagePart = r.Response.Truncate(25),
                         IsRead = r.IsRead
                     } )
                     .ToList();
-                rptRecipients.DataSource = responseListItems;
-                rptRecipients.DataBind();
+
+                gRecipients.DataSource = responseListItems;
+                gRecipients.DataBind();
             }
         }
 
@@ -176,15 +223,100 @@ namespace RockWeb.Blocks.Communication
             new CommunicationResponseService( new RockContext() ).UpdateReadPropertyByFromPersonAliasId( recipientId, smsPhoneDefinedValueId.Value );
         }
 
+        private Rock.Model.Communication CreateCommunication()
+        {
+            var communication = new Rock.Model.Communication();
+
+
+
+            return communication;
+        }
+
         protected class ResponseListItem
         {
             public int? RecipientId { get; set; }
+            public string MessageKey { get; set; }
             public string FullName { get; set; }
             public DateTime? CreatedDateTime { get; set; }
             public string LastMessagePart { get; set; }
             public bool IsRead { get; set; }
         }
 
+        /// <summary>
+        /// Shows the dialog.
+        /// </summary>
+        /// <param name="dialog">The dialog.</param>
+        /// <param name="setValues">if set to <c>true</c> [set values].</param>
+        private void ShowDialog( string dialog, bool setValues = false )
+        {
+            hfActiveDialog.Value = dialog.ToUpper().Trim();
+            ShowDialog( setValues );
+        }
+
+        /// <summary>
+        /// Shows the dialog.
+        /// </summary>
+        /// <param name="setValues">if set to <c>true</c> [set values].</param>
+        private void ShowDialog( bool setValues = false )
+        {
+            switch ( hfActiveDialog.Value )
+            {
+                case "MDNEWMESSAGE":
+                    mdNewMessage.Show();
+                    break;
+                case "MDLINKCONVERSATION":
+                    mdLinkConversation.Show();
+                    break;
+            }
+        }
+
+        /// <summary>
+        /// Hides the dialog.
+        /// </summary>
+        private void HideDialog()
+        {
+            switch ( hfActiveDialog.Value )
+            {
+                case "MDNEWMESSAGE":
+                    mdNewMessage.Hide();
+                    break;
+                case "MDLINKCONVERSATION":
+                    mdLinkConversation.Hide();
+                    break;
+            }
+
+            hfActiveDialog.Value = string.Empty;
+        }
+
+        private void SendMessage( int toPersonAliasId, string message )
+        {
+            using ( var rockContext = new RockContext() )
+            {
+                // default the sender to the logged in user. Only used if a ResponseRecipient is not defined for the SMS From number.
+                int fromPersonAliasId = CurrentUser.Person.PrimaryAliasId.Value;
+                string fromPersonName = CurrentUser.Person.FullName;
+
+                // The sending phone is the selected one
+                DefinedValueCache fromPhone = DefinedValueCache.Get( ddlSmsNumbers.SelectedValue.AsInteger() );
+
+                var responseRecipientGuid = fromPhone.GetAttributeValue( "ResponseRecipient" ).AsGuidOrNull();
+                if( responseRecipientGuid.HasValue )
+                {
+                    var fromPerson = new PersonAliasService( rockContext )
+                        .Queryable().Where( p => p.Guid.Equals( responseRecipientGuid.Value ) )
+                        .Select( p => p.Person )
+                        .FirstOrDefault();
+
+                    fromPersonAliasId = fromPerson.PrimaryAliasId.Value;
+                    fromPersonName = fromPerson.FullName;
+                }
+                
+                string responseCode = Rock.Communication.Medium.Sms.GenerateResponseCode( rockContext );
+
+                // Create and enqueue the communication
+                Rock.Communication.Medium.Sms.CreateCommunicationMobile( fromPersonAliasId, fromPersonName, toPersonAliasId, message, fromPhone, responseCode, rockContext );
+            }
+        }
 
         #endregion private/protected Methods
 
@@ -192,7 +324,10 @@ namespace RockWeb.Blocks.Communication
         #region Control Events
         protected void lbLinkConversation_Click( object sender, EventArgs e )
         {
+            var btn = ( LinkButton ) sender;
+            hfMessageKey.Value = btn.CommandArgument;
 
+            ShowDialog( "mdLinkConversation" );
         }
 
         protected void ddlSmsNumbers_SelectedIndexChanged( object sender, EventArgs e )
@@ -202,84 +337,64 @@ namespace RockWeb.Blocks.Communication
 
         protected void tglShowRead_CheckedChanged( object sender, EventArgs e )
         {
-
+            LoadResponseListing();
         }
 
         protected void btnCreateNewMessage_Click( object sender, EventArgs e )
         {
-
+            ShowDialog( "mdNewMessage" );
         }
 
         protected void btnSend_Click( object sender, EventArgs e )
         {
-            string smsMessage = tbNewMessage.Text.Trim();
+            string message = tbNewMessage.Text.Trim();
 
-            if (smsMessage.Length == 0 )
+            if (message.Length == 0 )
             {
                 return;
             }
 
-            // Create the SMS message and send it.
+            int toPersonAliasId = hfSelectedRecipientId.ValueAsInt();
+            SendMessage( toPersonAliasId, message );
+            tbNewMessage.Text = string.Empty;
+            LoadResponsesForRecipient( toPersonAliasId );
+        }
 
-            var mergeFields = Rock.Lava.LavaHelper.GetCommonMergeFields( null );
-            int personAliasId = hfSelectedRecipientId.ValueAsInt();
-            var personAliasService = new PersonAliasService( new RockContext() );
-
-            var phoneNumber = personAliasService
-                .Queryable()
-                .AsNoTracking()
-                .Where( a => a.Id == personAliasId )
-                .SelectMany( a => a.Person.PhoneNumbers )
-                .Where( p => p.IsMessagingEnabled )
-                .FirstOrDefault();
-
-            string smsNumber = phoneNumber.Number;
-            if ( !string.IsNullOrWhiteSpace( phoneNumber.CountryCode ) )
+        protected void mdNewMessage_SaveClick( object sender, EventArgs e )
+        {
+            string message = tbSMSTextMessage.Text.Trim();
+            if ( message.IsNullOrWhiteSpace() )
             {
-                smsNumber = "+" + phoneNumber.CountryCode + phoneNumber.Number;
+                return;
             }
 
-            var recipient = new RecipientData( smsNumber, mergeFields );
+            int toPersonAliasId = ppRecipient.PersonAliasId.Value;
+            SendMessage( toPersonAliasId, message );
+            ppRecipient.SelectedValue = null;
+            tbSMSTextMessage.Text = string.Empty;
+            HideDialog();
+        }
 
-            var person = personAliasService.GetPerson( personAliasId );
-            if ( person != null )
-            {
-                recipient.MergeFields.Add( "Person", person );
-            }
+        protected void mdLinkConversation_SaveClick( object sender, EventArgs e )
+        {
 
-            var fromNumberDefinedValueCache = DefinedValueCache.Get( ddlSmsNumbers.SelectedValue.AsInteger() );
 
-            var rockSMSMessage = new RockSMSMessage
-            {
-                CreateCommunicationRecord = true,
-                Message = smsMessage,
-                FromNumber = fromNumberDefinedValueCache
-            };
 
-            rockSMSMessage.AddRecipient( recipient );
-            rockSMSMessage.Send();
+            hfMessageKey.Value = string.Empty;
+            HideDialog();
+        }
 
-            // create a communicationResponse to track the conversation
-            //string errorMessage = string.Empty;
-            //var sms = new Rock.Communication.Medium.Sms();
-            //sms.ProcessResponse( smsNumber, fromNumberDefinedValueCache.Value, smsMessage, out errorMessage );
-
-            //tbNewMessage.Text = string.Empty;
-
-            LoadResponsesForRecipient( personAliasId );
+        protected void gRecipients_RowSelected( object sender, RowEventArgs e )
+        {
+            hfSelectedRecipientId.Value = e.RowKeyId.ToStringSafe();
+            LoadResponsesForRecipient( e.RowKeyId );
+            UpdateReadProperty( e.RowKeyId );
+            // Reset styling on all existing rows and set selected styling on this row
         }
 
         #endregion Control Events
 
-
-
-
-        protected void mdNewMessage_SaveClick( object sender, EventArgs e )
-        {
-
-        }
-
-        protected void mdLinkConversation_SaveClick( object sender, EventArgs e )
+        protected void tNewOrExisting_CheckedChanged( object sender, EventArgs e )
         {
 
         }
