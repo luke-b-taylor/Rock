@@ -28,8 +28,8 @@ namespace Rock.Tests.Communications
         public void ProcessResponseTestToRockWithUnknownSenderNumber()
         {
             string toPhone = "+16237777794";
-            string fromPhone = "+16128750960";
-            string message = "Message sent on " + RockDateTime.Now.ToString();
+            string fromPhone = "+16128750970";
+            string message = "Message from unknown sender sent on " + RockDateTime.Now.ToString();
             string errorMessage = "";
 
             var sms = new Sms();
