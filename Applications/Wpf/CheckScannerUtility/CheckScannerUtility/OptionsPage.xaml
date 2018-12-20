@@ -5,7 +5,7 @@
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
       mc:Ignorable="d"
       d:DesignHeight="680"
-      d:DesignWidth="700"
+      d:DesignWidth="900"
       Title="Check Scanner - Options"
       Loaded="Page_Loaded"
       Style="{StaticResource pageBackground}">
@@ -29,82 +29,119 @@
                 Style="{StaticResource borderStyleWell}"
                 Visibility="Visible"
                 Margin="12">
-            <StackPanel>
-                <Label Style="{StaticResource labelStyle}">Rock URL</Label>
-                <TextBox Name="txtRockUrl"
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition />
+                    <RowDefinition />
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition />
+                    <ColumnDefinition />
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Row="0" Grid.Column="0">
+                    <Label Style="{StaticResource labelStyle}">Rock URL</Label>
+                    <TextBox Name="txtRockUrl"
                          Style="{StaticResource textboxStyleUrl}" />
-                <Label Name="lblScannerError"
+                    <Label Name="lblScannerError"
                        Style="{StaticResource labelStyleAlertError}"
                        Content="ERROR: No scanner drivers. Make sure that either a Ranger or MagTek driver is installed."
                        Visibility="Collapsed">
-                </Label>
-                <Label Name="lblScannerInterfaceType"
+                    </Label>
+                    <Label Name="lblScannerInterfaceType"
                        Style="{StaticResource labelStyle}">Scanner Interface</Label>
-                <ComboBox Name="cboScannerInterfaceType"
+                    <ComboBox Name="cboScannerInterfaceType"
                           Style="{StaticResource textboxStyle}"
                           SelectionChanged="cboScannerInterfaceType_SelectionChanged" />
-                <Label Name="lblMagTekCommPort"
+                    <Label Name="lblMagTekCommPort"
                        Style="{StaticResource labelStyle}">COM Port</Label>
-                <ComboBox Name="cboMagTekCommPort"
+                    <ComboBox Name="cboMagTekCommPort"
                           Style="{StaticResource textboxStyle}" />
-                <Label Name="lblImageOption"
+                    <Label Name="lblImageOption"
                        Style="{StaticResource labelStyle}">Scan Image Color Type</Label>
-                <ComboBox Name="cboImageOption"
+                    <ComboBox Name="cboImageOption"
                           Style="{StaticResource textboxStyle}" />
-                
-
-                
-                <Label Name="lblAdvancedInfo"
+                    <Border BorderThickness="1" Margin="0,10,10,10" BorderBrush="LightGray">
+                        <StackPanel>
+                            <Label Name="lblScanningOptions"
+                                 Style="{StaticResource labelStyle}">Scanning Options</Label>
+                            <CheckBox Name="chkshouldCaptureAmountOnScan"
+                                  Content="Capture Amount on Scan"
+                                  Margin="8,8,0,0"
+                                  IsChecked="False" />
+                            <Label Name="lblDefaultBatchCampus"
+                                 Style="{StaticResource labelStyle}">Default Batch Campus</Label>
+                            <ComboBox 
+                                      x:Name="cbDefaultCampus"    
+                                      Style="{StaticResource comboBoxStyle}" />
+                            <Label Name="lblBatchOptions"
+                                 Style="{StaticResource labelStyle}">Batch Options</Label>
+                            <CheckBox Name="chkRequireConrolAmount"
+                                  Content="Require Control Amount"
+                                  Margin="8,8,0,0"
+                                  IsChecked="False" />
+                            <CheckBox Name="chkRequireControlItemCount"
+                                  Content="Require Control Item Amount"
+                                  Margin="8,8,0,0"
+                                  IsChecked="False" />
+                            
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+                <StackPanel Grid.Row="0" Grid.Column="1" Background="AliceBlue" VerticalAlignment="Stretch">
+                    
+                </StackPanel>
+                <StackPanel Grid.Row="1" Margin="0,10,0,0" Grid.ColumnSpan="2">
+                    <Label Name="lblAdvancedInfo"
                        Style="{StaticResource labelStyleAlertInfo}">
-                    Advanced: Sensitivity and Plurality can be tuned from 1-255. Increase sensitivity and/or lower plurality if you are getting too many bad reads.  Normally these can be left blank which will use the default of 128.
-                </Label>
-
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="1*"/>
-                        <ColumnDefinition Width="1*"/>
-                        <ColumnDefinition Width="3*"/>
-                    </Grid.ColumnDefinitions>
-                    <StackPanel Grid.Column="0"
+                        Advanced: Sensitivity and Plurality can be tuned from 1-255. Increase sensitivity and/or lower plurality if you are getting too many bad reads.  Normally these can be left blank which will use the default of 128.
+                    </Label>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="1*"/>
+                            <ColumnDefinition Width="1*"/>
+                            <ColumnDefinition Width="3*"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0"
                                 Orientation="Vertical">
-                        <Label Name="lblSensitivity"
+                            <Label Name="lblSensitivity"
                                Style="{StaticResource labelStyle}">Sensitivity</Label>
-                        <TextBox Name="txtSensitivity"
+                            <TextBox Name="txtSensitivity"
                                  Style="{StaticResource textboxStyle}"
                                  Width="120" />
-                    </StackPanel>
-                    <StackPanel Grid.Column="1"
+                        </StackPanel>
+                        <StackPanel Grid.Column="1"
                                 Orientation="Vertical">
-                        <Label Name="lblPlurality"
+                            <Label Name="lblPlurality"
                                Grid.Column="1"
                                Style="{StaticResource labelStyle}">Plurality</Label>
-                        <TextBox Name="txtPlurality"
+                            <TextBox Name="txtPlurality"
                                  Grid.Column="1"
                                  Style="{StaticResource textboxStyle}" Width="120" />
-                    </StackPanel>
-                </Grid>
-
-                <Label Name="lblAlert"
+                        </StackPanel>
+                    </Grid>
+                    <Label Name="lblAlert"
                        Style="{StaticResource labelStyleAlert}"
                        Content="ERROR: ">
-                </Label>
-                <StackPanel Orientation="Horizontal"
+                    </Label>
+                    <StackPanel Orientation="Horizontal"
                             Margin="0, 8">
-                    <Button Style="{StaticResource buttonStylePrimary}"
+                        <Button Style="{StaticResource buttonStylePrimary}"
                             Name="btnSave"
                             Margin="4,4,0,0"
                             Content="Save"
                             HorizontalAlignment="Left"
                             Click="btnSave_Click" />
-                    <Button Style="{StaticResource buttonStyle}"
+                        <Button Style="{StaticResource buttonStyle}"
                             Name="btnCancel"
                             Margin="4,4,0,0"
                             Content="Cancel"
                             IsCancel="True"
                             HorizontalAlignment="Left"
                             Click="btnCancel_Click" />
+                    </StackPanel>
                 </StackPanel>
-            </StackPanel>
+            </Grid>
+          
         </Border>
     </StackPanel>
 </Page>
