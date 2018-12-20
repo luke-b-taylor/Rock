@@ -14,9 +14,7 @@
 // limitations under the License.
 // </copyright>
 //
-using System;
 using System.Configuration;
-using System.Text;
 
 namespace Rock.Apps.CheckScannerUtility
 {
@@ -29,11 +27,11 @@ namespace Rock.Apps.CheckScannerUtility
         /// The password, stored for the session, but not in the config file
         /// </summary>
         private static string sessionPassword = null;
-        
+
         /// <summary>
         /// The default instance
         /// </summary>
-        private static RockConfig defaultInstance = (RockConfig)ApplicationSettingsBase.Synchronized( new RockConfig() );
+        private static RockConfig defaultInstance = ( RockConfig ) ApplicationSettingsBase.Synchronized( new RockConfig() );
 
         /// <summary>
         /// Gets the default.
@@ -122,7 +120,7 @@ namespace Rock.Apps.CheckScannerUtility
         {
             get
             {
-                return (RangerImageColorTypes)this["ImageColorType"];
+                return ( RangerImageColorTypes ) this["ImageColorType"];
             }
 
             set
@@ -143,7 +141,7 @@ namespace Rock.Apps.CheckScannerUtility
         {
             get
             {
-                return (short)this["MICRImageComPort"];
+                return ( short ) this["MICRImageComPort"];
             }
 
             set
@@ -173,7 +171,7 @@ namespace Rock.Apps.CheckScannerUtility
         {
             get
             {
-                return (InterfaceType)this["ScannerInterfaceType"];
+                return ( InterfaceType ) this["ScannerInterfaceType"];
             }
 
             set
@@ -361,6 +359,69 @@ namespace Rock.Apps.CheckScannerUtility
             }
         }
 
+
+        /// <summary>
+        /// Gets or sets the ShouldCaptureAmountOnScan.
+        /// </summary>
+        /// <value>
+        /// The ShouldCaptureAmountOnScan.
+        /// </value>
+        [DefaultSettingValueAttribute( "false" )]
+        [UserScopedSetting]
+        public bool CaptureAmountOnScan
+        {
+            get
+            {
+                return this["CaptureAmountOnScan"] as bool? ?? true;
+            }
+
+            set
+            {
+                this["CaptureAmountOnScan"] = value;
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets the RequireControlAmount.
+        /// </summary>
+        /// <value>
+        /// The RequireControlAmount.
+        /// </value>
+        [DefaultSettingValueAttribute( "false" )]
+        [UserScopedSetting]
+        public bool RequireControlAmount
+        {
+            get
+            {
+                return this["RequireControlAmount"] as bool? ?? true;
+            }
+
+            set
+            {
+                this["RequireControlAmount"] = value;
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets the RequireControlAmount.
+        /// </summary>
+        /// <value>
+        /// The RequireControlAmount.
+        /// </value>
+        [DefaultSettingValueAttribute( "false" )]
+        [UserScopedSetting]
+        public bool RequireControlItemCount
+        {
+            get
+            {
+                return this["RequireControlItemCount"] as bool? ?? true;
+            }
+
+            set
+            {
+                this["RequireControlItemCount"] = value;
+            }
+        }
         /// <summary>
         /// Loads this instance.
         /// </summary>

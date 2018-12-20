@@ -64,7 +64,7 @@
                         <StackPanel>
                             <Label Name="lblScanningOptions"
                                  Style="{StaticResource labelStyle}">Scanning Options</Label>
-                            <CheckBox Name="chkshouldCaptureAmountOnScan"
+                            <CheckBox Name="chkCaptureAmountOnScan"
                                   Content="Capture Amount on Scan"
                                   Margin="8,8,0,0"
                                   IsChecked="False" />
@@ -80,7 +80,7 @@
                                   Margin="8,8,0,0"
                                   IsChecked="False" />
                             <CheckBox Name="chkRequireControlItemCount"
-                                  Content="Require Control Item Amount"
+                                  Content="Require Control Item Count"
                                   Margin="8,8,0,0"
                                   IsChecked="False" />
                             

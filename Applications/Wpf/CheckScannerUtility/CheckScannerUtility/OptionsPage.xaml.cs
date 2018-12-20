@@ -15,7 +15,6 @@
 // </copyright>
 //
 using System;
-using System.Collections.Generic;
 using System.Net;
 using System.Linq;
 using System.Windows;
@@ -56,11 +55,25 @@ namespace Rock.Apps.CheckScannerUtility
             LoadDropDowns();
 
             lblAlert.Visibility = Visibility.Collapsed;
+            GetConfigValues();
 
+            string feederFriendlyNameType = BatchPage.ScannerFeederType.Equals( FeederType.MultipleItems ) ? "Multiple Items" : "Single Item";
+            lblFeederType.Content = string.Format( "Feeder Type: {0}", feederFriendlyNameType );
+
+        }
+
+        /// <summary>
+        /// Gets the configuration values.
+        /// These values are saved at
+        /// C:\Users\[username]\AppData\Local\Spark_Development_Network
+        /// </summary>
+        private void GetConfigValues()
+        {
             var rockConfig = RockConfig.Load();
-
             txtRockUrl.Text = rockConfig.RockBaseUrl;
-
+            chkRequireConrolAmount.IsChecked = rockConfig.RequireControlAmount;
+            chkRequireControlItemCount.IsChecked = rockConfig.RequireControlItemCount;
+            chkCaptureAmountOnScan.IsChecked = rockConfig.CaptureAmountOnScan;
             if ( rockConfig.ScannerInterfaceType == RockConfig.InterfaceType.MICRImageRS232 )
             {
                 cboScannerInterfaceType.SelectedItem = "MagTek";
@@ -104,10 +117,7 @@ namespace Rock.Apps.CheckScannerUtility
                 }
             }
 
-            string feederFriendlyNameType = BatchPage.ScannerFeederType.Equals( FeederType.MultipleItems ) ? "Multiple Items" : "Single Item";
-            lblFeederType.Content = string.Format( "Feeder Type: {0}", feederFriendlyNameType );
-
-            switch ( (RangerImageColorTypes)rockConfig.ImageColorType )
+            switch ( ( RangerImageColorTypes ) rockConfig.ImageColorType )
             {
                 case RangerImageColorTypes.ImageColorTypeGrayscale:
                     cboImageOption.SelectedValue = "Grayscale";
@@ -125,7 +135,7 @@ namespace Rock.Apps.CheckScannerUtility
                 cboMagTekCommPort.SelectedItem = string.Format( "COM{0}", rockConfig.MICRImageComPort );
             }
 
-            if (rockConfig.Sensitivity.AsInteger() == 0)
+            if ( rockConfig.Sensitivity.AsInteger() == 0 )
             {
                 txtSensitivity.Text = string.Empty;
             }
@@ -134,7 +144,7 @@ namespace Rock.Apps.CheckScannerUtility
                 txtSensitivity.Text = rockConfig.Sensitivity;
             }
 
-            if ( rockConfig.Plurality.AsInteger() == 0)
+            if ( rockConfig.Plurality.AsInteger() == 0 )
             {
                 txtPlurality.Text = string.Empty;
             }
@@ -187,6 +197,9 @@ namespace Rock.Apps.CheckScannerUtility
         private void btnSave_Click( object sender, RoutedEventArgs e )
         {
             RockConfig rockConfig = RockConfig.Load();
+            rockConfig.CaptureAmountOnScan = chkCaptureAmountOnScan.IsChecked == true;
+            rockConfig.RequireControlAmount = chkRequireConrolAmount.IsChecked == true;
+            rockConfig.RequireControlItemCount = chkRequireControlItemCount.IsChecked == true;
 
             try
             {
