@@ -17,10 +17,10 @@
                 <div class="row">
 
                     <div class="col-md-6 panel panel-block">
-                        <asp:UpdatePanel ID="upRecipients" runat="server">
+                        <asp:UpdatePanel ID="upRecipients" runat="server" UpdateMode="Conditional">
                             <ContentTemplate>
                                 <Rock:Toggle ID="tglShowRead" runat="server" Label="Show Read" OnCheckedChanged="tglShowRead_CheckedChanged" OnText="Yes" OffText="No" Checked="true" />
-                                <Rock:Grid ID="gRecipients" runat="server" OnRowSelected="gRecipients_RowSelected" DataKeyNames="RecipientId" ShowHeader="false" ShowActionRow="false">
+                                <Rock:Grid ID="gRecipients" runat="server" OnRowSelected="gRecipients_RowSelected" OnRowDataBound="gRecipients_RowDataBound" DataKeyNames="RecipientId" ShowHeader="false" ShowActionRow="false">
                                     <Columns>
                                         <Rock:RockBoundField DataField="RecipientId" Visible="false"></Rock:RockBoundField>
                                         <Rock:RockTemplateField>
@@ -29,7 +29,7 @@
                                                     <div class="col-md-6">
                                                         <Rock:HiddenFieldWithClass ID="hfRecipientId" runat="server" CssClass="js-recipientId" Value='<%# Eval("RecipientId") %>' />
                                                         <asp:Label ID="lblName" runat="server" Text='<%# Eval("FullName") ?? Eval("MessageKey") %>'></asp:Label>
-                                                        <asp:LinkButton ID="lbLinkConversation" runat="server" Text="Link To Person" Visible='<%# (string)Eval("FullName") == null  %>' OnClick="lbLinkConversation_Click" CommandArgument='<%# Eval("MessageKey") %>'></asp:LinkButton>
+                                                        <asp:LinkButton ID="lbLinkConversation" runat="server" Text="Link To Person" Visible="false" CssClass="btn btn-primary btn-sm" OnClick="lbLinkConversation_Click" CommandArgument='<%# Eval("MessageKey") %>'></asp:LinkButton>
                                                         <br />
                                                         <asp:Literal ID="litMessagePart" runat="server" Text='<%# Eval("LastMessagePart") %>'></asp:Literal>
                                                     </div>
@@ -38,7 +38,7 @@
                                                         <br />
                                                         <asp:RadioButton ID="rbRead" runat="server" Checked='<%# !(bool)Eval("IsRead") %>' CssClass="js-read-checkbox" Enabled="false" />
                                                     </div>
-                                            </div>
+                                                </div>
                                             </ItemTemplate>
                                         </Rock:RockTemplateField>
                                     </Columns>
@@ -53,18 +53,19 @@
                             
                             <div class="row">
                                 <div class="col-md-12">
-                                    <asp:Repeater ID="rptConversation" runat="server">
+                                    <asp:Repeater ID="rptConversation" runat="server" OnItemDataBound="rptConversation_ItemDataBound">
                                         <ItemTemplate>
                                             <div class="row">
-                                                <div class="col-md-6">
-                                                    <span class=""> <%# Eval("CreatedDateTime") %></span><br />
-                                                    <span class="rounded"><%# Eval("Response") %></span>
+                                                <Rock:HiddenFieldWithClass ID="hfCommunicationRecipientId" runat="server" Value='<%# Eval("FromPersonAliasId") %>' />
+                                                <div class="col-md-6 bg-primary pull-right" style="border-radius: 15px;  margin-bottom:15px;" id="divCommunication" runat="server">
+                                                    <span class="small"> <%# Eval("CreatedDateTime") %></span><br />
+                                                    <span><%# Eval("Response") %></span>
                                                 </div>
                                             </div>
                                         </ItemTemplate>
-                                    <FooterTemplate>
-                                        <asp:Label ID="lbNoConversationsFound" runat="server" Visible='<%# rptConversation.Items.Count == 0 %>' Text="<tr><td>No conversations found.</td></tr>" CssClass="text-muted" />
-                                    </FooterTemplate>
+                                        <FooterTemplate>
+                                            <asp:Label ID="lbNoConversationsFound" runat="server" Visible='<%# rptConversation.Items.Count == 0 %>' Text="<tr><td>No conversations found.</td></tr>" CssClass="text-muted" />
+                                        </FooterTemplate>
                                     </asp:Repeater>
 
 
@@ -102,6 +103,7 @@
         <Rock:ModalDialog ID="mdLinkConversation" runat="server" OnSaveClick="mdLinkConversation_SaveClick" OnCancelScript="clearActiveDialog();">
             <Content>
                 <asp:HiddenField ID="hfMessageKey" runat="server" />
+                <asp:HiddenField ID="hfActiveTab" runat="server" />
 
                 <ul class="nav nav-pills margin-b-md">
                     <li id="liNewPerson" runat="server" class="active"><a href='#<%=divNewPerson.ClientID%>' data-toggle="pill">Add New Person</a></li>
@@ -135,8 +137,6 @@
                                     <Rock:DatePicker ID="dpNewPersonBirthDate" runat="server" Label="Birthdate" ValidationGroup="AddPerson" AllowFutureDateSelection="False" ForceParse="false"/>
                                     <Rock:GradePicker ID="ddlGradePicker" runat="server" Label="Grade" ValidationGroup="AddPerson" UseAbbreviation="true" UseGradeOffsetAsValue="true" />
                                     <Rock:DefinedValuePicker ID="dvpNewPersonMaritalStatus" runat="server" DataTextField="Name" DataValueField="Id" RepeatDirection="Horizontal" Label="Marital Status"  ValidationGroup="AddPerson"/>
-                                    <Rock:PhoneNumberBox ID="pnNewPersonPhoneNumber"  runat="server" Label="Phone" ValidationGroup="AddPerson" />
-                                    <Rock:EmailBox ID="tbNewPersonEmail" runat="server" Label="Email" ValidationGroup="AddPerson" />
                                 </div>
                             </div>
                         </div>
@@ -146,7 +146,6 @@
                     <div id="divExistingPerson" runat="server" class="tab-pane">
                         <fieldset>
                             <Rock:PersonPicker ID="ppPerson" runat="server" Label="Person" Required="true" ValidationGroup="AddPerson" />
-                            <Rock:RockCheckBox ID="cbRemoveOtherGroups" runat="server" Checked="true" Text="Remove person from other groups" ValidationGroup="AddPerson"/>
                         </fieldset>
                     </div>
 

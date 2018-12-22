@@ -127,6 +127,7 @@ namespace Rock.Communication.Medium
                 //if ( fromPerson != null && fromPerson.PrimaryAliasId.HasValue )
                 if ( rockSmsFromPhoneDv != null )
                 {
+                    string plainMessage = message;
                     if ( toPerson != null && toPerson.Id == fromPerson.Id ) // message from the medium recipient
                     {
                         // look for response code in the message
@@ -141,12 +142,12 @@ namespace Rock.Communication.Medium
 
                             if ( recipient != null && recipient.Communication.SenderPersonAliasId.HasValue )
                             {
-                                CreateCommunication( fromPerson.PrimaryAliasId.Value, fromPerson.FullName, fromPhone, recipient.Communication.SenderPersonAliasId.Value, message.Replace( responseCode, "" ), rockSmsFromPhoneDv, "", rockContext );
+                                CreateCommunication( fromPerson.PrimaryAliasId.Value, fromPerson.FullName, fromPhone, recipient.Communication.SenderPersonAliasId.Value, message.Replace( responseCode, "" ), plainMessage, rockSmsFromPhoneDv, "", rockContext );
                             }
                             else // send a warning message back to the medium recipient
                             {
                                 string warningMessage = string.Format( "A conversation could not be found with the response token {0}.", responseCode );
-                                CreateCommunication( fromPerson.PrimaryAliasId.Value, fromPerson.FullName, fromPhone, fromPerson.PrimaryAliasId.Value, warningMessage, rockSmsFromPhoneDv, "", rockContext );
+                                CreateCommunication( fromPerson.PrimaryAliasId.Value, fromPerson.FullName, fromPhone, fromPerson.PrimaryAliasId.Value, warningMessage, plainMessage, rockSmsFromPhoneDv, "", rockContext );
                             }
                         }
                     }
@@ -158,12 +159,12 @@ namespace Rock.Communication.Medium
                         if ( fromPerson != null && fromPerson.PrimaryAliasId.HasValue )
                         {
                             message = $"-{fromPerson.FullName}-\n{message}\n( {messageId} )";
-                            CreateCommunication( fromPerson.PrimaryAliasId.Value, fromPerson.FullName, fromPhone, toPersonPrimaryAliasId, message, rockSmsFromPhoneDv, messageId, rockContext );
+                            CreateCommunication( fromPerson.PrimaryAliasId.Value, fromPerson.FullName, fromPhone, toPersonPrimaryAliasId, message, plainMessage, rockSmsFromPhoneDv, messageId, rockContext );
                         }
                         else
                         {
                             message = $"-Unknown Person-\n{message}\n( {messageId} )";
-                            CreateCommunication( null, "Unknown Person", fromPhone, toPersonPrimaryAliasId, message, rockSmsFromPhoneDv, messageId, rockContext );
+                            CreateCommunication( null, "Unknown Person", fromPhone, toPersonPrimaryAliasId, message, plainMessage, rockSmsFromPhoneDv, messageId, rockContext );
                         }
                     }
                 }
@@ -187,7 +188,7 @@ namespace Rock.Communication.Medium
         /// <param name="rockSmsFromPhoneDv">From phone.</param>
         /// <param name="responseCode">The reponseCode to use for tracking the conversation.</param>
         /// <param name="rockContext">A context to use for database calls.</param>
-        private void CreateCommunication( int? fromPersonAliasId, string fromPersonName, string messageKey, int? toPersonAliasId, string message, DefinedValueCache rockSmsFromPhoneDv, string responseCode, Rock.Data.RockContext rockContext )
+        private void CreateCommunication( int? fromPersonAliasId, string fromPersonName, string messageKey, int? toPersonAliasId, string message, string plainMessage, DefinedValueCache rockSmsFromPhoneDv, string responseCode, Rock.Data.RockContext rockContext )
         {
             // See if this should go to a phone or to the DB. Default is to the phone so if for some reason we get a null here then just send it to the phone.
             var enableMobileConversations = rockSmsFromPhoneDv.GetAttributeValue( "EnableMobileConversations" ).AsBooleanOrNull() ?? true;
@@ -199,7 +200,7 @@ namespace Rock.Communication.Medium
             else
             {
                 // To and from person can be null and the response linked to a person later.
-                CreateCommunicationResponse( fromPersonAliasId, fromPersonName, messageKey, toPersonAliasId, message, rockSmsFromPhoneDv, responseCode, rockContext );
+                CreateCommunicationResponse( fromPersonAliasId, fromPersonName, messageKey, toPersonAliasId, plainMessage, rockSmsFromPhoneDv, responseCode, rockContext );
             }
         }
 

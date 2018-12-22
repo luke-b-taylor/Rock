@@ -140,6 +140,54 @@ namespace Rock.Model
             Rock.Data.DbService.ExecuteCommand( sql, CommandType.Text, sqlParams );
         }
 
+        public void UpdatePersonAliasByMessageKey( int personAliasId, string messageKey, PersonAliasType personAliasType )
+        {
+            string sql = string.Empty;
 
+            switch ( personAliasType )
+            {
+                case PersonAliasType.FromPersonAlias:
+                    UpdateFromPersonAliasByMessageKey( personAliasId, messageKey );
+                    break;
+                case PersonAliasType.ToPersonAlias:
+                    UpdateToPersonAliasByMessageKey( personAliasId, messageKey );
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        private void UpdateToPersonAliasByMessageKey( int personAliasId, string messageKey )
+        {
+            var sqlParams = new Dictionary<string, object>();
+            sqlParams.Add( "@personAliasId", personAliasId );
+            sqlParams.Add( "@messageKey", messageKey );
+
+            string sql = @"
+                UPDATE [CommunicationResponse]
+                SET [ToPersonAliasId] = @personAliasId
+                WHERE [MessageKey] = @messageKey";
+
+            Rock.Data.DbService.ExecuteCommand( sql, CommandType.Text, sqlParams );
+        }
+
+        private void UpdateFromPersonAliasByMessageKey( int personAliasId, string messageKey )
+        {
+            var sqlParams = new Dictionary<string, object>();
+            sqlParams.Add( "personAliasId", personAliasId );
+            sqlParams.Add( "messageKey", messageKey );
+
+            string sql = @"
+                UPDATE [CommunicationResponse]
+                SET [FromPersonAliasId] = @personAliasId
+                WHERE [MessageKey] = @messageKey";
+            Rock.Data.DbService.ExecuteCommand( sql, CommandType.Text, sqlParams );
+        }
+    }
+
+    public enum PersonAliasType
+    {
+        FromPersonAlias = 0,
+        ToPersonAlias = 1
     }
 }

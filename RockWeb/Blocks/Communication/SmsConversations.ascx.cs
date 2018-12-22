@@ -75,14 +75,99 @@ namespace RockWeb.Blocks.Communication
     {
         #region Control Overrides
 
+        protected override void OnPreRender( EventArgs e)
+        {
+            base.OnPreRender( e );
+
+            if ( mdLinkConversation.Visible )
+            {
+                string script = string.Format( @"
+
+    $('#{0}').on('click', function () {{
+
+        // if Save was clicked, set the fields that should be validated based on what tab they are on
+        if ($('#{9}').val() == 'Existing') {{
+            enableRequiredField( '{1}', true )
+            enableRequiredField( '{2}_rfv', false );
+            enableRequiredField( '{3}_rfv', false );
+            enableRequiredField( '{4}', false );
+            enableRequiredField( '{5}', false );
+            enableRequiredField( '{6}_rfv', false );
+            enableRequiredField( '{10}_rfv', false );
+        }} else {{
+            enableRequiredField('{1}', false)
+            enableRequiredField('{2}_rfv', true);
+            enableRequiredField('{3}_rfv', true);
+            enableRequiredField('{4}', true);
+            enableRequiredField('{5}', true);
+            enableRequiredField('{6}_rfv', true);
+            enableRequiredField('{10}_rfv', true);
+        }}
+
+        // update the scrollbar since our validation box could show
+        setTimeout( function ()
+        {{
+            Rock.dialogs.updateModalScrollBar( '{7}' );
+        }});
+
+    }})
+
+    $('a[data-toggle=""pill""]').on('shown.bs.tab', function (e) {{
+
+        var tabHref = $( e.target ).attr( 'href' );
+        if ( tabHref == '#{8}' )
+        {{
+            $( '#{9}' ).val( 'Existing' );
+        }} else {{
+            $( '#{9}' ).val( 'New' );
+        }}
+
+        // if the validation error summary is shown, hide it when they switch tabs
+        $( '#{7}' ).hide();
+    }});
+",
+                    mdLinkConversation.ServerSaveLink.ClientID,                         // {0}
+                    ppPerson.RequiredFieldValidator.ClientID,                       // {1}
+                    tbNewPersonFirstName.ClientID,                                  // {2}
+                    tbNewPersonLastName.ClientID,                                   // {3}
+                    rblNewPersonRole.RequiredFieldValidator.ClientID,               // {4}
+                    rblNewPersonGender.RequiredFieldValidator.ClientID,             // {5}
+                    dvpNewPersonConnectionStatus.ClientID,                          // {6}
+                    valSummaryAddPerson.ClientID,                                   // {7}
+                    divExistingPerson.ClientID,                                     // {8}
+                    hfActiveTab.ClientID,                                           // {9}
+                    dpNewPersonBirthDate.ClientID                                   // {10}
+                );
+
+                ScriptManager.RegisterStartupScript( mdLinkConversation, mdLinkConversation.GetType(), "modaldialog-validation", script, true );
+            }
+        }
+
         protected override void OnInit( EventArgs e )
         {
             base.OnInit( e );
             hfSMSCharLimit.Value = ( this.GetAttributeValue( "CharacterLimit" ).AsIntegerOrNull() ?? 160 ).ToString();
+            dvpNewPersonTitle.DefinedTypeId = DefinedTypeCache.Get( Rock.SystemGuid.DefinedType.PERSON_TITLE.AsGuid() ).Id;
+            dvpNewPersonSuffix.DefinedTypeId = DefinedTypeCache.Get( Rock.SystemGuid.DefinedType.PERSON_SUFFIX.AsGuid() ).Id;
+            dvpNewPersonMaritalStatus.DefinedTypeId = DefinedTypeCache.Get( Rock.SystemGuid.DefinedType.PERSON_MARITAL_STATUS.AsGuid() ).Id;
+            dvpNewPersonConnectionStatus.DefinedTypeId = DefinedTypeCache.Get( Rock.SystemGuid.DefinedType.PERSON_CONNECTION_STATUS.AsGuid() ).Id;
+
+            var groupType = GroupTypeCache.GetFamilyGroupType();
+            rblNewPersonRole.DataSource = groupType.Roles.OrderBy( r => r.Order ).ToList();
+            rblNewPersonRole.DataBind();
+
+            rblNewPersonGender.Items.Clear();
+            rblNewPersonGender.Items.Add( new ListItem( Gender.Male.ConvertToString(), Gender.Male.ConvertToInt().ToString() ) );
+            rblNewPersonGender.Items.Add( new ListItem( Gender.Female.ConvertToString(), Gender.Female.ConvertToInt().ToString() ) );
+            rblNewPersonGender.Items.Add( new ListItem( Gender.Unknown.ConvertToString(), Gender.Unknown.ConvertToInt().ToString() ) );
         }
 
-        protected void Page_Load( object sender, EventArgs e )
+        protected override void OnLoad( EventArgs e )
         {
+            base.OnLoad( e );
+
+            nbAddPerson.Visible = false;
+
             if ( !IsPostBack )
             {
                 LoadPhoneNumbers();
@@ -91,6 +176,12 @@ namespace RockWeb.Blocks.Communication
             else
             {
                 ShowDialog();
+            }
+
+            if ( !string.IsNullOrWhiteSpace( hfActiveTab.Value ) )
+            {
+                SetActiveTab();
+                mdLinkConversation.Show();
             }
         }
 
@@ -181,11 +272,11 @@ namespace RockWeb.Blocks.Communication
                 var responseListItems = filteredresponses
                     .Select( r => new ResponseListItem
                     {
-                        RecipientId = r.FromPersonAliasId,
+                        RecipientId = r.FromPersonAliasId ?? -1,
                         MessageKey = r.MessageKey,
-                        FullName = r.FromPersonAlias.Person.FullName,
+                        FullName = ( r.FromPersonAlias != null ? r.FromPersonAlias.Person.FullName : "Phone: " + r.MessageKey ),
                         CreatedDateTime = r.CreatedDateTime,
-                        LastMessagePart = r.Response.Truncate(25),
+                        LastMessagePart = r.Response.Left(25),
                         IsRead = r.IsRead
                     } )
                     .ToList();
@@ -221,15 +312,6 @@ namespace RockWeb.Blocks.Communication
             }
 
             new CommunicationResponseService( new RockContext() ).UpdateReadPropertyByFromPersonAliasId( recipientId, smsPhoneDefinedValueId.Value );
-        }
-
-        private Rock.Model.Communication CreateCommunication()
-        {
-            var communication = new Rock.Model.Communication();
-
-
-
-            return communication;
         }
 
         protected class ResponseListItem
@@ -375,15 +457,6 @@ namespace RockWeb.Blocks.Communication
             HideDialog();
         }
 
-        protected void mdLinkConversation_SaveClick( object sender, EventArgs e )
-        {
-
-
-
-            hfMessageKey.Value = string.Empty;
-            HideDialog();
-        }
-
         protected void gRecipients_RowSelected( object sender, RowEventArgs e )
         {
             hfSelectedRecipientId.Value = e.RowKeyId.ToStringSafe();
@@ -392,11 +465,210 @@ namespace RockWeb.Blocks.Communication
             // Reset styling on all existing rows and set selected styling on this row
         }
 
+        protected void gRecipients_RowDataBound( object sender, GridViewRowEventArgs e )
+        {
+            if (e.Row.RowType != DataControlRowType.DataRow)
+            {
+                return;
+            }
+
+            HiddenFieldWithClass recipientId = ( HiddenFieldWithClass ) e.Row.FindControl( "hfRecipientId" );
+
+            if ( recipientId.Value == "-1" )
+            {
+                LinkButton linkConversation = (LinkButton)e.Row.FindControl( "lbLinkConversation" );
+                linkConversation.Visible = true;
+            }
+        }
         #endregion Control Events
 
-        protected void tNewOrExisting_CheckedChanged( object sender, EventArgs e )
+        #region Link Conversation Modal
+        private void SetActiveTab()
         {
+            if ( hfActiveTab.Value == "Existing" )
+            {
+                liNewPerson.RemoveCssClass( "active" );
+                divNewPerson.RemoveCssClass( "active" );
+                liExistingPerson.AddCssClass( "active" );
+                divExistingPerson.AddCssClass( "active" );
+            }
+            else
+            {
+                liNewPerson.AddCssClass( "active" );
+                divNewPerson.AddCssClass( "active" );
+                liExistingPerson.RemoveCssClass( "active" );
+                divExistingPerson.RemoveCssClass( "active" );
+            }
+        }
 
+        protected void mdLinkConversation_SaveClick( object sender, EventArgs e )
+        {
+            // Do some validation on entering a new person/family first
+            if ( hfActiveTab.Value != "Existing" )
+            {
+                var validationMessages = new List<string>();
+                bool isValid = true;
+            
+                DateTime? birthdate = dpNewPersonBirthDate.SelectedDate;
+                if ( !dpNewPersonBirthDate.IsValid )
+                {
+                    validationMessages.Add( "Birthdate is not valid." );
+                    isValid = false;
+                }
+
+                if ( !isValid )
+                {
+                    if ( validationMessages.Any() )
+                    {
+                        nbAddPerson.Text = "<ul><li>" + validationMessages.AsDelimited( "</li><li>" ) + "</li></lu>";
+                        nbAddPerson.Visible = true;
+                    }
+
+                    return;
+                }
+            }
+            using ( var rockContext = new RockContext() )
+            {
+                int mobilePhoneTypeId = DefinedValueCache.Get( Rock.SystemGuid.DefinedValue.PERSON_PHONE_TYPE_MOBILE ).Id;
+
+                if ( hfActiveTab.Value == "Existing" )
+                {
+                    if ( ppPerson.PersonId.HasValue )
+                    {
+                        // All we need to do here is add the mobile phone number and save
+                        var personService = new PersonService( rockContext );
+                        var person = personService.Get( ppPerson.PersonId.Value );
+                        bool hasSmsNumber = person.PhoneNumbers.Where( p => p.IsMessagingEnabled ).Any();
+                        var phoneNumber = person.PhoneNumbers.FirstOrDefault( n => n.NumberTypeValueId == mobilePhoneTypeId );
+
+                        if ( phoneNumber == null )
+                        {
+                            phoneNumber = new PhoneNumber
+                            {
+                                NumberTypeValueId = mobilePhoneTypeId,
+                                IsMessagingEnabled = !hasSmsNumber,
+                                Number = hfMessageKey.Value
+                            };
+
+                            person.PhoneNumbers.Add( phoneNumber );
+                        }
+                        else
+                        {
+                            phoneNumber.Number = hfMessageKey.Value;
+                            if ( !hasSmsNumber )
+                            {
+                                //if they don't have a number then use this one, otherwise don't do anything
+                                phoneNumber.IsMessagingEnabled = true;
+                            }
+                        }
+
+                        rockContext.SaveChanges();
+                        hfSelectedRecipientId.Value = person.PrimaryAliasId.ToString();
+                    }
+                }
+                else
+                {
+                    // new Person and new family
+                    var person = new Person();
+
+                    person.TitleValueId = dvpNewPersonTitle.SelectedValueAsId();
+                    person.FirstName = tbNewPersonFirstName.Text;
+                    person.NickName = tbNewPersonFirstName.Text;
+                    person.LastName = tbNewPersonLastName.Text;
+                    person.SuffixValueId = dvpNewPersonSuffix.SelectedValueAsId();
+                    person.Gender = rblNewPersonGender.SelectedValueAsEnum<Gender>();
+                    person.MaritalStatusValueId = dvpNewPersonMaritalStatus.SelectedValueAsInt();
+
+
+                    person.PhoneNumbers = new List<PhoneNumber>();
+                    var phoneNumber = new PhoneNumber
+                    {
+                        NumberTypeValueId = mobilePhoneTypeId,
+                        IsMessagingEnabled = true,
+                        Number = hfMessageKey.Value
+                    };
+
+                    person.PhoneNumbers.Add( phoneNumber );
+
+                    var birthMonth = person.BirthMonth;
+                    var birthDay = person.BirthDay;
+                    var birthYear = person.BirthYear;
+
+                    var birthday = dpNewPersonBirthDate.SelectedDate;
+                    if ( birthday.HasValue )
+                    {
+                        person.BirthMonth = birthday.Value.Month;
+                        person.BirthDay = birthday.Value.Day;
+                        if ( birthday.Value.Year != DateTime.MinValue.Year )
+                        {
+                            person.BirthYear = birthday.Value.Year;
+                        }
+                        else
+                        {
+                            person.BirthYear = null;
+                        }
+                    }
+                    else
+                    {
+                        person.SetBirthDate( null );
+                    }
+
+                    person.GradeOffset = ddlGradePicker.SelectedValueAsInt();
+                    person.ConnectionStatusValueId = dvpNewPersonConnectionStatus.SelectedValueAsId();
+
+                    var groupMember = new GroupMember();
+                    groupMember.GroupRoleId = rblNewPersonRole.SelectedValueAsInt() ?? 0;
+                    groupMember.Person = person;
+
+                    var groupMembers = new List<GroupMember>();
+                    groupMembers.Add( groupMember );
+
+                    Group group = GroupService.SaveNewFamily( rockContext, groupMembers, null, true );
+                    hfSelectedRecipientId.Value = person.PrimaryAliasId.ToString();
+                    
+                }
+
+                new CommunicationResponseService( rockContext ).UpdatePersonAliasByMessageKey( hfSelectedRecipientId.ValueAsInt(), hfMessageKey.Value, PersonAliasType.FromPersonAlias );
+            }
+
+
+            ppPerson.Required = false;
+            tbNewPersonFirstName.Required = false;
+            tbNewPersonLastName.Required = false;
+            rblNewPersonRole.Required = false;
+            rblNewPersonGender.Required = false;
+            dvpNewPersonConnectionStatus.Required = false;
+
+            hfActiveTab.Value = string.Empty;
+            hfMessageKey.Value = string.Empty;
+            
+            mdLinkConversation.Hide();
+            HideDialog();
+            upRecipients.Update();
+        }
+
+
+
+        #endregion Link Conversation Modal
+
+
+
+        protected void rptConversation_ItemDataBound( object sender, RepeaterItemEventArgs e )
+        {
+            if ( e.Item.ItemType == ListItemType.Item || e.Item.ItemType == ListItemType.AlternatingItem )
+            {
+                HiddenFieldWithClass recipientId = ( HiddenFieldWithClass ) e.Item.FindControl( "hfCommunicationRecipientId" );
+
+                if ( recipientId.Value != null && recipientId.Value != string.Empty && recipientId.Value != "-1" && recipientId.Value == hfSelectedRecipientId.Value )
+                {
+                    var divCommunication = ( HtmlGenericControl ) e.Item.FindControl( "divCommunication" );
+                    divCommunication.RemoveCssClass( "pull-right" );
+                    divCommunication.AddCssClass( "pull-left" );
+                    divCommunication.RemoveCssClass( "bg-primary" );
+                    divCommunication.AddCssClass( "bg-info" );
+
+                }
+            }
         }
     }
 }
