@@ -48,13 +48,13 @@ namespace Rock.Model
             sqlParams.Add( "@smsMediumEntityTypeId", EntityTypeCache.Get( SystemGuid.EntityType.COMMUNICATION_MEDIUM_SMS ).Id );
 
             string sql = @"
-                SELECT [Response], [CreatedDateTime], [FromPersonAliasId]
+                SELECT [Response], [CreatedDateTime], [FromPersonAliasId], [MessageKey]
                 FROM [CommunicationResponse] cr
                 WHERE ( cr.[FromPersonAliasId] = @personAliasId )
                     AND cr.[RelatedSmsFromDefinedValueId] = @releatedSmsFromDefinedValueId
                     AND cr.[RelatedMediumEntityTypeId] = @smsMediumEntityTypeId
                 UNION
-                SELECT c.[SMSMessage], c.[CreatedDateTime], c.[SenderPersonAliasId]
+                SELECT c.[SMSMessage], c.[CreatedDateTime], c.[SenderPersonAliasId], ''
                 FROM [Communication] c
                 JOIN [CommunicationRecipient] rec ON c.[Id] = rec.[CommunicationId]
                 WHERE rec.[PersonAliasId] = @personAliasId
