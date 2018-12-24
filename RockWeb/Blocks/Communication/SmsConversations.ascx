@@ -11,16 +11,16 @@
             <div class="panel-body">
                 <%-- The list of phone numbers that do not have "Enable Mobile Conversations" enabled --%>
                 <Rock:RockDropDownList ID="ddlSmsNumbers" runat="server" Label="SMS Number" AutoPostBack="true" OnSelectedIndexChanged="ddlSmsNumbers_SelectedIndexChanged"></Rock:RockDropDownList>
-                
+                <asp:Label ID="lblSelectedSmsNumber" runat="server" visible="false" />
                 <asp:LinkButton ID="btnCreateNewMessage" runat="server" CssClass="btn btn-primary pull-right rounded " OnClick="btnCreateNewMessage_Click"><i class="fa fa-comments"></i>&nbsp;Send SMS</asp:LinkButton>
         
                 <div class="row">
 
                     <div class="col-md-6 panel panel-block">
-                        <asp:UpdatePanel ID="upRecipients" runat="server" UpdateMode="Conditional">
+                        <asp:UpdatePanel ID="upRecipients" runat="server">
                             <ContentTemplate>
                                 <Rock:Toggle ID="tglShowRead" runat="server" Label="Show Read" OnCheckedChanged="tglShowRead_CheckedChanged" OnText="Yes" OffText="No" Checked="true" />
-                                <Rock:Grid ID="gRecipients" runat="server" OnRowSelected="gRecipients_RowSelected" OnRowDataBound="gRecipients_RowDataBound" DataKeyNames="RecipientId" ShowHeader="false" ShowActionRow="false">
+                                <Rock:Grid ID="gRecipients" runat="server" OnRowSelected="gRecipients_RowSelected" OnRowDataBound="gRecipients_RowDataBound" ShowHeader="false" ShowActionRow="false">
                                     <Columns>
                                         <Rock:RockBoundField DataField="RecipientId" Visible="false"></Rock:RockBoundField>
                                         <Rock:RockTemplateField>
@@ -28,6 +28,7 @@
                                                 <div class="row">
                                                     <div class="col-md-6">
                                                         <Rock:HiddenFieldWithClass ID="hfRecipientId" runat="server" CssClass="js-recipientId" Value='<%# Eval("RecipientId") %>' />
+                                                        <Rock:HiddenFieldWithClass ID="hfMessageKey" runat="server" CssClass="js-messageKey" Value='<%# Eval("MessageKey") %>' />
                                                         <asp:Label ID="lblName" runat="server" Text='<%# Eval("FullName") ?? Eval("MessageKey") %>'></asp:Label>
                                                         <asp:LinkButton ID="lbLinkConversation" runat="server" Text="Link To Person" Visible="false" CssClass="btn btn-primary btn-sm" OnClick="lbLinkConversation_Click" CommandArgument='<%# Eval("MessageKey") %>'></asp:LinkButton>
                                                         <br />
@@ -57,6 +58,7 @@
                                         <ItemTemplate>
                                             <div class="row">
                                                 <Rock:HiddenFieldWithClass ID="hfCommunicationRecipientId" runat="server" Value='<%# Eval("FromPersonAliasId") %>' />
+                                                <Rock:HiddenFieldWithClass ID="hfCommunicationMessageKey" runat="server" Value='<%# Eval("MessageKey") %>' />
                                                 <div class="col-md-6 bg-primary pull-right" style="border-radius: 15px;  margin-bottom:15px;" id="divCommunication" runat="server">
                                                     <span class="small"> <%# Eval("CreatedDateTime") %></span><br />
                                                     <span><%# Eval("Response") %></span>

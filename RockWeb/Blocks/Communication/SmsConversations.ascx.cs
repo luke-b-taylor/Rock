@@ -221,16 +221,20 @@ namespace RockWeb.Blocks.Communication
                         filteredNumbers.Add( number );
                     }
                 }
-                ddlSmsNumbers.DataSource = filteredNumbers;
             }
             else
             {
-                ddlSmsNumbers.DataSource = SmsNumbers;
+                filteredNumbers = SmsNumbers;
             }
 
+            ddlSmsNumbers.DataSource = filteredNumbers;
             ddlSmsNumbers.DataValueField = "Id";
             ddlSmsNumbers.DataTextField = "Value";
             ddlSmsNumbers.DataBind();
+
+            lblSelectedSmsNumber.Text = "SMS Number " + ddlSmsNumbers.SelectedItem.Text;
+            lblSelectedSmsNumber.Visible = filteredNumbers.Count == 1;
+            ddlSmsNumbers.Visible = filteredNumbers.Count > 1;
         }
 
         private void LoadResponseListing()
@@ -260,7 +264,10 @@ namespace RockWeb.Blocks.Communication
                     responses = responses.Where( r => r.IsRead == false );
                 }
 
-                var filteredresponses = responses.GroupBy( r => new { r.FromPersonAliasId } )
+                // Since some of the responses will not have a PersonAlias associated with them
+                // we need to group these by the MessageKey, which is the sending phone number
+                // in the case of SMS messages.
+                var filteredresponses = responses.GroupBy( r => new { r.MessageKey } )
                     .Select( g => g.OrderByDescending( r => r.CreatedDateTime ).FirstOrDefault() )
                     .ToList();
 
@@ -276,7 +283,7 @@ namespace RockWeb.Blocks.Communication
                         MessageKey = r.MessageKey,
                         FullName = ( r.FromPersonAlias != null ? r.FromPersonAlias.Person.FullName : "Phone: " + r.MessageKey ),
                         CreatedDateTime = r.CreatedDateTime,
-                        LastMessagePart = r.Response.Left(25),
+                        LastMessagePart = r.Response.LeftWithEllipsis(25),
                         IsRead = r.IsRead
                     } )
                     .ToList();
@@ -302,7 +309,23 @@ namespace RockWeb.Blocks.Communication
             rptConversation.DataBind();
         }
 
-        private void UpdateReadProperty( int recipientId )
+        private void LoadResponsesForRecipient( string messageKey )
+        {
+            int? smsPhoneDefinedValueId = ddlSmsNumbers.SelectedValue.AsIntegerOrNull();
+
+            if ( smsPhoneDefinedValueId == null )
+            {
+                return;
+            }
+
+            var communicationResponseService = new CommunicationResponseService( new RockContext() );
+            var responses = communicationResponseService.GetConversation( messageKey, smsPhoneDefinedValueId.Value );
+
+            rptConversation.DataSource = responses.Tables[0];
+            rptConversation.DataBind();
+        }
+
+        private void UpdateReadProperty( string messageKey )
         {
             int? smsPhoneDefinedValueId = ddlSmsNumbers.SelectedValue.AsIntegerOrNull();
 
@@ -311,7 +334,7 @@ namespace RockWeb.Blocks.Communication
                 return;
             }
 
-            new CommunicationResponseService( new RockContext() ).UpdateReadPropertyByFromPersonAliasId( recipientId, smsPhoneDefinedValueId.Value );
+            new CommunicationResponseService( new RockContext() ).UpdateReadPropertyByMessageKey( messageKey, smsPhoneDefinedValueId.Value );
         }
 
         protected class ResponseListItem
@@ -459,9 +482,26 @@ namespace RockWeb.Blocks.Communication
 
         protected void gRecipients_RowSelected( object sender, RowEventArgs e )
         {
-            hfSelectedRecipientId.Value = e.RowKeyId.ToStringSafe();
-            LoadResponsesForRecipient( e.RowKeyId );
-            UpdateReadProperty( e.RowKeyId );
+            if ( e.Row.RowType != DataControlRowType.DataRow )
+            {
+                return;
+            }
+
+            var recipientId = ( HiddenFieldWithClass ) e.Row.FindControl( "hfRecipientId" );
+            var messageKey = ( HiddenFieldWithClass ) e.Row.FindControl( "hfMessageKey" );
+            hfSelectedRecipientId.Value = recipientId.Value;
+            
+            if(recipientId.Value == "-1")
+            {
+                LoadResponsesForRecipient( messageKey.Value );
+            }
+            else
+            {
+                LoadResponsesForRecipient( recipientId.ValueAsInt() );
+            }
+
+            UpdateReadProperty( messageKey.Value );
+
             // Reset styling on all existing rows and set selected styling on this row
         }
 
@@ -644,7 +684,8 @@ namespace RockWeb.Blocks.Communication
             
             mdLinkConversation.Hide();
             HideDialog();
-            upRecipients.Update();
+            //upRecipients.Update();
+            LoadResponseListing();
         }
 
 
@@ -657,16 +698,14 @@ namespace RockWeb.Blocks.Communication
         {
             if ( e.Item.ItemType == ListItemType.Item || e.Item.ItemType == ListItemType.AlternatingItem )
             {
-                HiddenFieldWithClass recipientId = ( HiddenFieldWithClass ) e.Item.FindControl( "hfCommunicationRecipientId" );
-
-                if ( recipientId.Value != null && recipientId.Value != string.Empty && recipientId.Value != "-1" && recipientId.Value == hfSelectedRecipientId.Value )
+                var messageKey = ( HiddenFieldWithClass ) e.Item.FindControl( "hfCommunicationMessageKey" );
+                if (messageKey.Value != string.Empty )
                 {
                     var divCommunication = ( HtmlGenericControl ) e.Item.FindControl( "divCommunication" );
                     divCommunication.RemoveCssClass( "pull-right" );
                     divCommunication.AddCssClass( "pull-left" );
                     divCommunication.RemoveCssClass( "bg-primary" );
                     divCommunication.AddCssClass( "bg-info" );
-
                 }
             }
         }
