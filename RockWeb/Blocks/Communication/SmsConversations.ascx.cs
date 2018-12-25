@@ -146,6 +146,10 @@ namespace RockWeb.Blocks.Communication
         protected override void OnInit( EventArgs e )
         {
             base.OnInit( e );
+
+            // Create unique user setting keys for this block.
+            //_settingKeyShowResults = _settingKeyShowResults.Replace( "{blockId}", this.BlockId.ToString() );
+
             hfSMSCharLimit.Value = ( this.GetAttributeValue( "CharacterLimit" ).AsIntegerOrNull() ?? 160 ).ToString();
             dvpNewPersonTitle.DefinedTypeId = DefinedTypeCache.Get( Rock.SystemGuid.DefinedType.PERSON_TITLE.AsGuid() ).Id;
             dvpNewPersonSuffix.DefinedTypeId = DefinedTypeCache.Get( Rock.SystemGuid.DefinedType.PERSON_SUFFIX.AsGuid() ).Id;
@@ -235,6 +239,17 @@ namespace RockWeb.Blocks.Communication
             lblSelectedSmsNumber.Text = "SMS Number " + ddlSmsNumbers.SelectedItem.Text;
             lblSelectedSmsNumber.Visible = filteredNumbers.Count == 1;
             ddlSmsNumbers.Visible = filteredNumbers.Count > 1;
+
+            string keyPrefix = string.Format( "sms-conversations-{0}-", this.BlockId );
+
+            string smsNumberUserPref = this.GetUserPreference( keyPrefix + "smsNumber" ) ?? string.Empty;
+
+            if ( smsNumberUserPref.IsNotNullOrWhiteSpace() )
+            {
+                ddlSmsNumbers.SelectedValue = smsNumberUserPref;
+            }
+
+            tglShowRead.Checked = this.GetUserPreference( keyPrefix + "showRead" ).AsBooleanOrNull() ?? true;
         }
 
         private void LoadResponseListing()
@@ -393,6 +408,14 @@ namespace RockWeb.Blocks.Communication
             hfActiveDialog.Value = string.Empty;
         }
 
+        private void SaveSettings()
+        {
+            string keyPrefix = string.Format( "sms-conversations-{0}-", this.BlockId );
+
+            this.SetUserPreference( keyPrefix + "smsNumber", ddlSmsNumbers.SelectedValue.ToString(), false );
+            this.SetUserPreference( keyPrefix + "showRead", tglShowRead.Checked.ToString(), false );
+        }
+
         private void SendMessage( int toPersonAliasId, string message )
         {
             using ( var rockContext = new RockContext() )
@@ -437,11 +460,13 @@ namespace RockWeb.Blocks.Communication
 
         protected void ddlSmsNumbers_SelectedIndexChanged( object sender, EventArgs e )
         {
+            SaveSettings();
             LoadResponseListing();
         }
 
         protected void tglShowRead_CheckedChanged( object sender, EventArgs e )
         {
+            SaveSettings();
             LoadResponseListing();
         }
 
