@@ -190,6 +190,8 @@ namespace Rock.Communication.Medium
         /// <param name="rockContext">A context to use for database calls.</param>
         private void CreateCommunication( int? fromPersonAliasId, string fromPersonName, string messageKey, int? toPersonAliasId, string message, string plainMessage, DefinedValueCache rockSmsFromPhoneDv, string responseCode, Rock.Data.RockContext rockContext )
         {
+            LaunchWorkflow( fromPersonAliasId, messageKey, message, toPersonAliasId, rockSmsFromPhoneDv );
+
             // See if this should go to a phone or to the DB. Default is to the phone so if for some reason we get a null here then just send it to the phone.
             var enableMobileConversations = rockSmsFromPhoneDv.GetAttributeValue( "EnableMobileConversations" ).AsBooleanOrNull() ?? true;
 
@@ -202,6 +204,37 @@ namespace Rock.Communication.Medium
                 // To and from person can be null and the response linked to a person later.
                 CreateCommunicationResponse( fromPersonAliasId, fromPersonName, messageKey, toPersonAliasId, plainMessage, rockSmsFromPhoneDv, responseCode, rockContext );
             }
+        }
+
+        private void LaunchWorkflow( int? fromPersonAliasId, string fromPhone, string message, int? toPersonAliasId, DefinedValueCache rockSmsFromPhoneDv )
+        {
+            var workflowTypeGuid = rockSmsFromPhoneDv.GetAttributeValue( "LaunchWorkflowOnResponseReceived" );
+            var workflowType = WorkflowTypeCache.Get( workflowTypeGuid );
+
+            if ( workflowType == null || ( workflowType.IsActive != true ) )
+            {
+                return;
+            }
+
+            var personAliasService = new PersonAliasService( new RockContext() );
+            var workflowAttributeValues = new Dictionary<string, string>();
+            workflowAttributeValues.Add( "FromPhone", fromPhone );
+            workflowAttributeValues.Add( "Message", message );
+            workflowAttributeValues.Add( "SMSFromDefinedValue", rockSmsFromPhoneDv.Guid.ToString() );
+
+            if ( fromPersonAliasId != null )
+            {
+                workflowAttributeValues.Add( "FromPerson", personAliasService.GetPerson( fromPersonAliasId.Value ).Guid.ToString() ?? string.Empty );
+            }
+
+            if( toPersonAliasId != null )
+            {
+                workflowAttributeValues.Add( "ToPerson", personAliasService.GetPerson( toPersonAliasId.Value ).Guid.ToString() ?? string.Empty );
+            }
+            
+            var launchWorkflowTransaction = new Rock.Transactions.LaunchWorkflowTransaction( workflowType.Id );
+            launchWorkflowTransaction.WorkflowAttributeValues = workflowAttributeValues;
+            launchWorkflowTransaction.Enqueue();
         }
 
         /// <summary>
