@@ -43,6 +43,7 @@ namespace Rock.Apps.CheckScannerUtility
             LoggedInPerson = loggedInPerson;
             InitializeComponent();
             ScanningPage = new ScanningPage( this );
+            CaptureAmountScanningPage = new CaptureAmountScanningPage( this );
             ScanningPromptPage = new ScanningPromptPage( this );
             BatchItemDetailPage = new BatchItemDetailPage();
             FirstPageLoad = true;
@@ -145,6 +146,8 @@ namespace Rock.Apps.CheckScannerUtility
         /// The scanning page
         /// </summary>
         public ScanningPage ScanningPage { get; set; }
+
+        public CaptureAmountScanningPage CaptureAmountScanningPage { get; set; }
 
         /// <summary>
         /// Gets or sets the scanning prompt page.
