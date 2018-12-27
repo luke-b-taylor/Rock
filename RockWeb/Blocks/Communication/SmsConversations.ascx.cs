@@ -174,8 +174,15 @@ namespace RockWeb.Blocks.Communication
 
             if ( !IsPostBack )
             {
-                LoadPhoneNumbers();
-                LoadResponseListing();
+                if ( LoadPhoneNumbers() )
+                {
+                    nbNoNumbers.Visible = false;
+                    LoadResponseListing();
+                }
+                else
+                {
+                    nbNoNumbers.Visible = true;
+                }
             }
             else
             {
@@ -192,10 +199,10 @@ namespace RockWeb.Blocks.Communication
         #endregion Control Overrides
 
         #region private/protected Methods
-        private void LoadPhoneNumbers()
+        private bool LoadPhoneNumbers()
         {
             // First load up all of the available numbers
-            var SmsNumbers = DefinedTypeCache.Get( Rock.SystemGuid.DefinedType.COMMUNICATION_SMS_FROM.AsGuid() )
+            var smsNumbers = DefinedTypeCache.Get( Rock.SystemGuid.DefinedType.COMMUNICATION_SMS_FROM.AsGuid() )
                 .DefinedValues
                 .Where( v => v.GetAttributeValue( "EnableMobileConversations").AsBoolean( true ) == false )
                 .ToList();// probably do this last, keep here for testing
@@ -203,14 +210,14 @@ namespace RockWeb.Blocks.Communication
             var selectedNumberGuids = GetAttributeValue( "AllowedSMSNumbers" ).SplitDelimitedValues( true ).AsGuidList();
             if ( selectedNumberGuids.Any() )
             {
-                SmsNumbers = SmsNumbers.Where( v => selectedNumberGuids.Contains( v.Guid ) ).ToList();
+                smsNumbers = smsNumbers.Where( v => selectedNumberGuids.Contains( v.Guid ) ).ToList();
             }
 
             // show only current persons number
             if ( GetAttributeValue( "ShowOnlyPersonalSmsNumber" ).AsBoolean() )
             {
                 var currentPersonSMSNumber = this.CurrentPerson.PhoneNumbers.FirstOrDefault( a => a.IsMessagingEnabled );
-                SmsNumbers = SmsNumbers.Where( v => v.Value == currentPersonSMSNumber.Number ).ToList();
+                smsNumbers = smsNumbers.Where( v => v.Value == currentPersonSMSNumber.Number ).ToList();
             }
 
             var filteredNumbers = new List<DefinedValueCache>();
@@ -218,7 +225,7 @@ namespace RockWeb.Blocks.Communication
             // hide personal numbers
             if ( GetAttributeValue( "HidePersonalSmsNumbers" ).AsBoolean() )
             {
-                foreach( var number in SmsNumbers )
+                foreach( var number in smsNumbers )
                 {
                     if( number.GetAttributeValue( "ResponseRecipient" ).IsNullOrWhiteSpace() )
                     {
@@ -228,28 +235,37 @@ namespace RockWeb.Blocks.Communication
             }
             else
             {
-                filteredNumbers = SmsNumbers;
+                filteredNumbers = smsNumbers;
             }
 
-            ddlSmsNumbers.DataSource = filteredNumbers;
-            ddlSmsNumbers.DataValueField = "Id";
-            ddlSmsNumbers.DataTextField = "Value";
-            ddlSmsNumbers.DataBind();
-
-            lblSelectedSmsNumber.Text = "SMS Number " + ddlSmsNumbers.SelectedItem.Text;
-            lblSelectedSmsNumber.Visible = filteredNumbers.Count == 1;
-            ddlSmsNumbers.Visible = filteredNumbers.Count > 1;
-
-            string keyPrefix = string.Format( "sms-conversations-{0}-", this.BlockId );
-
-            string smsNumberUserPref = this.GetUserPreference( keyPrefix + "smsNumber" ) ?? string.Empty;
-
-            if ( smsNumberUserPref.IsNotNullOrWhiteSpace() )
+            if ( filteredNumbers.Any() )
             {
-                ddlSmsNumbers.SelectedValue = smsNumberUserPref;
+                ddlSmsNumbers.DataSource = filteredNumbers;
+                ddlSmsNumbers.DataValueField = "Id";
+                ddlSmsNumbers.DataTextField = "Value";
+                ddlSmsNumbers.DataBind();
+
+                lblSelectedSmsNumber.Text = "SMS Number " + ddlSmsNumbers.SelectedItem.Text;
+                lblSelectedSmsNumber.Visible = filteredNumbers.Count == 1;
+                ddlSmsNumbers.Visible = filteredNumbers.Count > 1;
+
+                string keyPrefix = string.Format( "sms-conversations-{0}-", this.BlockId );
+
+                string smsNumberUserPref = this.GetUserPreference( keyPrefix + "smsNumber" ) ?? string.Empty;
+
+                if ( smsNumberUserPref.IsNotNullOrWhiteSpace() )
+                {
+                    ddlSmsNumbers.SelectedValue = smsNumberUserPref;
+                }
+
+                tglShowRead.Checked = this.GetUserPreference( keyPrefix + "showRead" ).AsBooleanOrNull() ?? true;
+            }
+            else
+            {
+                return false;
             }
 
-            tglShowRead.Checked = this.GetUserPreference( keyPrefix + "showRead" ).AsBooleanOrNull() ?? true;
+            return true;
         }
 
         private void LoadResponseListing()

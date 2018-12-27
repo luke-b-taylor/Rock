@@ -9,11 +9,18 @@
             </div>
 
             <div class="panel-body">
+                <Rock:NotificationBox ID="nbNoNumbers" runat="server" NotificationBoxType="Warning" Text="No SMS numbers are available to view." Visible="false"></Rock:NotificationBox>
+
                 <%-- The list of phone numbers that do not have "Enable Mobile Conversations" enabled --%>
-                <Rock:RockDropDownList ID="ddlSmsNumbers" runat="server" Label="SMS Number" AutoPostBack="true" OnSelectedIndexChanged="ddlSmsNumbers_SelectedIndexChanged"></Rock:RockDropDownList>
-                <asp:Label ID="lblSelectedSmsNumber" runat="server" visible="false" />
-                <asp:LinkButton ID="btnCreateNewMessage" runat="server" CssClass="btn btn-primary pull-right rounded " OnClick="btnCreateNewMessage_Click"><i class="fa fa-comments"></i>&nbsp;Send SMS</asp:LinkButton>
-        
+                <div class="row">
+                    <div class="col-md-4">
+                        <Rock:RockDropDownList ID="ddlSmsNumbers" runat="server" Label="SMS Number" AutoPostBack="true" OnSelectedIndexChanged="ddlSmsNumbers_SelectedIndexChanged"></Rock:RockDropDownList>
+                        <asp:Label ID="lblSelectedSmsNumber" runat="server" visible="false" />
+                    </div>
+                    <div class="col-md-8">
+                        <asp:LinkButton ID="btnCreateNewMessage" runat="server" CssClass="btn btn-primary pull-right rounded " OnClick="btnCreateNewMessage_Click"><i class="fa fa-comments"></i>&nbsp;Send SMS</asp:LinkButton>
+                    </div>
+                </div>
                 <div class="row">
 
                     <div class="col-md-6 panel panel-block">
