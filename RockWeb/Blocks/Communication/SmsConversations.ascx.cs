@@ -150,6 +150,7 @@ namespace RockWeb.Blocks.Communication
             // Create unique user setting keys for this block.
             //_settingKeyShowResults = _settingKeyShowResults.Replace( "{blockId}", this.BlockId.ToString() );
 
+            btnCreateNewMessage.Visible = ( this.GetAttributeValue( "EnableSmsSend" ) ).AsBoolean();
             hfSMSCharLimit.Value = ( this.GetAttributeValue( "CharacterLimit" ).AsIntegerOrNull() ?? 160 ).ToString();
             dvpNewPersonTitle.DefinedTypeId = DefinedTypeCache.Get( Rock.SystemGuid.DefinedType.PERSON_TITLE.AsGuid() ).Id;
             dvpNewPersonSuffix.DefinedTypeId = DefinedTypeCache.Get( Rock.SystemGuid.DefinedType.PERSON_SUFFIX.AsGuid() ).Id;
