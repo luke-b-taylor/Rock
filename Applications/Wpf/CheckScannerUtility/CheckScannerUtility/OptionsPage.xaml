@@ -1,14 +1,20 @@
-﻿<Page x:Class="Rock.Apps.CheckScannerUtility.OptionsPage"
+﻿<Page x:Class="Rock.Apps.CheckScannerUtility.SetAccountsForAmountsToSave"
       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+      xmlns:models="clr-namespace:Rock.Apps.CheckScannerUtility.Models"
       mc:Ignorable="d"
       d:DesignHeight="680"
       d:DesignWidth="900"
       Title="Check Scanner - Options"
       Loaded="Page_Loaded"
       Style="{StaticResource pageBackground}">
+    <Page.Resources>
+        <HierarchicalDataTemplate  DataType="{x:Type models:DisplayAccount}" ItemsSource="{Binding Children}">
+            <CheckBox Name="Account" Margin="5" Content="{Binding AccountDisplayName}" IsChecked="{Binding IsAccountChecked}"/>
+        </HierarchicalDataTemplate>
+    </Page.Resources>
     <StackPanel>
         <Label Style="{StaticResource labelStyleLegend}"
                Margin="8,0">Options</Label>
@@ -60,35 +66,50 @@
                        Style="{StaticResource labelStyle}">Scan Image Color Type</Label>
                     <ComboBox Name="cboImageOption"
                           Style="{StaticResource textboxStyle}" />
-                    <Border BorderThickness="1" Margin="0,10,10,10" BorderBrush="LightGray">
-                        <StackPanel>
-                            <Label Name="lblScanningOptions"
+                    <StackPanel Margin="0,10,0,0">
+                        <Label Name="lblScanningOptions"
                                  Style="{StaticResource labelStyle}">Scanning Options</Label>
-                            <CheckBox Name="chkCaptureAmountOnScan"
+                        <CheckBox Name="chkCaptureAmountOnScan"
                                   Content="Capture Amount on Scan"
                                   Margin="8,8,0,0"
                                   IsChecked="False" />
-                            <Label Name="lblDefaultBatchCampus"
+                        <Label Name="lblDefaultBatchCampus"
                                  Style="{StaticResource labelStyle}">Default Batch Campus</Label>
-                            <ComboBox 
+                        <ComboBox 
                                       x:Name="cbDefaultCampus"    
                                       Style="{StaticResource comboBoxStyle}" />
-                            <Label Name="lblBatchOptions"
+                        <Label Name="lblBatchOptions"
                                  Style="{StaticResource labelStyle}">Batch Options</Label>
-                            <CheckBox Name="chkRequireConrolAmount"
+                        <CheckBox Name="chkRequireConrolAmount"
                                   Content="Require Control Amount"
                                   Margin="8,8,0,0"
                                   IsChecked="False" />
-                            <CheckBox Name="chkRequireControlItemCount"
+                        <CheckBox Name="chkRequireControlItemCount"
                                   Content="Require Control Item Count"
                                   Margin="8,8,0,0"
                                   IsChecked="False" />
-                            
-                        </StackPanel>
-                    </Border>
+                    </StackPanel>
                 </StackPanel>
-                <StackPanel Grid.Row="0" Grid.Column="1" Background="AliceBlue" VerticalAlignment="Stretch">
-                    
+                <StackPanel Grid.Row="0" Grid.Column="1"  VerticalAlignment="Stretch">
+                    <ScrollViewer HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Auto">
+                        <StackPanel VerticalAlignment="Stretch"  HorizontalAlignment="Stretch" Height="365">
+                            <Label Name="lblCapturingAccountAmounts"
+                                 Style="{StaticResource labelStyle}">Accounts for Capturing Batches</Label>
+                            <TreeView x:Name="icAccountsForBatches" Margin="0,5,0,0" BorderThickness="0" Height="365" ScrollViewer.VerticalScrollBarVisibility="Auto">
+                                <TreeView.ItemContainerStyle>
+                                    <Style>
+                                        <Setter Property="TreeViewItem.IsExpanded" Value="True"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding Path=Type}" Value="menu">
+                                                <Setter Property="TreeViewItem.IsSelected" Value="True"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TreeView.ItemContainerStyle>
+                                <TreeViewItem ItemsSource="{Binding}" Header="{Binding AccountDisplayName}"/>
+                            </TreeView>
+                        </StackPanel>
+                    </ScrollViewer>
                 </StackPanel>
                 <StackPanel Grid.Row="1" Margin="0,10,0,0" Grid.ColumnSpan="2">
                     <Label Name="lblAdvancedInfo"

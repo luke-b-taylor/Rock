@@ -14,6 +14,7 @@
 // limitations under the License.
 // </copyright>
 //
+using System.Collections.Generic;
 using System.Configuration;
 
 namespace Rock.Apps.CheckScannerUtility
@@ -422,6 +423,23 @@ namespace Rock.Apps.CheckScannerUtility
                 this["RequireControlItemCount"] = value;
             }
         }
+
+       
+        [UserScopedSetting]
+        public int [] SelectedAccountForAmountsIds
+        {
+            get
+            {
+                return this["SelectedAccountForAmountsIds"] as int[];
+            }
+
+            set
+            {
+                this["SelectedAccountForAmountsIds"] = value;
+            }
+
+        }
+        
         /// <summary>
         /// Loads this instance.
         /// </summary>

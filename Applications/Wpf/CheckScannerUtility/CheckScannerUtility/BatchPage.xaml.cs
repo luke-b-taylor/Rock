@@ -602,7 +602,7 @@ namespace Rock.Apps.CheckScannerUtility
         /// </summary>
         private void NavigateToOptionsPage()
         {
-            var optionsPage = new OptionsPage( this );
+            var optionsPage = new SetAccountsForAmountsToSave( this );
             this.NavigationService.Navigate( optionsPage );
         }
 
