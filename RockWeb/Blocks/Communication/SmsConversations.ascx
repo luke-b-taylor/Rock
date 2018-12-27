@@ -61,7 +61,7 @@
                             
                             <div class="row">
                                 <div class="col-md-12">
-                                    <asp:Repeater ID="rptConversation" runat="server" OnItemDataBound="rptConversation_ItemDataBound">
+                                    <asp:Repeater ID="rptConversation" runat="server" OnItemDataBound="rptConversation_ItemDataBound" Visible="false">
                                         <ItemTemplate>
                                             <div class="row">
                                                 <Rock:HiddenFieldWithClass ID="hfCommunicationRecipientId" runat="server" Value='<%# Eval("FromPersonAliasId") %>' />
