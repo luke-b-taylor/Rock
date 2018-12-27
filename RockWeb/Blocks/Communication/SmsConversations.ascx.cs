@@ -240,12 +240,17 @@ namespace RockWeb.Blocks.Communication
 
             if ( filteredNumbers.Any() )
             {
-                ddlSmsNumbers.DataSource = filteredNumbers;
+                ddlSmsNumbers.DataSource = filteredNumbers.Select( v => new
+                {
+                    v.Id,
+                    Description = string.IsNullOrWhiteSpace( v.Description ) ? v.Value : v.Description.Truncate( 100 ),
+                });
+
                 ddlSmsNumbers.DataValueField = "Id";
-                ddlSmsNumbers.DataTextField = "Value";
+                ddlSmsNumbers.DataTextField = "Description";
                 ddlSmsNumbers.DataBind();
 
-                lblSelectedSmsNumber.Text = "SMS Number " + ddlSmsNumbers.SelectedItem.Text;
+                lblSelectedSmsNumber.Text = "SMS Number <br/>" + ddlSmsNumbers.SelectedItem.Text.Truncate(25);
                 lblSelectedSmsNumber.Visible = filteredNumbers.Count == 1;
                 ddlSmsNumbers.Visible = filteredNumbers.Count > 1;
 
