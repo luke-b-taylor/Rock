@@ -131,8 +131,8 @@ namespace Rock.Migrations
             RockMigrationHelper.AddDefinedType( 
                 "Communication", 
                 "SMS Phone Numbers",
-                "SMS numbers that can be used to send text messages from. This is usually a phone number or short code that has been set up with your SMS provider.Providing a response recipient will send replies straight to the individual’s mobile phone. Leaving this field blank will enable responses to be processed from within Rock.", 
-                "611BDE1F-7405-4D16-8626-CCFEDB0E62BE" );
+                "SMS numbers that can be used to send text messages from. This is usually a phone number or short code that has been set up with your SMS provider. Providing a response recipient will send replies straight to the individual's mobile phone unless 'Enable Mobile Conversations' is set to No. Leaving this field blank will enable responses to be processed from within Rock.",
+                Rock.SystemGuid.DefinedType.COMMUNICATION_SMS_FROM );
         }
 
         private void UpdateDefinedType_COMMUNICATION_SMS_FROM_Down()
@@ -141,14 +141,14 @@ namespace Rock.Migrations
                 "Communication",
                 "SMS From Values",
                 "Values that can be used to send text messages from.  This is usually a phone number or short code that has been set up with your SMS provider.",
-                "611BDE1F-7405-4D16-8626-CCFEDB0E62BE" );
+                Rock.SystemGuid.DefinedType.COMMUNICATION_SMS_FROM );
         }
 
         private void AddUpdateDefinedValuesFor_COMMUNICATION_SMS_FROM_Up()
         {
-            // Edit DT Attribute Reponse Recipient and make optional
-            RockMigrationHelper.UpdateDefinedTypeAttribute( "611BDE1F-7405-4D16-8626-CCFEDB0E62BE",
-                "E4EAB7B2-0B76-429B-AFE4-AD86D7428C70",
+            // Edit DT Attribute Response Recipient and make optional
+            RockMigrationHelper.UpdateDefinedTypeAttribute( Rock.SystemGuid.DefinedType.COMMUNICATION_SMS_FROM,
+                Rock.SystemGuid.FieldType.PERSON,
                 "Response Recipient",
                 "ResponseRecipient",
                 "The person who should receive responses to the SMS number. This person must have a phone number with SMS enabled or no response will be sent.",
@@ -161,21 +161,21 @@ namespace Rock.Migrations
 
 
             // Add DT Attribute Enable Mobile Conversations and set to true
-            RockMigrationHelper.AddDefinedTypeAttribute( "611BDE1F-7405-4D16-8626-CCFEDB0E62BE",
-                "1EDAFDED-DFE6-4334-B019-6EECBA89E05A",
+            RockMigrationHelper.AddDefinedTypeAttribute( Rock.SystemGuid.DefinedType.COMMUNICATION_SMS_FROM,
+                Rock.SystemGuid.FieldType.BOOLEAN,
                 "Enable Mobile Conversations",
                 "EnableMobileConversations",
-                "When enabled SMS conversations would be processed by sending messages to the Response Recipient’s mobile phone. Otherwise, the conversations would be handled using the SMS Conversations page.",
+                "When enabled, SMS conversations would be processed by sending messages to the Response Recipient's mobile phone. Otherwise, the conversations would be handled using the SMS Conversations page.",
                 1019,
                 "True",
                 "60E05E00-E1A3-46A2-A56D-FE208D91FE4F" );
 
             // Add DT Attribute Value for Enable Mobile Conversations Attribute and set to true
-            RockMigrationHelper.AddDefinedValueAttributeValue( "611BDE1F-7405-4D16-8626-CCFEDB0E62BE", "60E05E00-E1A3-46A2-A56D-FE208D91FE4F", "1" );
+            RockMigrationHelper.AddDefinedValueAttributeValue( Rock.SystemGuid.DefinedType.COMMUNICATION_SMS_FROM, "60E05E00-E1A3-46A2-A56D-FE208D91FE4F", "1" );
 
             // Add DT Attribute LaunchWorkflowOnResponseReceived 
-            RockMigrationHelper.AddDefinedTypeAttribute( "611BDE1F-7405-4D16-8626-CCFEDB0E62BE",
-                "46A03F59-55D3-4ACE-ADD5-B4642225DD20",
+            RockMigrationHelper.AddDefinedTypeAttribute( Rock.SystemGuid.DefinedType.COMMUNICATION_SMS_FROM,
+                Rock.SystemGuid.FieldType.WORKFLOW_TYPE,
                 "Launch Workflow On Response Received",
                 "LaunchWorkflowOnResponseReceived",
                 "The workflow type to launch when a response is received. Additionally if the workflow type has any of the following attribute keys defined, those attribute values will also be set: FromPhone, Message, SMSFromDefinedValue, FromPerson, ToPerson.",
@@ -187,8 +187,8 @@ namespace Rock.Migrations
         private void AddUpdateDefinedValuesFor_COMMUNICATION_SMS_FROM_Down()
         {
             // Edit DT Attribute Response Recipient and make optional
-            RockMigrationHelper.UpdateDefinedTypeAttribute( "611BDE1F-7405-4D16-8626-CCFEDB0E62BE",
-                "E4EAB7B2-0B76-429B-AFE4-AD86D7428C70",
+            RockMigrationHelper.UpdateDefinedTypeAttribute( Rock.SystemGuid.DefinedType.COMMUNICATION_SMS_FROM,
+                Rock.SystemGuid.FieldType.PERSON,
                 "Response Recipient",
                 "ResponseRecipient",
                 "The person who should receive responses to the SMS number. This person must have a phone number with SMS enabled or no response will be sent.",
@@ -212,7 +212,7 @@ namespace Rock.Migrations
             RockMigrationHelper.AddPage( true, "7F79E512-B9DB-4780-9887-AD6D63A39050","D65F783D-87A9-4CC9-8110-E83466A0EADB","SMS Conversations","","275A5175-60E0-40A2-8C63-4E9D9CD39036","fa fa-comments"); // Site:Rock RMS
             RockMigrationHelper.UpdateBlockType("Communication > Sms Conversations","","~/Blocks/Communication/SmsConversations.ascx","","3497603B-3BE6-4262-B7E9-EC01FC7140EB");
             // Add Block to Page: SMS Conversations Site: Rock RMS
-            RockMigrationHelper.AddBlock( true, "275A5175-60E0-40A2-8C63-4E9D9CD39036".AsGuid(),null,"C2D29296-6A87-47A9-A753-EE4E9159C4C4".AsGuid(),"3497603B-3BE6-4262-B7E9-EC01FC7140EB".AsGuid(), "Sms Conversations","Main",@"",@"",0,"24CAFC0B-3C23-45EB-B69C-BEC68BB21B97"); 
+            RockMigrationHelper.AddBlock( true, "275A5175-60E0-40A2-8C63-4E9D9CD39036".AsGuid(),null,Rock.SystemGuid.Site.SITE_ROCK_INTERNAL.AsGuid(),"3497603B-3BE6-4262-B7E9-EC01FC7140EB".AsGuid(), "Sms Conversations","Main",@"",@"",0,"24CAFC0B-3C23-45EB-B69C-BEC68BB21B97"); 
         }
 
         private void PagesAndBlocksDown()
