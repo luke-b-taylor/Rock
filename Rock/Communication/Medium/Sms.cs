@@ -224,12 +224,12 @@ namespace Rock.Communication.Medium
 
             if ( fromPersonAliasId != null )
             {
-                workflowAttributeValues.Add( "FromPerson", personAliasService.GetPerson( fromPersonAliasId.Value ).Guid.ToString() ?? string.Empty );
+                workflowAttributeValues.Add( "FromPerson", personAliasService.Get( fromPersonAliasId.Value ).Guid.ToString() ?? string.Empty );
             }
 
             if( toPersonAliasId != null )
             {
-                workflowAttributeValues.Add( "ToPerson", personAliasService.GetPerson( toPersonAliasId.Value ).Guid.ToString() ?? string.Empty );
+                workflowAttributeValues.Add( "ToPerson", personAliasService.Get( toPersonAliasId.Value ).Guid.ToString() ?? string.Empty );
             }
             
             var launchWorkflowTransaction = new Rock.Transactions.LaunchWorkflowTransaction( workflowType.Id );

@@ -178,7 +178,7 @@ namespace Rock.Migrations
                 "46A03F59-55D3-4ACE-ADD5-B4642225DD20",
                 "Launch Workflow On Response Received",
                 "LaunchWorkflowOnResponseReceived",
-                "",
+                "The workflow type to launch when a response is received. Additionally if the workflow type has any of the following attribute keys defined, those attribute values will also be set: FromPhone, Message, SMSFromDefinedValue, FromPerson, ToPerson.",
                 1020,
                 string.Empty,
                 "49C7A5A3-D711-4E41-86E4-06408ED6C1BD" );
@@ -186,7 +186,7 @@ namespace Rock.Migrations
 
         private void AddUpdateDefinedValuesFor_COMMUNICATION_SMS_FROM_Down()
         {
-            // Edit DT Attribute Reponse Recipient and make optional
+            // Edit DT Attribute Response Recipient and make optional
             RockMigrationHelper.UpdateDefinedTypeAttribute( "611BDE1F-7405-4D16-8626-CCFEDB0E62BE",
                 "E4EAB7B2-0B76-429B-AFE4-AD86D7428C70",
                 "Response Recipient",
