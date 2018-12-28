@@ -339,7 +339,7 @@ namespace Rock.Apps.CheckScannerUtility
             lblScannerNotReady.Visibility = Visibility.Collapsed;
 
             ScannedDocInfo sampleDocInfo = new ScannedDocInfo();
-            sampleDocInfo.CurrencyTypeValue = batchPage.CurrencyValueList.FirstOrDefault( a => a.Guid == RockConfig.Load().SourceTypeValueGuid.AsGuid() );
+            sampleDocInfo.CurrencyTypeValue = batchPage.CurrencyValueList.FirstOrDefault( a => a.Guid == RockConfig.Load().TenderTypeValueGuid.AsGuid() );
             DisplayScannedDocInfo( sampleDocInfo );
 
             bool scanningChecks = RockConfig.Load().TenderTypeValueGuid.AsGuid() == Rock.Client.SystemGuid.DefinedValue.CURRENCY_TYPE_CHECK.AsGuid();

@@ -63,12 +63,9 @@ namespace Rock.Apps.CheckScannerUtility
             {
                 var rangerScannerHostPage = new RangerScannerHostPage();
                 this.rangerScanner = rangerScannerHostPage.rangerScanner;
-
-                this.rangerScanner.TransportFeedingState += ScanningPage.rangerScanner_TransportFeedingState;
-                this.rangerScanner.TransportFeedingStopped += ScanningPage.rangerScanner_TransportFeedingStopped;
-                this.rangerScanner.TransportNewItem += ScanningPage.rangerScanner_TransportNewItem;
-                this.rangerScanner.TransportSetItemOutput += ScanningPage.rangerScanner_TransportSetItemOutput;
-                this.rangerScanner.TransportIsDead += ScanningPage.rangerScanner_TransportIsDead;
+                this.BindRangeScannerEventsScanningPage();
+                this.BindRangeScannerEventsCaputureAmountScanningPage();
+             
                 this.rangerScanner.TransportNewState += rangerScanner_TransportNewState;
                 this.rangerScanner.TransportChangeOptionsState += rangerScanner_TransportChangeOptionsState;
 
@@ -92,6 +89,25 @@ namespace Rock.Apps.CheckScannerUtility
             {
                 // intentionally nothing.  means they don't have the Ranger driver
             }
+        }
+
+        private void BindRangeScannerEventsScanningPage()
+        {
+            this.rangerScanner.TransportFeedingState += ScanningPage.rangerScanner_TransportFeedingState;
+            this.rangerScanner.TransportFeedingStopped += ScanningPage.rangerScanner_TransportFeedingStopped;
+            this.rangerScanner.TransportNewItem += ScanningPage.rangerScanner_TransportNewItem;
+            this.rangerScanner.TransportSetItemOutput += ScanningPage.rangerScanner_TransportSetItemOutput;
+            this.rangerScanner.TransportIsDead += ScanningPage.rangerScanner_TransportIsDead;
+
+        }
+
+        private void BindRangeScannerEventsCaputureAmountScanningPage()
+        {
+            this.rangerScanner.TransportFeedingState += CaptureAmountScanningPage.rangerScanner_TransportFeedingState;
+            this.rangerScanner.TransportFeedingStopped += CaptureAmountScanningPage.rangerScanner_TransportFeedingStopped;
+            this.rangerScanner.TransportNewItem += CaptureAmountScanningPage.rangerScanner_TransportNewItem;
+            this.rangerScanner.TransportSetItemOutput += CaptureAmountScanningPage.rangerScanner_TransportSetItemOutput;
+            this.rangerScanner.TransportIsDead += CaptureAmountScanningPage.rangerScanner_TransportIsDead;
         }
 
         /// <summary>
@@ -271,6 +287,7 @@ namespace Rock.Apps.CheckScannerUtility
             this.shapeStatus.ToolTip = status;
 
             ScanningPage.ShowScannerStatus( xportState, statusColor, status );
+            CaptureAmountScanningPage.ShowScannerStatus( xportState, statusColor, status );
         }
 
         /// <summary>
