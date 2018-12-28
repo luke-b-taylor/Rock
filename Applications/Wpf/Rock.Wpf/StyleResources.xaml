@@ -19,6 +19,21 @@
         <Setter Property="Label.Foreground"
                 Value="#6a6a6a"></Setter>
     </Style>
+    
+    <Style x:Key="labelStyleSmall"
+           TargetType="{x:Type Label}">
+        <Setter Property="Padding"
+                Value="4,4,0,0" />
+        <Setter Property="Label.HorizontalAlignment"
+                Value="Left"></Setter>
+        <Setter Property="Label.FontWeight"
+                Value="Normal"></Setter>
+        <Setter Property="Label.FontSize"
+                Value="12"></Setter>
+        <Setter Property="Label.Foreground"
+                Value="#6a6a6a"></Setter>
+    </Style>
+
 
     <!-- Label style: Bold -->
     <Style x:Key="labelStyleError"

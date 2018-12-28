@@ -81,10 +81,8 @@ namespace Rock.Apps.CheckScannerUtility
             var client = this.RestClient;
             _allAccounts = client.GetData<List<FinancialAccount>>( "api/FinancialAccounts" );
 
-            SetParentChildAccounts( _allAccounts);
-           
-            icAccountsForBatches.Items.Clear();
-            
+            SetParentChildAccounts( _allAccounts); 
+            icAccountsForBatches.Items.Clear();       
             icAccountsForBatches.ItemsSource = _displayAccounts;
 
         }
@@ -95,15 +93,15 @@ namespace Rock.Apps.CheckScannerUtility
 
         
 
-        public void AddParentChild( DisplayAccount node, int id, int? parentId )
+        public void AddParentChild( DisplayAccount displayAccount, int id, int? parentId )
         {
             // keep a map of each id to the node
-            _map.Add( id, node );
+            _map.Add( id, displayAccount );
 
             // if no parentId was given then it's a root node, so just add it
             if ( parentId == null )
             {
-                _displayAccounts.Add( node );
+                _displayAccounts.Add( displayAccount );
             }
             else
             {
@@ -113,7 +111,7 @@ namespace Rock.Apps.CheckScannerUtility
                 {
                     parent.Children = new ObservableCollection<DisplayAccount>();
                 }
-                parent.Children.Add( node );
+                parent.Children.Add( displayAccount );
             }
         }
 

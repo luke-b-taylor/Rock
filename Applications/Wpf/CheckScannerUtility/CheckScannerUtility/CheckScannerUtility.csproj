@@ -122,6 +122,7 @@
     <Compile Include="MicrImageHostPage.xaml.cs">
       <DependentUpon>MicrImageHostPage.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Models\DisplayAccountValue.cs" />
     <Compile Include="Models\DisplayAccount.cs" />
     <Compile Include="OptionsPage.xaml.cs">
       <DependentUpon>OptionsPage.xaml</DependentUpon>
