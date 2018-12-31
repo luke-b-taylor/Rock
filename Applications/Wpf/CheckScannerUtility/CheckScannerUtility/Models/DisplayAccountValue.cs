@@ -28,8 +28,8 @@ namespace Rock.Apps.CheckScannerUtility.Models
             get { return _amount; }
             set
             {
-                _amount = value;
-                PropertyChanged?.Invoke( this, new PropertyChangedEventArgs( "Amount" ) );
+                    _amount = value;
+                        PropertyChanged?.Invoke( this, new PropertyChangedEventArgs( "Amount" ) );
             }
         }
     }

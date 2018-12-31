@@ -116,6 +116,7 @@
     <Compile Include="BatchItemDetailPage.xaml.cs">
       <DependentUpon>BatchItemDetailPage.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Behaviors\FocusExtension.cs" />
     <Compile Include="CaptureAmountScanningPage.xaml.cs">
       <DependentUpon>CaptureAmountScanningPage.xaml</DependentUpon>
     </Compile>

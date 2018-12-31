@@ -332,7 +332,7 @@
                             <TextBox Grid.Row="7"
                                      Grid.Column="0"
                                      VerticalAlignment="Top"
-                                     x:Name="txtNumberOfItems"
+                                     x:Name="txtControlItemCount"
                                      Style="{StaticResource textboxStyle}"
                                      Text="0" />
                             <StackPanel Grid.Row="8"

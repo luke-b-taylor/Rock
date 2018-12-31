@@ -40,6 +40,12 @@ namespace Rock.Apps.CheckScannerUtility
         private int _itemsSkipped;
         private int _itemsScanned;
         private bool _keepScanning;
+        private decimal _totalAmountScanned;
+        private decimal _batchAmount;
+        private ScannedDocInfo _currentscannedDocInfo = null;
+
+        public ObservableCollection<DisplayAccountValue> _displayAccountValuesContext { get; set; }
+
 
         /// <summary>
         /// Gets the batch page.
@@ -48,6 +54,7 @@ namespace Rock.Apps.CheckScannerUtility
         /// The batch page.
         /// </value>
         public BatchPage batchPage { get; private set; }
+
         public string DebugLogFilePath { get; set; }
 
         /// <summary>
@@ -67,12 +74,9 @@ namespace Rock.Apps.CheckScannerUtility
             _itemsScanned = 0;
             this.btnComplete.Visibility = Visibility.Hidden;
             //Update Progress bar is equivalent to ShowUploadStatus on Scanning Page
-            UpdateProgressBars( _itemsUploaded );
             InitializeFirstScan();
 
         }
-
-
         /// <summary>
         /// Initializes the first scan.
         /// When the page loads an initial check will be scanned then paused to allow
@@ -117,6 +121,7 @@ namespace Rock.Apps.CheckScannerUtility
         /// </summary>
         private void LoadAccountInfo()
         {
+            InitializeProgressBarsOfSelectedBatch();
             RockConfig rockConfig = RockConfig.Load();
             var client = new RockRestClient( rockConfig.RockBaseUrl );
             client.Login( rockConfig.Username, rockConfig.Password );
@@ -125,6 +130,46 @@ namespace Rock.Apps.CheckScannerUtility
 
         }
 
+        private void InitializeProgressBarsOfSelectedBatch()
+        {
+            this._totalAmountScanned = 0;
+            if ( this.batchPage.SelectedFinancialBatch != null )
+            {
+                var selectedBatch = this.batchPage.SelectedFinancialBatch;
+                this._batchAmount = selectedBatch.ControlAmount;
+                this.pbControlAmounts.Minimum = 0;
+                this.pbControlAmounts.Maximum = 100;
+
+                //Control Amount
+                this._batchAmount = selectedBatch.ControlAmount;
+                //Control Item Count
+                this._itemsToProcess = selectedBatch.ControlItemCount;
+                this.pbControlItems.Minimum = 0;
+                this.pbControlItems.Maximum = this._itemsToProcess;
+                this.UpdateProgessBarSection();
+            }
+
+        }
+
+        private void UpdateProgessBarSection()
+        {
+            var currentTotals = SumAllAccountEntries();
+            this._totalAmountScanned += currentTotals;
+            this.lblAmountScannedValue.Content = string.Format( "$ {0}", _totalAmountScanned );
+            this.lblAmountRemaininValue.Content = string.Format( "$ {0}", _batchAmount - _totalAmountScanned );
+
+            //Control Items
+            var remainingItemsToScan = _itemsToProcess - _itemsUploaded;
+            this.lblItemCountRemainingValue.Content = remainingItemsToScan;
+            this.lblItemScannedValue.Content = _itemsUploaded;
+
+            this.lblAmountScannedValue.Content = string.Format( "$ {0}", currentTotals );
+            if ( remainingItemsToScan == 0 )
+            {
+                this.btnComplete.Visibility = Visibility.Visible;
+                this.btnNext.Visibility = Visibility.Hidden;
+            }
+        }
         /// <summary>
         /// Filters the accounts by configured.
         /// Returns only the values checked in the Rock config settings
@@ -135,7 +180,6 @@ namespace Rock.Apps.CheckScannerUtility
         {
             var filteredAccounts = allAccounts.Where( a => rockConfig.SelectedAccountForAmountsIds.Contains( a.Id ) );
             var displayAccountValues = new ObservableCollection<DisplayAccountValue>();
-            lvAccounts.ItemsSource = filteredAccounts;
             int index = 0;
             foreach ( var account in filteredAccounts )
             {
@@ -144,33 +188,26 @@ namespace Rock.Apps.CheckScannerUtility
                 index++;
             }
 
-            _itemsToProcess = displayAccountValues.Count;
-            lvAccounts.ItemsSource = displayAccountValues;
-            SetupProgressBarBasedOnAccounts( displayAccountValues );
+            this._displayAccountValuesContext = displayAccountValues;
+            lvAccounts.ItemsSource = this._displayAccountValuesContext;
+            lvAccounts.SelectedIndex = 0;
+
         }
 
-        private void SetupProgressBarBasedOnAccounts( ObservableCollection<DisplayAccountValue> displayAccountValues )
-        {
-            this.pbControlItems.Minimum = 0;
-            this.pbControlItems.Maximum = displayAccountValues.Count();
-            this.UpdateProgressBarsLegends();
-        }
 
-        /// <summary>
-        /// Updates the progress bars legends.
-        /// Areas beneath both progress bars
-        /// </summary>
-        private void UpdateProgressBarsLegends()
+        private decimal SumAllAccountEntries()
         {
-            this.lblItemScannedValue.Content = _itemsUploaded;
-            var remainingItemToProcess = _itemsToProcess - _itemsUploaded;
-            this.lblAmountItemsRemaininValue.Content = remainingItemToProcess;
-            if ( remainingItemToProcess == 0)
+            decimal sum = 0;
+            if ( this._displayAccountValuesContext != null )
             {
-                this.btnComplete.Visibility = Visibility.Visible;
-                this.btnNext.Visibility = Visibility.Hidden;
+                foreach ( DisplayAccountValue accountValue in this._displayAccountValuesContext )
+                {
+                    sum += accountValue.Amount;
+
+                }
+                this._totalAmountScanned += sum;
             }
-            
+            return sum;
         }
         #region TODO DUPLICATED ON BOTH SCANNING PAGE REFACTOR TO A BASE SCANNING PAGE
 
@@ -306,8 +343,7 @@ namespace Rock.Apps.CheckScannerUtility
 
             if ( scannedDocInfo.Upload )
             {
-                this.UploadScannedItem( scannedDocInfo );
-                this.UpdateProgressBars( _itemsUploaded );
+                this._currentscannedDocInfo = scannedDocInfo;
             }
             else
             {
@@ -403,7 +439,7 @@ namespace Rock.Apps.CheckScannerUtility
             var financialPaymentDetailId = client.PostData<FinancialPaymentDetail>( "api/FinancialPaymentDetails", financialPaymentDetail ).AsIntegerOrNull();
 
 
-          
+
             FinancialTransaction financialTransaction = new FinancialTransaction();
 
             financialTransaction.BatchId = batchPage.SelectedFinancialBatch.Id;
@@ -565,6 +601,9 @@ namespace Rock.Apps.CheckScannerUtility
             else
             {
                 pnlChecks.Visibility = Visibility.Collapsed;
+                ShowStartupPage();
+                lblNoItemsFound.Visibility = Visibility.Visible;
+
             }
         }
         private void BtnIgnoreAndUpload_Click( object sender, RoutedEventArgs e )
@@ -667,7 +706,35 @@ namespace Rock.Apps.CheckScannerUtility
 
         private void BtnNext_Click( object sender, System.Windows.RoutedEventArgs e )
         {
-            this.ResumeScanning();
+            ShowStartupPage();
+            HandleCurrentDocInfo( () =>
+             {
+                 this._currentscannedDocInfo = null;
+                 this.ResumeScanning();
+                 this.ClearPreviousCheckValues();
+             } );
+
+        }
+
+        private void ClearPreviousCheckValues()
+        {
+            foreach ( DisplayAccountValue item in lvAccounts.Items )
+            {
+                item.Amount = 0;
+            }
+
+        }
+
+        private void HandleCurrentDocInfo( Action callback )
+        {
+            if ( this._currentscannedDocInfo != null )
+            {
+                this.UploadScannedItem( _currentscannedDocInfo );
+                this.UpdateProgressBars( _itemsUploaded );
+            }
+
+            callback.DynamicInvoke();
+
         }
 
         #endregion
@@ -1042,9 +1109,15 @@ namespace Rock.Apps.CheckScannerUtility
         {
             //TODO: UPDATE Progress Bars
             this.pbControlItems.Value = itemsUploaded;
-            this.UpdateProgressBarsLegends();
+            this.pbControlAmounts.Value = GetPercentageAmountComplete();
+            this.UpdateProgessBarSection();
 
 
+        }
+
+        private double GetPercentageAmountComplete()
+        {
+            return ( double ) Math.Round( ( double ) ( 100 * this._totalAmountScanned ) / ( double ) this._batchAmount );
         }
 
         /// <summary>

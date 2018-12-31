@@ -721,6 +721,15 @@ namespace Rock.Apps.CheckScannerUtility
                     financialBatch.ControlAmount = 0.00M;
                 }
 
+                if ( !string.IsNullOrWhiteSpace( txtControlItemCount.Text ) )
+                {
+                    financialBatch.ControlItemCount = int.Parse( txtControlItemCount.Text);
+                }
+                else
+                {
+                    financialBatch.ControlItemCount = 0;
+                }
+
                 txtNote.Text = txtNote.Text.Trim();
                 financialBatch.Note = txtNote.Text;
 
