@@ -393,7 +393,7 @@ namespace RockWeb.Blocks.Communication
             {
                 case "MDNEWMESSAGE":
                     mdNewMessage.Show();
-                    lblMdNewMessageSendingSMSNumber.Text = lblSelectedSmsNumber.Text;
+                    lblMdNewMessageSendingSMSNumber.Text = "SMS Number: " + ddlSmsNumbers.SelectedItem.Text.Truncate(25);
                     break;
                 case "MDLINKCONVERSATION":
                     mdLinkConversation.Show();
