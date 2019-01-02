@@ -143,8 +143,6 @@ namespace RockWeb.Blocks.Communication
             base.OnInit( e );
 
             this.BlockUpdated += Block_BlockUpdated;
-            // Create unique user setting keys for this block.
-            //_settingKeyShowResults = _settingKeyShowResults.Replace( "{blockId}", this.BlockId.ToString() );
 
             btnCreateNewMessage.Visible = ( this.GetAttributeValue( "EnableSmsSend" ) ).AsBoolean();
             dvpNewPersonTitle.DefinedTypeId = DefinedTypeCache.Get( Rock.SystemGuid.DefinedType.PERSON_TITLE.AsGuid() ).Id;
@@ -549,7 +547,12 @@ namespace RockWeb.Blocks.Communication
             tbNewMessage.Visible = true;
             btnSend.Visible = true;
 
-            // Reset styling on all existing rows and set selected styling on this row
+            foreach ( GridViewRow row in gRecipients.Rows )
+            {
+                row.RemoveCssClass( "selected" );
+            }
+
+            e.Row.AddCssClass( "selected" );
         }
 
         protected void gRecipients_RowDataBound( object sender, GridViewRowEventArgs e )
@@ -559,8 +562,12 @@ namespace RockWeb.Blocks.Communication
                 return;
             }
 
+            var dataItem = e.Row.DataItem;
+            if ( !( bool ) dataItem.GetPropertyValue( "IsRead" ) )
+            {
+                e.Row.AddCssClass( "unread" );
+            }
             HiddenFieldWithClass recipientId = ( HiddenFieldWithClass ) e.Row.FindControl( "hfRecipientId" );
-
             if ( recipientId.Value == "-1" )
             {
                 LinkButton linkConversation = (LinkButton)e.Row.FindControl( "lbLinkConversation" );
