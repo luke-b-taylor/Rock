@@ -96,16 +96,15 @@
 
         <asp:HiddenField ID="hfActiveDialog" runat="server" />
 
-        <Rock:ModalDialog ID="mdNewMessage" runat="server" OnSaveClick="mdNewMessage_SaveClick" OnCancelScript="clearActiveDialog();" SaveButtonText="Send">
+        <Rock:ModalDialog ID="mdNewMessage" runat="server" OnSaveClick="mdNewMessage_SaveClick" OnCancelScript="clearActiveDialog();" SaveButtonText="Send" ValidationGroup="vgMobileTextEditor">
             <Content>
+                <asp:ValidationSummary ID="vsMobileTextEditor" runat="server" HeaderText="Please correct the following:" ValidationGroup="vgMobileTextEditor" CssClass="alert alert-validation" />
+                <asp:Label ID="lblMdNewMessageSendingSMSNumber" runat="server" />
                 <%-- person picker --%>
-                <Rock:PersonPicker ID="ppRecipient" runat="server" Label="Recipient" />
+                <Rock:PersonPicker ID="ppRecipient" runat="server" Label="Recipient" ValidationGroup="vgMobileTextEditor" RequiredErrorMessage="Please select an SMS recipient." Required="true" />
+
                 <%-- multi-line textbox --%>
-                <Rock:RockControlWrapper ID="rcwSMSMessage" runat="server" Label="Message" Help="<span class='tip tip-lava'></span>">
-                <asp:HiddenField ID="hfSMSCharLimit" runat="server" />
-                <asp:Label ID="lblSMSMessageCount" runat="server" CssClass="badge margin-all-sm pull-right" />
                 <Rock:RockTextBox ID="tbSMSTextMessage" runat="server" CssClass="js-sms-text-message" TextMode="MultiLine" Rows="3" Required="true" ValidationGroup="vgMobileTextEditor" RequiredErrorMessage="Message is required" ValidateRequestMode="Disabled" />
-            </Rock:RockControlWrapper>
             </Content>
         </Rock:ModalDialog>
 
@@ -167,42 +166,6 @@
             function clearActiveDialog() {
                 $('#<%=hfActiveDialog.ClientID %>').val('');
             }
-            Sys.Application.add_load(function () {
-            var smsCharLimit = $('#<%=hfSMSCharLimit.ClientID%>').val();
-                if ( smsCharLimit && smsCharLimit > 0)
-                {
-                    $('#<%=tbSMSTextMessage.ClientID%>').limit(
-                        {
-                            maxChars: smsCharLimit,
-                            counter: '#<%=lblSMSMessageCount.ClientID%>',
-                            normalClass: 'badge',
-                            warningClass: 'badge-warning',
-                            overLimitClass: 'badge-danger'
-                        });
-            }
-
-            <%--
-                $('.js-repeater-recipient-item').click(function () {
-                    // Remove the selected styling from all items.
-                    $('.js-repeater-recipient-item').removeClass('bg-primary').addClass('bg-light');
-
-                    var item = $(this);
-
-                    // Add the selected styling to this item
-                    item.addClass('bg-primary');
-
-                    // Uncheck the box since it has now been read
-                    item.find('.js-read-checkbox').prop('checked', false);
-
-                    // Get the recipient ID and set the selected recipient Id hidden field value
-                    var recipientId = item.find('.js-recipientId').val();
-                    item.closest('.js-selected-recipient-id').val(recipientId);
-
-                    // Create the postback with args adn send.
-                    var postbackArg = "recipient-id:" + recipientId;
-                    window.location = "javascript:__doPostBack('<%=upRecipients.ClientID %>', '" + postbackArg + "')";
-                }); --%>
-                })
         </script>
     </ContentTemplate>
 </asp:UpdatePanel>

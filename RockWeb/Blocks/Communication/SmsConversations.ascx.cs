@@ -65,12 +65,6 @@ namespace RockWeb.Blocks.Communication
         defaultValue: true,
         order: 4,
         key: "EnableSmsSend" )]
-    [IntegerField( "Character Limit",
-        description: "Set this to show a character limit countdown for SMS communications. Set to 0 to disable",
-        required: false,
-        defaultValue: 160,
-        order: 5,
-        key: "CharacterLimit" )]
     public partial class SmsConversations : RockBlock
     {
         #region Control Overrides
@@ -152,7 +146,6 @@ namespace RockWeb.Blocks.Communication
             //_settingKeyShowResults = _settingKeyShowResults.Replace( "{blockId}", this.BlockId.ToString() );
 
             btnCreateNewMessage.Visible = ( this.GetAttributeValue( "EnableSmsSend" ) ).AsBoolean();
-            hfSMSCharLimit.Value = ( this.GetAttributeValue( "CharacterLimit" ).AsIntegerOrNull() ?? 160 ).ToString();
             dvpNewPersonTitle.DefinedTypeId = DefinedTypeCache.Get( Rock.SystemGuid.DefinedType.PERSON_TITLE.AsGuid() ).Id;
             dvpNewPersonSuffix.DefinedTypeId = DefinedTypeCache.Get( Rock.SystemGuid.DefinedType.PERSON_SUFFIX.AsGuid() ).Id;
             dvpNewPersonMaritalStatus.DefinedTypeId = DefinedTypeCache.Get( Rock.SystemGuid.DefinedType.PERSON_MARITAL_STATUS.AsGuid() ).Id;
@@ -239,7 +232,7 @@ namespace RockWeb.Blocks.Communication
                 ddlSmsNumbers.DataTextField = "Description";
                 ddlSmsNumbers.DataBind();
 
-                lblSelectedSmsNumber.Text = "SMS Number <br/>" + ddlSmsNumbers.SelectedItem.Text.Truncate(25);
+                lblSelectedSmsNumber.Text = "SMS Number: " + ddlSmsNumbers.SelectedItem.Text.Truncate(25);
                 lblSelectedSmsNumber.Visible = smsNumbers.Count() == 1;
                 ddlSmsNumbers.Visible = smsNumbers.Count() > 1;
 
@@ -400,6 +393,7 @@ namespace RockWeb.Blocks.Communication
             {
                 case "MDNEWMESSAGE":
                     mdNewMessage.Show();
+                    lblMdNewMessageSendingSMSNumber.Text = lblSelectedSmsNumber.Text;
                     break;
                 case "MDLINKCONVERSATION":
                     mdLinkConversation.Show();
