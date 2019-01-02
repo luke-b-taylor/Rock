@@ -82,8 +82,8 @@
                             </div>
                             <br />
                             <div class="row">
-                                <div class="col-md-10"><Rock:RockTextBox ID="tbNewMessage" runat="server"></Rock:RockTextBox></div>
-                                <div class="col-md-2"><Rock:BootstrapButton ID="btnSend" runat="server" CssClass="btn btn-primary js-send-text-button" Text="Send" OnClick="btnSend_Click"></Rock:BootstrapButton></div>
+                                <div class="col-md-10"><Rock:RockTextBox ID="tbNewMessage" runat="server" Visible="false"></Rock:RockTextBox></div>
+                                <div class="col-md-2"><Rock:BootstrapButton ID="btnSend" runat="server" CssClass="btn btn-primary js-send-text-button" Text="Send" OnClick="btnSend_Click" Visible="false"></Rock:BootstrapButton></div>
                             </div>
 
                         </ContentTemplate></asp:UpdatePanel>

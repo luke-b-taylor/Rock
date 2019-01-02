@@ -37,6 +37,7 @@ using Rock.Web.Cache;
 using Rock.Web.UI;
 using Rock.Web.UI.Controls.Communication;
 using Rock.Web.UI.Controls;
+using System.Data;
 
 namespace RockWeb.Blocks.Communication
 {
@@ -266,51 +267,41 @@ namespace RockWeb.Blocks.Communication
             // communication from Rock. Restated the response is from the recipient of a communication.
 
             int? smsPhoneDefinedValueId = ddlSmsNumbers.SelectedValue.AsIntegerOrNull();
-
             if ( smsPhoneDefinedValueId == null )
             {
                 return;
             }
 
-            bool showRead = tglShowRead.Checked;
-
             using ( var rockContext = new RockContext() )
             {
-                var responses = new CommunicationResponseService( rockContext )
-                    .Queryable()
-                    .AsNoTracking()
-                    .Where( r => r.RelatedSmsFromDefinedValueId == smsPhoneDefinedValueId );
+                var communicationResponseService = new CommunicationResponseService( rockContext );
 
-                if ( !showRead )
+                DataSet responses = null;
+
+                if ( tglShowRead.Checked )
                 {
-                    responses = responses.Where( r => r.IsRead == false );
+                    responses = communicationResponseService.GetCommunicationsAndResponseRecipients( smsPhoneDefinedValueId.Value );
+                }
+                else
+                {
+                    // Since communications sent from Rock are always considered "Read" we don't need them included in the list if we are not showing "Read" messages.
+                    responses = communicationResponseService.GetResponseRecipients( smsPhoneDefinedValueId.Value, false );
                 }
 
-                // Since some of the responses will not have a PersonAlias associated with them
-                // we need to group these by the MessageKey, which is the sending phone number
-                // in the case of SMS messages.
-                var filteredresponses = responses.GroupBy( r => new { r.MessageKey } )
-                    .Select( g => g.OrderByDescending( r => r.CreatedDateTime ).FirstOrDefault() )
-                    .ToList();
-
-                if ( filteredresponses == null )
-                {
-                    return;
-                }
-
-                var responseListItems = filteredresponses
+                var responseListItems = responses.Tables[0].AsEnumerable()
                     .Select( r => new ResponseListItem
                     {
-                        RecipientId = r.FromPersonAliasId ?? -1,
-                        MessageKey = r.MessageKey,
-                        FullName = ( r.FromPersonAlias != null ? r.FromPersonAlias.Person.FullName : "Phone: " + r.MessageKey ),
-                        CreatedDateTime = r.CreatedDateTime,
-                        LastMessagePart = r.Response.LeftWithEllipsis(25),
-                        IsRead = r.IsRead
+                        RecipientId = r.Field<int?>("FromPersonAliasId"),
+                        MessageKey = r.Field<string>("MessageKey"),
+                        FullName = r.Field<string>("FullName"),
+                        CreatedDateTime = r.Field<DateTime>("CreatedDateTime"),
+                        LastMessagePart = r.Field<string>("SMSMessage").LeftWithEllipsis( 25 ),
+                        IsRead = r.Field<bool>("IsRead")
                     } )
                     .ToList();
 
-                rptConversation.Visible = false; // don't display conversations if we're rebinding the recipient list
+                // don't display conversations if we're rebinding the recipient list
+                rptConversation.Visible = false;
                 gRecipients.DataSource = responseListItems;
                 gRecipients.DataBind();
             }
@@ -508,7 +499,7 @@ namespace RockWeb.Blocks.Communication
         {
             string message = tbNewMessage.Text.Trim();
 
-            if (message.Length == 0 )
+            if ( message.Length == 0 || hfSelectedRecipientId.Value == string.Empty )
             {
                 return;
             }
@@ -555,6 +546,8 @@ namespace RockWeb.Blocks.Communication
             }
 
             UpdateReadProperty( messageKey.Value );
+            tbNewMessage.Visible = true;
+            btnSend.Visible = true;
 
             // Reset styling on all existing rows and set selected styling on this row
         }

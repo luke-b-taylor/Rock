@@ -183,6 +183,101 @@ namespace Rock.Model
                 WHERE [MessageKey] = @messageKey";
             Rock.Data.DbService.ExecuteCommand( sql, CommandType.Text, sqlParams );
         }
+
+        public DataSet GetCommunicationsAndResponseRecipients( int relatedSmsFromDefinedValueId )
+        {
+            var sqlParams = new Dictionary<string, object>
+            {
+                { "@releatedSmsFromDefinedValueId", relatedSmsFromDefinedValueId },
+                { "@smsMediumEntityTypeId", EntityTypeCache.Get( SystemGuid.EntityType.COMMUNICATION_MEDIUM_SMS ).Id }
+            };
+
+            string sql = $@"
+                ;WITH cte AS (
+                    SELECT 
+	                      COALESCE(cr.[FromPersonAliasId], -1) AS FromPersonAliasId
+	                    , cr.[MessageKey]
+	                    , COALESCE( 
+		                      (COALESCE(p.[NickName], p.[FirstName]) + ' ' + p.LastName)
+		                    , ('Phone: ' + cr.MessageKey)
+		                ) AS FullName
+	                    , cr.[CreatedDateTime]
+	                    , cr.[Response] AS SMSMessage
+	                    , cr.[IsRead]
+                    FROM [CommunicationResponse] cr
+                    LEFT JOIN [PersonAlias] pa ON cr.[FromPersonAliasId] = pa.[Id]
+                    LEFT JOIN [Person] p ON pa.[PersonId] = p.[Id]
+                    WHERE cr.[RelatedSmsFromDefinedValueId] = @releatedSmsFromDefinedValueId
+                        AND cr.[RelatedMediumEntityTypeId] = @smsMediumEntityTypeId
+                    UNION
+                    SELECT 
+	                       rec.[PersonAliasId] AS FromPersonAliasId
+	                    , COALESCE( pn.[CountryCode], '1' ) + pn.[Number] AS MessageKey
+	                    , COALESCE(p.[NickName], p.[FirstName]) + ' ' + p.LastName AS FullName
+	                    , c.[CreatedDateTime]
+	                    , c.[SMSMessage] 
+	                    , CONVERT(bit, 1) -- Communications from Rock are always considered read
+                    FROM [Communication] c
+                    JOIN [CommunicationRecipient] rec ON c.[Id] = rec.[CommunicationId]
+                    JOIN [PersonAlias] pa ON rec.[PersonAliasId] = pa.[Id]
+                    JOIN [Person] p ON pa.[PersonId] = p.[Id]
+                    JOIN [PhoneNumber] pn on pn.PersonId = p.Id
+                    WHERE c.[SMSFromDefinedValueId] = @releatedSmsFromDefinedValueId
+	                    AND pn.IsMessagingEnabled = 1
+                    )
+
+                    -- Lets do our grouping here since we are returning a dataset.
+                    SELECT *
+                    FROM cte cte1
+                    WHERE CreatedDateTime = (
+	                    SELECT MAX(cte2.CreatedDateTime) 
+	                    FROM cte cte2 
+	                    WHERE cte2.[MessageKey] = cte1.[MessageKey])
+                    ORDER BY CreatedDateTime";
+
+            return Rock.Data.DbService.GetDataSet( sql, CommandType.Text, sqlParams );
+        }
+
+        public DataSet GetResponseRecipients( int relatedSmsFromDefinedValueId, bool showReadMessages )
+        {
+            var sqlParams = new Dictionary<string, object>
+            {
+                { "@releatedSmsFromDefinedValueId", relatedSmsFromDefinedValueId },
+                { "@smsMediumEntityTypeId", EntityTypeCache.Get( SystemGuid.EntityType.COMMUNICATION_MEDIUM_SMS ).Id }
+            };
+            string showRead = !showReadMessages ? " AND cr.[IsRead] = 0 " : string.Empty;
+
+            string sql = $@"
+                ;WITH cte AS (
+                    SELECT 
+	                      COALESCE(cr.[FromPersonAliasId], -1) AS FromPersonAliasId
+	                    , cr.[MessageKey]
+	                    , COALESCE( 
+		                      (COALESCE(p.[NickName], p.[FirstName]) + ' ' + p.LastName)
+		                    , ('Phone: ' + cr.MessageKey)
+		                ) AS FullName
+	                    , cr.[CreatedDateTime]
+	                    , cr.[Response] AS SMSMessage
+	                    , cr.[IsRead]
+                    FROM [CommunicationResponse] cr
+                    LEFT JOIN [PersonAlias] pa ON cr.[FromPersonAliasId] = pa.[Id]
+                    LEFT JOIN [Person] p ON pa.[PersonId] = p.[Id]
+                    WHERE cr.[RelatedSmsFromDefinedValueId] = @releatedSmsFromDefinedValueId
+                        AND cr.[RelatedMediumEntityTypeId] = @smsMediumEntityTypeId
+                        {showRead}
+                    )
+
+                    -- Lets do our grouping here since we are returning a dataset.
+                    SELECT *
+                    FROM cte cte1
+                    WHERE CreatedDateTime = (
+	                    SELECT MAX(cte2.CreatedDateTime) 
+	                    FROM cte cte2 
+	                    WHERE cte2.[MessageKey] = cte1.[MessageKey])
+                    ORDER BY CreatedDateTime";
+
+            return Rock.Data.DbService.GetDataSet( sql, CommandType.Text, sqlParams );
+        }
     }
 
     public enum PersonAliasType
