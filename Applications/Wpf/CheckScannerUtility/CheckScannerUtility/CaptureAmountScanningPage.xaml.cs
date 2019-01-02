@@ -291,7 +291,6 @@ namespace Rock.Apps.CheckScannerUtility
             lblExceptions.Visibility = Visibility.Visible;
         }
 
-
         /// <summary>
         /// Adds the scanned doc to a history of scanned docs, and shows info and status.
         /// </summary>
@@ -344,10 +343,6 @@ namespace Rock.Apps.CheckScannerUtility
             if ( scannedDocInfo.Upload )
             {
                 this._currentscannedDocInfo = scannedDocInfo;
-            }
-            else
-            {
-                ShowUploadWarnings( scannedDocInfo );
             }
         }
 
@@ -598,13 +593,6 @@ namespace Rock.Apps.CheckScannerUtility
                 lblOtherData.Content = scannedDocInfo.OtherData;
                 spOtherData.Visibility = !string.IsNullOrWhiteSpace( scannedDocInfo.OtherData ) ? Visibility.Visible : Visibility.Collapsed;
             }
-            else
-            {
-                pnlChecks.Visibility = Visibility.Collapsed;
-                ShowStartupPage();
-                lblNoItemsFound.Visibility = Visibility.Visible;
-
-            }
         }
         private void BtnIgnoreAndUpload_Click( object sender, RoutedEventArgs e )
         {
@@ -706,12 +694,12 @@ namespace Rock.Apps.CheckScannerUtility
 
         private void BtnNext_Click( object sender, System.Windows.RoutedEventArgs e )
         {
-            ShowStartupPage();
             HandleCurrentDocInfo( () =>
              {
                  this._currentscannedDocInfo = null;
-                 this.ResumeScanning();
                  this.ClearPreviousCheckValues();
+                 this.ResumeScanning();
+
              } );
 
         }
@@ -722,6 +710,13 @@ namespace Rock.Apps.CheckScannerUtility
             {
                 item.Amount = 0;
             }
+            this.lblRoutingNumber.Content = string.Empty;
+            this.lblCheckNumber.Content = string.Empty;
+            lblAccountNumber.Content = string.Empty;
+            this.lblOtherData.Content = string.Empty;
+
+            this.grdFrontBack.Visibility = Visibility.Collapsed;
+
 
         }
 
@@ -740,7 +735,7 @@ namespace Rock.Apps.CheckScannerUtility
         #endregion
 
         #region Ranger (Canon CR50/80) Scanner Events
-
+        //TODO: This is different than Scan Page *********************
         /// <summary>
         /// Rangers the scanner_ transport feeding stopped.
         /// </summary>
@@ -754,8 +749,7 @@ namespace Rock.Apps.CheckScannerUtility
 
             btnClose.IsEnabled = true;
 
-
-            if ( _itemsScanned == 0 )
+            if ( rangerFeedingStoppedReason != RangerFeedingStoppedReasons.FeedRequestFinished)
             {
                 // show the Startup Info "Welcome" message if no check images are shown yet
                 if ( lblFront.Visibility != Visibility.Visible )
@@ -769,6 +763,7 @@ namespace Rock.Apps.CheckScannerUtility
                     lblNoItemsFound.Visibility = Visibility.Visible;
                 }
             }
+
         }
 
         /// <summary>

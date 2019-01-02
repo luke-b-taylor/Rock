@@ -40,6 +40,7 @@ namespace Rock.Apps.CheckScannerUtility
         /// <param name="loggedInPerson">The logged in person.</param>
         public BatchPage( Person loggedInPerson )
         {
+            var rockConfig = RockConfig.Load();
             LoggedInPerson = loggedInPerson;
             InitializeComponent();
             ScanningPage = new ScanningPage( this );
@@ -63,8 +64,15 @@ namespace Rock.Apps.CheckScannerUtility
             {
                 var rangerScannerHostPage = new RangerScannerHostPage();
                 this.rangerScanner = rangerScannerHostPage.rangerScanner;
-                this.BindRangeScannerEventsScanningPage();
-                this.BindRangeScannerEventsCaputureAmountScanningPage();
+
+                if ( rockConfig.CaptureAmountOnScan == true )
+                {
+                    this.BindRangeScannerEventsCaputureAmountScanningPage();
+                }
+                else
+                {
+                    this.BindRangeScannerEventsScanningPage();
+                }
              
                 this.rangerScanner.TransportNewState += rangerScanner_TransportNewState;
                 this.rangerScanner.TransportChangeOptionsState += rangerScanner_TransportChangeOptionsState;
