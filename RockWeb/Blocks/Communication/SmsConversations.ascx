@@ -21,10 +21,6 @@
                     <Rock:RockDropDownList ID="ddlSmsNumbers" runat="server" Label="SMS Number" AutoPostBack="true" OnSelectedIndexChanged="ddlSmsNumbers_SelectedIndexChanged" CssClass="input-sm" />
                     <asp:Label ID="lblSelectedSmsNumber" runat="server" visible="false" />
                 </div>
-                <div class="col-md-6">
-                    <asp:literal ID="litSelectedRecipientDescription" runat="server"></asp:literal>
-                    <asp:LinkButton ID="lbLinkConversation" runat="server" Text="Link To Person" Visible="false" CssClass="btn btn-primary btn-sm" OnClick="lbLinkConversation_Click"></asp:LinkButton>
-                </div>
             </div>
 
             <div>
@@ -49,8 +45,6 @@
                                                     <div class="sms-date flex-noshrink"><asp:Literal ID="litDateTime" runat="server" Text='<%# Eval("CreatedDateTime") %>'></asp:Literal></div>
                                                 </div>
                                                 <div class="message-truncate"><asp:Literal ID="litMessagePart" runat="server" Text='<%# Eval("LastMessagePart") %>'></asp:Literal></div>
-
-                                                <%--<asp:LinkButton ID="lbLinkConversation" runat="server" Text="Link To Person" Visible="false" CssClass="hidden" OnClick="lbLinkConversation_Click" CommandArgument='<%# Eval("MessageKey") %>'></asp:LinkButton>--%>
                                             </div>
                                         </ItemTemplate>
                                     </Rock:RockTemplateField>
@@ -60,38 +54,39 @@
                     </asp:UpdatePanel>
                     </div>
 
-                        <asp:UpdatePanel ID="upConversation" runat="server" class="conversations"><ContentTemplate>
-                            <Rock:HiddenFieldWithClass ID="hfSelectedRecipientId" runat="server" CssClass="js-selected-recipient-id" />
-                            <Rock:HiddenFieldWithClass ID="hfSelectedMessageKey" runat="server" CssClass="js-selected-message-key" />
-                            <div class="header">
-                            Person Name
-                            </div>
-                            <div class="messages-outer-container">
-                                <div class="messages-container">
-                                    <asp:Repeater ID="rptConversation" runat="server" OnItemDataBound="rptConversation_ItemDataBound" Visible="false">
-                                        <ItemTemplate>
-                                            <div class="message by-us" id="divCommunication" runat="server">
-                                                <Rock:HiddenFieldWithClass ID="hfCommunicationRecipientId" runat="server" Value='<%# Eval("FromPersonAliasId") %>' />
-                                                <Rock:HiddenFieldWithClass ID="hfCommunicationMessageKey" runat="server" Value='<%# Eval("MessageKey") %>' />
-                                                <div class="bubble bg-primary" id="divCommunicationBody" runat="server">
-                                                <%# Eval("Response") %>
-                                                </div>
-                                                <div class="sms-send small">Ted Decker - <%# Eval("CreatedDateTime") %></div>
+                    <asp:UpdatePanel ID="upConversation" runat="server" class="conversations"><ContentTemplate>
+                        <Rock:HiddenFieldWithClass ID="hfSelectedRecipientId" runat="server" CssClass="js-selected-recipient-id" />
+                        <Rock:HiddenFieldWithClass ID="hfSelectedMessageKey" runat="server" CssClass="js-selected-message-key" />
+                        <div class="header">
+                            <asp:literal ID="litSelectedRecipientDescription" runat="server"></asp:literal>
+                            <asp:LinkButton ID="lbLinkConversation" runat="server" Text="Link To Person" Visible="false" CssClass="btn btn-primary btn-sm" OnClick="lbLinkConversation_Click"></asp:LinkButton>
+                        </div>
+                        <div class="messages-outer-container">
+                            <div class="messages-container">
+                                <asp:Repeater ID="rptConversation" runat="server" OnItemDataBound="rptConversation_ItemDataBound" Visible="false">
+                                    <ItemTemplate>
+                                        <div class="message by-us" id="divCommunication" runat="server">
+                                            <Rock:HiddenFieldWithClass ID="hfCommunicationRecipientId" runat="server" Value='<%# Eval("FromPersonAliasId") %>' />
+                                            <Rock:HiddenFieldWithClass ID="hfCommunicationMessageKey" runat="server" Value='<%# Eval("MessageKey") %>' />
+                                            <div class="bubble bg-primary" id="divCommunicationBody" runat="server">
+                                            <%# Eval("Response") %>
                                             </div>
-                                        </ItemTemplate>
-                                        <FooterTemplate>
-                                            <asp:Label ID="lbNoConversationsFound" runat="server" Visible='<%# rptConversation.Items.Count == 0 %>' Text="<tr><td>No conversations found.</td></tr>" CssClass="text-muted" />
-                                        </FooterTemplate>
-                                    </asp:Repeater>
-                                </div>
+                                            <div class="sms-send small">Ted Decker - <%# Eval("CreatedDateTime") %></div>
+                                        </div>
+                                    </ItemTemplate>
+                                    <FooterTemplate>
+                                        <asp:Label ID="lbNoConversationsFound" runat="server" Visible='<%# rptConversation.Items.Count == 0 %>' Text="<tr><td>No conversations found.</td></tr>" CssClass="text-muted" />
+                                    </FooterTemplate>
+                                </asp:Repeater>
                             </div>
+                        </div>
 
-                            <div class="footer">
-                                <Rock:RockTextBox ID="tbNewMessage" runat="server" TextMode="multiline" Rows="1" Placeholder="Type a message" CssClass="js-input-message" autofocus></Rock:RockTextBox>
-                                <Rock:BootstrapButton ID="btnSend" runat="server" CssClass="btn btn-primary js-send-text-button" Text="Send" OnClick="btnSend_Click"></Rock:BootstrapButton>
-                            </div>
+                        <div class="footer">
+                            <Rock:RockTextBox ID="tbNewMessage" runat="server" TextMode="multiline" Rows="1" Placeholder="Type a message" CssClass="js-input-message" autofocus></Rock:RockTextBox>
+                            <Rock:BootstrapButton ID="btnSend" runat="server" CssClass="btn btn-primary js-send-text-button" Text="Send" OnClick="btnSend_Click"></Rock:BootstrapButton>
+                        </div>
 
-                        </ContentTemplate></asp:UpdatePanel>
+                    </ContentTemplate></asp:UpdatePanel>
 
                 </div>
 
