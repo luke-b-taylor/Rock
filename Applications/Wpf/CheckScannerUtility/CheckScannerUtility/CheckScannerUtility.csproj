@@ -141,7 +141,7 @@
     <Compile Include="ScanningPage.xaml.cs">
       <DependentUpon>ScanningPage.xaml</DependentUpon>
     </Compile>
-    <Compile Include="ScanningPageBase.cs" />
+    <Compile Include="ScanningPageUtility.cs" />
     <Compile Include="ScanningPromptPage.xaml.cs">
       <DependentUpon>ScanningPromptPage.xaml</DependentUpon>
     </Compile>

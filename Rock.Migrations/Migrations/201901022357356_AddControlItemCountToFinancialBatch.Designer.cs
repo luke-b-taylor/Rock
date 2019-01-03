@@ -13,7 +13,7 @@ namespace Rock.Migrations
         
         string IMigrationMetadata.Id
         {
-            get { return "201812311656362_AddControlItemCountToFinancialBatch"; }
+            get { return "201901022357356_AddControlItemCountToFinancialBatch"; }
         }
         
         string IMigrationMetadata.Source

@@ -55,7 +55,7 @@ namespace Rock.Client
         /// <value>
         /// The control item count.
         /// </value>
-        public int ControlItemCount { get; set; }
+        public int? ControlItemCount { get; set; }
 
         /// <summary />
         public Guid? ForeignGuid { get; set; }

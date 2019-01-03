@@ -29,7 +29,7 @@ namespace Rock.Migrations
         /// </summary>
         public override void Up()
         {
-            AddColumn("dbo.FinancialBatch", "ControlItemCount", c => c.Int(nullable: false));
+            AddColumn("dbo.FinancialBatch", "ControlItemCount", c => c.Int());
         }
         
         /// <summary>

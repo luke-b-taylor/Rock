@@ -892,6 +892,7 @@ namespace Rock.Apps.CheckScannerUtility
             dpBatchDate.SelectedDate = selectedBatch.BatchStartDateTime;
             lblCreatedBy.Content = lblBatchCreatedByReadOnly.Content as string;
             txtControlAmount.Text = selectedBatch.ControlAmount.ToString( "F" );
+            txtControlItemCount.Text = selectedBatch.ControlItemCount.ToString();
             txtNote.Text = selectedBatch.Note;
 
             // start a background thread to download transactions since this could take a little while and we want a Wait cursor
