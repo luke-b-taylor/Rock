@@ -218,7 +218,7 @@ namespace RockWeb.Blocks.Communication
             {
                 smsNumbers = smsNumbers.Where( v => CurrentPerson.Aliases.Any( a => a.Guid == v.GetAttributeValue( "ResponseRecipient" ).AsGuid() ) ).ToList();
             }
-            
+
             if ( smsNumbers.Any() )
             {
                 ddlSmsNumbers.DataSource = smsNumbers.Select( v => new
@@ -293,7 +293,7 @@ namespace RockWeb.Blocks.Communication
                         MessageKey = r.Field<string>("MessageKey"),
                         FullName = r.Field<string>("FullName"),
                         CreatedDateTime = r.Field<DateTime>("CreatedDateTime"),
-                        LastMessagePart = r.Field<string>("SMSMessage").LeftWithEllipsis( 25 ),
+                        LastMessagePart = r.Field<string>("SMSMessage"),
                         IsRead = r.Field<bool>("IsRead")
                     } )
                     .ToList();
@@ -438,7 +438,7 @@ namespace RockWeb.Blocks.Communication
                     fromPersonAliasId = fromPerson.PrimaryAliasId.Value;
                     fromPersonName = fromPerson.FullName;
                 }
-                
+
                 string responseCode = Rock.Communication.Medium.Sms.GenerateResponseCode( rockContext );
 
                 // Create and enqueue the communication
@@ -533,7 +533,7 @@ namespace RockWeb.Blocks.Communication
             var recipientId = ( HiddenFieldWithClass ) e.Row.FindControl( "hfRecipientId" );
             var messageKey = ( HiddenFieldWithClass ) e.Row.FindControl( "hfMessageKey" );
             hfSelectedRecipientId.Value = recipientId.Value;
-            
+
             if (recipientId.Value == "-1")
             {
                 LoadResponsesForRecipient( messageKey.Value );
@@ -602,7 +602,7 @@ namespace RockWeb.Blocks.Communication
             {
                 var validationMessages = new List<string>();
                 bool isValid = true;
-            
+
                 DateTime? birthdate = dpNewPersonBirthDate.SelectedDate;
                 if ( !dpNewPersonBirthDate.IsValid )
                 {
@@ -719,7 +719,7 @@ namespace RockWeb.Blocks.Communication
 
                     Group group = GroupService.SaveNewFamily( rockContext, groupMembers, null, true );
                     hfSelectedRecipientId.Value = person.PrimaryAliasId.ToString();
-                    
+
                 }
 
                 new CommunicationResponseService( rockContext ).UpdatePersonAliasByMessageKey( hfSelectedRecipientId.ValueAsInt(), hfMessageKey.Value, PersonAliasType.FromPersonAlias );
@@ -734,7 +734,7 @@ namespace RockWeb.Blocks.Communication
 
             hfActiveTab.Value = string.Empty;
             hfMessageKey.Value = string.Empty;
-            
+
             mdLinkConversation.Hide();
             HideDialog();
             //upRecipients.Update();
@@ -751,10 +751,12 @@ namespace RockWeb.Blocks.Communication
                 if (messageKey.Value != string.Empty )
                 {
                     var divCommunication = ( HtmlGenericControl ) e.Item.FindControl( "divCommunication" );
-                    divCommunication.RemoveCssClass( "pull-right" );
-                    divCommunication.AddCssClass( "pull-left" );
-                    divCommunication.RemoveCssClass( "bg-primary" );
-                    divCommunication.AddCssClass( "bg-info" );
+                    var divCommunicationBody = ( HtmlGenericControl ) e.Item.FindControl( "divCommunicationBody" );
+                    divCommunication.RemoveCssClass( "by-us" );
+                    // divCommunication.RemoveCssClass( "pull-right" );
+                    // divCommunication.AddCssClass( "pull-left" );
+                    divCommunicationBody.RemoveCssClass( "bg-primary" );
+                    divCommunicationBody.AddCssClass( "bg-info" );
                 }
             }
         }
