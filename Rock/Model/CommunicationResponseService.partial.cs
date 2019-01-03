@@ -230,7 +230,7 @@ namespace Rock.Model
 	                    SELECT MAX(cte2.CreatedDateTime) 
 	                    FROM cte cte2 
 	                    WHERE cte2.[MessageKey] = cte1.[MessageKey])
-                    ORDER BY CreatedDateTime";
+                    ORDER BY CreatedDateTime DESC";
 
             return Rock.Data.DbService.GetDataSet( sql, CommandType.Text, sqlParams );
         }
@@ -268,7 +268,7 @@ namespace Rock.Model
 	                    SELECT MAX(cte2.CreatedDateTime) 
 	                    FROM cte cte2 
 	                    WHERE cte2.[MessageKey] = cte1.[MessageKey])
-                    ORDER BY CreatedDateTime";
+                    ORDER BY CreatedDateTime DESC";
 
             return Rock.Data.DbService.GetDataSet( sql, CommandType.Text, sqlParams );
         }
