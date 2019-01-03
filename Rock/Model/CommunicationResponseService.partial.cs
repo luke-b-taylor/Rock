@@ -197,10 +197,7 @@ namespace Rock.Model
                     SELECT 
 	                      COALESCE(cr.[FromPersonAliasId], -1) AS FromPersonAliasId
 	                    , cr.[MessageKey]
-	                    , COALESCE( 
-		                      (COALESCE(p.[NickName], p.[FirstName]) + ' ' + p.LastName)
-		                    , ('Phone: ' + cr.MessageKey)
-		                ) AS FullName
+	                    , COALESCE( p.[NickName], p.[FirstName] ) + ' ' + p.LastName AS FullName
 	                    , cr.[CreatedDateTime]
 	                    , cr.[Response] AS SMSMessage
 	                    , cr.[IsRead]
@@ -252,10 +249,7 @@ namespace Rock.Model
                     SELECT 
 	                      COALESCE(cr.[FromPersonAliasId], -1) AS FromPersonAliasId
 	                    , cr.[MessageKey]
-	                    , COALESCE( 
-		                      (COALESCE(p.[NickName], p.[FirstName]) + ' ' + p.LastName)
-		                    , ('Phone: ' + cr.MessageKey)
-		                ) AS FullName
+	                    , COALESCE( p.[NickName], p.[FirstName] ) + ' ' + p.LastName AS FullName
 	                    , cr.[CreatedDateTime]
 	                    , cr.[Response] AS SMSMessage
 	                    , cr.[IsRead]

@@ -14,13 +14,16 @@
             </div>
 
             <div class="js-sms-configuration panel-body" style="display: none">
-                <%-- The list of phone numbers that do not have "Enable Mobile Conversations" enabled --%>
                 <div class="col-md-3">
                     <Rock:Toggle ID="tglShowRead" runat="server" Label="Show Read" OnCheckedChanged="tglShowRead_CheckedChanged" OnText="Yes" OffText="No" Checked="true" ButtonSizeCssClass="btn-sm" />
                 </div>
                 <div class="col-md-3">
                     <Rock:RockDropDownList ID="ddlSmsNumbers" runat="server" Label="SMS Number" AutoPostBack="true" OnSelectedIndexChanged="ddlSmsNumbers_SelectedIndexChanged" CssClass="input-sm" />
                     <asp:Label ID="lblSelectedSmsNumber" runat="server" visible="false" />
+                </div>
+                <div class="col-md-6">
+                    <asp:literal ID="litSelectedRecipientDescription" runat="server"></asp:literal>
+                    <asp:LinkButton ID="lbLinkConversation" runat="server" Text="Link To Person" Visible="false" CssClass="btn btn-primary btn-sm" OnClick="lbLinkConversation_Click"></asp:LinkButton>
                 </div>
             </div>
 
@@ -47,7 +50,7 @@
                                                 </div>
                                                 <div class="message-truncate"><asp:Literal ID="litMessagePart" runat="server" Text='<%# Eval("LastMessagePart") %>'></asp:Literal></div>
 
-                                                <asp:LinkButton ID="lbLinkConversation" runat="server" Text="Link To Person" Visible="false" CssClass="hidden" OnClick="lbLinkConversation_Click" CommandArgument='<%# Eval("MessageKey") %>'></asp:LinkButton>
+                                                <%--<asp:LinkButton ID="lbLinkConversation" runat="server" Text="Link To Person" Visible="false" CssClass="hidden" OnClick="lbLinkConversation_Click" CommandArgument='<%# Eval("MessageKey") %>'></asp:LinkButton>--%>
                                             </div>
                                         </ItemTemplate>
                                     </Rock:RockTemplateField>
@@ -59,6 +62,7 @@
 
                         <asp:UpdatePanel ID="upConversation" runat="server" class="conversations"><ContentTemplate>
                             <Rock:HiddenFieldWithClass ID="hfSelectedRecipientId" runat="server" CssClass="js-selected-recipient-id" />
+                            <Rock:HiddenFieldWithClass ID="hfSelectedMessageKey" runat="server" CssClass="js-selected-message-key" />
                             <div class="header">
                             Person Name
                             </div>
@@ -111,7 +115,7 @@
 
         <Rock:ModalDialog ID="mdLinkConversation" runat="server" Title="Link to Person" OnSaveClick="mdLinkConversation_SaveClick" OnCancelScript="clearActiveDialog();">
             <Content>
-                <asp:HiddenField ID="hfMessageKey" runat="server" />
+                <%--<asp:HiddenField ID="hfMessageKey" runat="server" />--%>
                 <asp:HiddenField ID="hfActiveTab" runat="server" />
 
                 <ul class="nav nav-pills margin-b-md">

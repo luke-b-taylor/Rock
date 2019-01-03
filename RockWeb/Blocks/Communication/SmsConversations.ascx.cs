@@ -66,6 +66,15 @@ namespace RockWeb.Blocks.Communication
         defaultValue: true,
         order: 4,
         key: "EnableSmsSend" )]
+    [CodeEditorField( "Person Info Lava Template",
+        description: "A Lava template to display person information about the selected Communication Recipient.",
+        mode: CodeEditorMode.Lava,
+        theme: CodeEditorTheme.Rock,
+        height: 300,
+        required: false,
+        order: 5,
+        key: "PersonInfoLavaTemplate" )]
+    //Start here to build the person description lit field after selecting recipient.
     public partial class SmsConversations : RockBlock
     {
         #region Control Overrides
@@ -141,6 +150,13 @@ namespace RockWeb.Blocks.Communication
         protected override void OnInit( EventArgs e )
         {
             base.OnInit( e );
+
+            HtmlMeta preventPhoneMetaTag = new HtmlMeta
+                {
+                    Name = "format-detection",
+                    Content = "telephone=no"
+                };
+            RockPage.AddMetaTag( this.Page, preventPhoneMetaTag );
 
             this.BlockUpdated += Block_BlockUpdated;
 
@@ -339,6 +355,41 @@ namespace RockWeb.Blocks.Communication
             rptConversation.DataBind();
         }
 
+        private void PopulatePersonLava( RowEventArgs e )
+        {
+            var recipientId = ( HiddenField ) e.Row.FindControl( "hfRecipientId" );
+            var messageKey = ( HiddenField ) e.Row.FindControl( "hfMessageKey" );
+            var fullName = ( Label ) e.Row.FindControl( "lblName" );
+            string html = fullName.Text;
+            string unknownPerson = " (Unknown Person)";
+            var lava = GetAttributeValue( "PersonInfoLavaTemplate" );
+
+            if ( recipientId.Value.IsNullOrWhiteSpace() || recipientId.Value == "-1" )
+            {
+                // We don't have a person to do the lava merge so just display the formatted phone number
+                html = PhoneNumber.FormattedNumber( "", messageKey.Value ) + unknownPerson;
+                litSelectedRecipientDescription.Text = html;
+            }
+            else if ( lava.IsNullOrWhiteSpace() )
+            {
+                // We have a person but no lava to merge so display the name
+                litSelectedRecipientDescription.Text = html;
+            }
+            else
+            {
+                // Merge the person and lava
+                using ( var rockContext = new RockContext() )
+                {
+                    var personAliasService = new PersonAliasService( rockContext );
+                    var currentPerson = personAliasService.GetPerson( recipientId.ValueAsInt() );
+                    var mergeFields = Rock.Lava.LavaHelper.GetCommonMergeFields( RockPage, currentPerson );
+                    html = lava.ResolveMergeFields( mergeFields );
+                }
+            }
+
+            litSelectedRecipientDescription.Text = string.Format("<span class='header-lava'>{0}</span>", html);
+        }
+
         private void UpdateReadProperty( string messageKey )
         {
             int? smsPhoneDefinedValueId = ddlSmsNumbers.SelectedValue.AsIntegerOrNull();
@@ -470,9 +521,6 @@ namespace RockWeb.Blocks.Communication
 
         protected void lbLinkConversation_Click( object sender, EventArgs e )
         {
-            var btn = ( LinkButton ) sender;
-            hfMessageKey.Value = btn.CommandArgument;
-
             ShowDialog( "mdLinkConversation" );
         }
 
@@ -530,9 +578,11 @@ namespace RockWeb.Blocks.Communication
                 return;
             }
 
-            var recipientId = ( HiddenFieldWithClass ) e.Row.FindControl( "hfRecipientId" );
-            var messageKey = ( HiddenFieldWithClass ) e.Row.FindControl( "hfMessageKey" );
+            var recipientId = ( HiddenField ) e.Row.FindControl( "hfRecipientId" );
+            var messageKey = ( HiddenField ) e.Row.FindControl( "hfMessageKey" );
+
             hfSelectedRecipientId.Value = recipientId.Value;
+            hfSelectedMessageKey.Value = messageKey.Value;
 
             if (recipientId.Value == "-1")
             {
@@ -553,6 +603,16 @@ namespace RockWeb.Blocks.Communication
             }
 
             e.Row.AddCssClass( "selected" );
+
+            if ( recipientId.Value == "-1" )
+            {
+                lbLinkConversation.Visible = true;
+            }
+            else
+            {
+                lbLinkConversation.Visible = false;
+            }
+            PopulatePersonLava( e );
         }
 
         protected void gRecipients_RowDataBound( object sender, GridViewRowEventArgs e )
@@ -566,12 +626,6 @@ namespace RockWeb.Blocks.Communication
             if ( !( bool ) dataItem.GetPropertyValue( "IsRead" ) )
             {
                 e.Row.AddCssClass( "unread" );
-            }
-            HiddenFieldWithClass recipientId = ( HiddenFieldWithClass ) e.Row.FindControl( "hfRecipientId" );
-            if ( recipientId.Value == "-1" )
-            {
-                LinkButton linkConversation = (LinkButton)e.Row.FindControl( "lbLinkConversation" );
-                linkConversation.Visible = true;
             }
         }
         #endregion Control Events
@@ -641,14 +695,14 @@ namespace RockWeb.Blocks.Communication
                             {
                                 NumberTypeValueId = mobilePhoneTypeId,
                                 IsMessagingEnabled = !hasSmsNumber,
-                                Number = hfMessageKey.Value
+                                Number = hfSelectedMessageKey.Value
                             };
 
                             person.PhoneNumbers.Add( phoneNumber );
                         }
                         else
                         {
-                            phoneNumber.Number = hfMessageKey.Value;
+                            phoneNumber.Number = hfSelectedMessageKey.Value;
                             if ( !hasSmsNumber )
                             {
                                 //if they don't have a number then use this one, otherwise don't do anything
@@ -679,7 +733,7 @@ namespace RockWeb.Blocks.Communication
                     {
                         NumberTypeValueId = mobilePhoneTypeId,
                         IsMessagingEnabled = true,
-                        Number = hfMessageKey.Value
+                        Number = hfSelectedMessageKey.Value
                     };
 
                     person.PhoneNumbers.Add( phoneNumber );
@@ -722,7 +776,7 @@ namespace RockWeb.Blocks.Communication
 
                 }
 
-                new CommunicationResponseService( rockContext ).UpdatePersonAliasByMessageKey( hfSelectedRecipientId.ValueAsInt(), hfMessageKey.Value, PersonAliasType.FromPersonAlias );
+                new CommunicationResponseService( rockContext ).UpdatePersonAliasByMessageKey( hfSelectedRecipientId.ValueAsInt(), hfSelectedMessageKey.Value, PersonAliasType.FromPersonAlias );
             }
 
             ppPerson.Required = false;
@@ -733,11 +787,9 @@ namespace RockWeb.Blocks.Communication
             dvpNewPersonConnectionStatus.Required = false;
 
             hfActiveTab.Value = string.Empty;
-            hfMessageKey.Value = string.Empty;
-
+            
             mdLinkConversation.Hide();
             HideDialog();
-            //upRecipients.Update();
             LoadResponseListing();
         }
 
