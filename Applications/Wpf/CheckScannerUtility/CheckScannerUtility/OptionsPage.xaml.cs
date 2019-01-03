@@ -154,9 +154,13 @@ namespace Rock.Apps.CheckScannerUtility
         {
             var rockConfig = RockConfig.Load();
             txtRockUrl.Text = rockConfig.RockBaseUrl;
-            chkRequireConrolAmount.IsChecked = rockConfig.RequireControlAmount;
-            chkRequireControlItemCount.IsChecked = rockConfig.RequireControlItemCount;
-            chkCaptureAmountOnScan.IsChecked = rockConfig.CaptureAmountOnScan;
+            if ( rockConfig.CaptureAmountOnScan == true )
+            {
+                chkRequireConrolAmount.IsChecked = rockConfig.RequireControlAmount;
+                chkRequireControlItemCount.IsChecked = rockConfig.RequireControlItemCount;
+                chkCaptureAmountOnScan.IsChecked = rockConfig.CaptureAmountOnScan;
+            }
+          
             if ( rockConfig.ScannerInterfaceType == RockConfig.InterfaceType.MICRImageRS232 )
             {
                 cboScannerInterfaceType.SelectedItem = "MagTek";
@@ -472,5 +476,10 @@ namespace Rock.Apps.CheckScannerUtility
             }
         }
 
+        private void ChkCaptureAmountOnScan_Unchecked( object sender, RoutedEventArgs e )
+        {
+            chkRequireConrolAmount.IsChecked = false;
+            chkRequireControlItemCount.IsChecked = false;
+        }
     }
 }

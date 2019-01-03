@@ -70,6 +70,7 @@
                         <Label Name="lblScanningOptions"
                                  Style="{StaticResource labelStyle}">Scanning Options</Label>
                         <CheckBox Name="chkCaptureAmountOnScan"
+                                  Unchecked="ChkCaptureAmountOnScan_Unchecked"
                                   Content="Capture Amount on Scan"
                                   Margin="8,8,0,0"
                                   IsChecked="False" />
@@ -83,11 +84,33 @@
                         <CheckBox Name="chkRequireConrolAmount"
                                   Content="Require Control Amount"
                                   Margin="8,8,0,0"
-                                  IsChecked="False" />
+                                  IsChecked="False">
+                            <CheckBox.Style>
+                                <Style TargetType="CheckBox">
+                                    <Setter Property="IsEnabled" Value="True" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding ElementName=chkCaptureAmountOnScan,Path=IsChecked}"  Value="False">
+                                            <Setter Property="IsEnabled" Value="False" />
+                                        </DataTrigger>    
+                                    </Style.Triggers>
+                                </Style>
+                            </CheckBox.Style>
+                        </CheckBox>
                         <CheckBox Name="chkRequireControlItemCount"
                                   Content="Require Control Item Count"
                                   Margin="8,8,0,0"
-                                  IsChecked="False" />
+                                  IsChecked="False" >
+                            <CheckBox.Style>
+                                <Style TargetType="CheckBox">
+                                    <Setter Property="IsEnabled" Value="True" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding ElementName=chkCaptureAmountOnScan,Path=IsChecked}"  Value="False">
+                                            <Setter Property="IsEnabled" Value="False" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </CheckBox.Style>
+                        </CheckBox>
                     </StackPanel>
                 </StackPanel>
                 <StackPanel Grid.Row="0" Grid.Column="1"  VerticalAlignment="Stretch">

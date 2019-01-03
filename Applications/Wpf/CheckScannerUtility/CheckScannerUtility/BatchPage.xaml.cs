@@ -696,16 +696,8 @@ namespace Rock.Apps.CheckScannerUtility
                     financialBatch = client.GetData<FinancialBatch>( string.Format( "api/FinancialBatches/{0}", SelectedFinancialBatch.Id ) );
                 }
 
-                txtBatchName.Text = txtBatchName.Text.Trim();
-                if ( string.IsNullOrWhiteSpace( txtBatchName.Text ) )
-                {
-                    txtBatchName.Style = this.FindResource( "textboxStyleError" ) as Style;
-                    return;
-                }
-                else
-                {
-                    txtBatchName.Style = this.FindResource( "textboxStyle" ) as Style;
-                }
+                if ( !IsValid(rockConfig) ) { return; }
+               
 
                 financialBatch.Name = txtBatchName.Text;
                 Campus selectedCampus = cbCampus.SelectedItem as Campus;
@@ -767,6 +759,63 @@ namespace Rock.Apps.CheckScannerUtility
             {
                 ShowException( ex );
             }
+        }
+
+        /// <summary>
+        /// Apply Validation Rules
+        /// Returns true if ... is valid.
+        /// </summary>
+        /// <returns>
+        ///   <c>true</c> if this instance is valid; otherwise, <c>false</c>.
+        /// </returns>
+        private bool IsValid( RockConfig rockConfig)
+        {
+            bool result = false;
+            //Batch Name Required
+            txtBatchName.Text = txtBatchName.Text.Trim();
+            if ( string.IsNullOrWhiteSpace( txtBatchName.Text ) )
+            {
+                txtBatchName.Style = this.FindResource( "textboxStyleError" ) as Style;
+                result = false;
+                return result;
+            }
+            else
+            {
+                txtBatchName.Style = this.FindResource( "textboxStyle" ) as Style;
+                result = true;
+            }
+
+            //Capture Amount Required Validation
+            if ( rockConfig.CaptureAmountOnScan == true )
+            {
+                if ( rockConfig.RequireControlAmount && (string.IsNullOrWhiteSpace( txtControlAmount.Text ) || decimal.Parse(txtControlAmount.Text) < 1))
+                {
+                    txtControlAmount.Style = this.FindResource( "textboxStyleError" ) as Style;
+                    result = false;
+                }
+                else
+                {
+                    txtControlAmount.Style = this.FindResource( "textboxStyle" ) as Style;
+                    result = result != false;
+                }
+
+                if ( rockConfig.RequireControlItemCount && (string.IsNullOrWhiteSpace(txtControlItemCount.Text) || int.Parse(txtControlItemCount.Text )< 1))
+                {
+                    txtControlItemCount.Style = this.FindResource( "textboxStyleError" ) as Style;
+                    result = false;
+                }
+                else
+                {
+                    txtControlItemCount.Style = this.FindResource( "textboxStyle" ) as Style;
+                    result = result != false;
+                }
+            }
+            else
+            {
+                result = result != false;
+            }
+
+            return result;
         }
 
         /// <summary>

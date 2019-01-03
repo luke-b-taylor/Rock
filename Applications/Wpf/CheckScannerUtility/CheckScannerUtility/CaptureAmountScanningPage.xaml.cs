@@ -78,11 +78,17 @@ namespace Rock.Apps.CheckScannerUtility
             ScanningPageUtility.Initalize();
             ScanningPageUtility.UploadScannedItemClient = null;
             ScanningPageUtility.EnsureUploadScanRestClient();
+            SyncAnyExistingTransaction();
             LoadAccountInfo();
             ShowStartupPage();
             this.btnComplete.Visibility = Visibility.Hidden;
             //Update Progress bar is equivalent to ShowUploadStatus on Scanning Page
             InitializeFirstScan();
+        }
+
+        private void SyncAnyExistingTransaction()
+        {
+          
         }
 
         /// <summary>
@@ -306,7 +312,7 @@ namespace Rock.Apps.CheckScannerUtility
             this.lblItemScannedValue.Content = ScanningPageUtility.ItemsUploaded;
 
             var currentTotals = SumAllAccountEntries();
-            ScanningPageUtility.TotalAmountScanned += currentTotals;
+            var test = ScanningPageUtility.TotalAmountScanned;
             this.lblAmountScannedValue.Content = string.Format( "$ {0}", ScanningPageUtility.TotalAmountScanned );
             this.lblAmountRemaininValue.Content = string.Format( "$ {0}", ScanningPageUtility.BatchAmount - ScanningPageUtility.TotalAmountScanned );
 
@@ -331,7 +337,7 @@ namespace Rock.Apps.CheckScannerUtility
             foreach ( var account in filteredAccounts )
             {
 
-                displayAccountValues.Add( new DisplayAccountValue { AccountDisplayName = account.Name, Index = index } );
+                displayAccountValues.Add( new DisplayAccountValue { Account = account,AccountDisplayName = account.Name, Index = index } );
                 index++;
             }
 
@@ -401,7 +407,7 @@ namespace Rock.Apps.CheckScannerUtility
         {
             if ( this._currentscannedDocInfo != null )
             {
-                ScanningPageUtility.UploadScannedItem( _currentscannedDocInfo );
+                ScanningPageUtility.UploadScannedItem( _currentscannedDocInfo,accounts:this._displayAccountValuesContext.ToList() );
                 this.UpdateProgressBars( ScanningPageUtility.ItemsUploaded );
             }
 
@@ -440,7 +446,6 @@ namespace Rock.Apps.CheckScannerUtility
                     lblNoItemsFound.Visibility = Visibility.Visible;
                     imgBack.Source = null;
                     imgFront.Source = null;
-                    lvAccounts.IsEnabled = false;
                 }
             }
 

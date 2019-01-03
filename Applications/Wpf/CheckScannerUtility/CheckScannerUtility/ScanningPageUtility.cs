@@ -1,11 +1,14 @@
 ﻿
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Shapes;
+using Rock.Apps.CheckScannerUtility.Models;
 using Rock.Client;
 using Rock.Client.Enums;
 using Rock.Net;
@@ -162,7 +165,7 @@ namespace Rock.Apps.CheckScannerUtility
         /// Uploads the scanned item.
         /// </summary>
         /// <param name="scannedDocInfo">The scanned document information.</param>
-        public static void UploadScannedItem( ScannedDocInfo scannedDocInfo, Action<int> UpdateProgressBarCallback = null )
+        public static void UploadScannedItem( ScannedDocInfo scannedDocInfo, Action<int> UpdateProgressBarCallback = null, List<DisplayAccountValue> accounts = null )
         {
             RockRestClient client = EnsureUploadScanRestClient();
 
@@ -204,6 +207,13 @@ namespace Rock.Apps.CheckScannerUtility
 
             financialTransaction.TransactionTypeValueId = transactionTypeValueContribution.Id;
 
+            var accountsWithValues = accounts.Where( a => a.Amount > 0 ).ToList();
+            if ( accountsWithValues != null && accountsWithValues.Count() > 0 )
+            {
+
+                AddFinancialTransactionDetailForEachAccount( accountsWithValues, financialTransaction );
+            }
+
             int? uploadedTransactionId;
 
             if ( scannedDocInfo.IsCheck )
@@ -217,15 +227,12 @@ namespace Rock.Apps.CheckScannerUtility
                 financialTransactionScannedCheck.FinancialTransaction = financialTransaction;
                 financialTransactionScannedCheck.ScannedCheckMicrData = scannedDocInfo.ScannedCheckMicrData;
                 financialTransactionScannedCheck.ScannedCheckMicrParts = scannedDocInfo.ScannedCheckMicrParts;
-
-                // Foreach on all Valid Accounts from UI Accounts List
-                //FinancialTransactionDetail
-
                 uploadedTransactionId = client.PostData<FinancialTransactionScannedCheck>( "api/FinancialTransactions/PostScanned", financialTransactionScannedCheck ).AsIntegerOrNull();
             }
             else
             {
-                // Foreach on all Valid Accounts from UI Accounts List
+              
+
                 //FinancialTransactionDetail
                 uploadedTransactionId = client.PostData<FinancialTransaction>( "api/FinancialTransactions", financialTransaction as FinancialTransaction ).AsIntegerOrNull();
             }
@@ -265,6 +272,21 @@ namespace Rock.Apps.CheckScannerUtility
 
             }
 
+        }
+
+    
+        private static void AddFinancialTransactionDetailForEachAccount( List<DisplayAccountValue> accounts,FinancialTransaction financialTransaction )
+        {
+            var tranactionDetails = new List<FinancialTransactionDetail>();
+            if ( financialTransaction.TransactionDetails == null )
+            {
+                financialTransaction.TransactionDetails = new List<FinancialTransactionDetail>();
+            }
+            foreach ( var displayAccount in accounts )
+            {
+                var account = displayAccount.Account;
+                financialTransaction.TransactionDetails.Add( new FinancialTransactionDetail { AccountId = account.Id,Amount= displayAccount.Amount,Guid=Guid.NewGuid()} ); 
+            }
         }
 
         /// <summary>

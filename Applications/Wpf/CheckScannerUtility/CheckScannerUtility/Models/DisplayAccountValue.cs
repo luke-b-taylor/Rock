@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using Rock.Client;
 
 namespace Rock.Apps.CheckScannerUtility.Models
 {
@@ -32,5 +33,8 @@ namespace Rock.Apps.CheckScannerUtility.Models
                         PropertyChanged?.Invoke( this, new PropertyChangedEventArgs( "Amount" ) );
             }
         }
+
+        public FinancialAccount Account { get; set; } 
+
     }
 }
