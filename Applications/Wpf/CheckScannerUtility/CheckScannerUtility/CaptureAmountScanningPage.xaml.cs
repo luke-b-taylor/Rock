@@ -106,8 +106,8 @@ namespace Rock.Apps.CheckScannerUtility
                 bitmapImageFront.EndInit();
                 imgFront.Source = bitmapImageFront;
                 Rock.Wpf.WpfHelper.FadeIn( imgFront, 100 );
+
                 lblFront.Visibility = Visibility.Visible;
-                colFrontImage.Width = new GridLength( 1, GridUnitType.Star );
             }
             else
             {
@@ -124,13 +124,11 @@ namespace Rock.Apps.CheckScannerUtility
                 imgBack.Source = bitmapImageBack;
                 Rock.Wpf.WpfHelper.FadeIn( imgBack, 100 );
                 lblBack.Visibility = Visibility.Visible;
-                colBackImage.Width = new GridLength( 1, GridUnitType.Star );
             }
             else
             {
                 imgBack.Source = null;
                 lblBack.Visibility = Visibility.Hidden;
-                colBackImage.Width = new GridLength( 0, GridUnitType.Star );
             }
 
             if ( scannedDocInfo.IsCheck )
@@ -143,6 +141,9 @@ namespace Rock.Apps.CheckScannerUtility
                 spOtherData.Visibility = !string.IsNullOrWhiteSpace( scannedDocInfo.OtherData ) ? Visibility.Visible : Visibility.Collapsed;
             }
         }
+
+       
+
         private void BtnIgnoreAndUpload_Click( object sender, RoutedEventArgs e )
         {
             HideUploadWarningPrompts();

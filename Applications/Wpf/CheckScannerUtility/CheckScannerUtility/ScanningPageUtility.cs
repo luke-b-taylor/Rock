@@ -206,14 +206,17 @@ namespace Rock.Apps.CheckScannerUtility
             financialTransaction.SourceTypeValueId = scannedDocInfo.SourceTypeValue.Id;
 
             financialTransaction.TransactionTypeValueId = transactionTypeValueContribution.Id;
-
-            var accountsWithValues = accounts.Where( a => a.Amount > 0 ).ToList();
-            if ( accountsWithValues != null && accountsWithValues.Count() > 0 )
+            if ( accounts != null )
             {
 
-                AddFinancialTransactionDetailForEachAccount( accountsWithValues, financialTransaction );
-            }
 
+                var accountsWithValues = accounts.Where( a => a.Amount > 0 ).ToList();
+                if ( accountsWithValues != null && accountsWithValues.Count() > 0 )
+                {
+
+                    AddFinancialTransactionDetailForEachAccount( accountsWithValues, financialTransaction );
+                }
+            }
             int? uploadedTransactionId;
 
             if ( scannedDocInfo.IsCheck )

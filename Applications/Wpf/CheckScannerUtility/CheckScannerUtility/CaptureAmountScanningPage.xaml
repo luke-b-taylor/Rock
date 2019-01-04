@@ -7,7 +7,7 @@
       xmlns:local="clr-namespace:Rock.Apps.CheckScannerUtility"
       Title="CaptureAmountScanningPage"
       Loaded="Page_Loaded">
-    <Grid VerticalAlignment="Top">
+    <Grid VerticalAlignment="Top" >
         <Grid.RowDefinitions>
             <RowDefinition Name="Header" Height=".5*" />
             <RowDefinition Name="Body" Height="12*"/>
@@ -17,7 +17,7 @@
             <ColumnDefinition  Name="colLeft" Width="2.2*"/>
             <ColumnDefinition  Name="colRight"/>
         </Grid.ColumnDefinitions>
-        <StackPanel Background="LightGray" Grid.ColumnSpan="2">
+        <StackPanel  Grid.ColumnSpan="2">
             <StackPanel Orientation="Horizontal"
                         HorizontalAlignment="Right">
                 <Ellipse Name="shapeStatus"
@@ -32,7 +32,7 @@
                 </Ellipse>
             </StackPanel>
         </StackPanel>
-        <StackPanel Grid.Row="1" Grid.Column="0"  Background="LightGray" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+        <StackPanel Grid.Row="1" VerticalAlignment="Bottom" Background="LightGray" Grid.Column="0" Margin="0,0,0,10"  HorizontalAlignment="Stretch" >
             <Label Name="lblExceptions"
                        Style="{StaticResource labelStyleAlertError}"
                        Content="ERROR: --"
@@ -147,39 +147,29 @@
                 VerticalAlignment="Bottom"
                 Margin="8"
                 Style="{StaticResource labelStyleBannerTitle}">Click Next To Begin</Label>
+            <ScrollViewer Height="420" VerticalScrollBarVisibility="Auto" >
             <StackPanel Name="spImages">
-                <Label Name="lblFront"
+                    <Label Name="lblFront"
                     VerticalAlignment="Bottom"
                     Margin="8"
                     Style="{StaticResource labelStyleCaption}">Front</Label>
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Name="colFrontImage" Width="*" />
-                    </Grid.ColumnDefinitions>
                     <Image
-                    Grid.Column="0"
-                    Name="imgFront"
-                    Stretch="Uniform"
-                    Margin="8,0"
-                    HorizontalAlignment="Left"
-                   Source="images/check-image.png" />
-                </Grid>
-                <Label Name="lblBack"
-                            VerticalAlignment="Bottom"
-                            Style="{StaticResource labelStyleCaption}">Back</Label>
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Name="colBackImage" Width="1*" />
-                    </Grid.ColumnDefinitions>
+                        Name="imgFront"
+                        Stretch="Uniform"
+                        Margin="8,0"
+                        HorizontalAlignment="Left"
+                       Source="images/check-image.png" />
+                    <Label Name="lblBack"
+                        VerticalAlignment="Bottom"
+                        Style="{StaticResource labelStyleCaption}">Back</Label>
                     <Image Name="imgBack"
-                       Grid.Column="0"
                        Stretch="Uniform"
                        HorizontalAlignment="Left"
                        Margin="8,0"
                        VerticalAlignment="Top"
                        Source="images/check-image.png" />
-                </Grid>
-            </StackPanel>
+                </StackPanel>
+            </ScrollViewer>
             <StackPanel Grid.ColumnSpan="2" Grid.Row="1" VerticalAlignment="Bottom">
                 <Label Name="lblNoItemsFound"
                             Style="{StaticResource labelStyleAlert}"
@@ -191,7 +181,7 @@
                 </Label>
             </StackPanel>
         </StackPanel>
-        <StackPanel Grid.Row="1" Grid.Column="1" Background="LightGray" HorizontalAlignment="Stretch" >
+        <StackPanel Grid.Row="1" Grid.Column="1"  HorizontalAlignment="Stretch" >
             <Label Name="lblControlItems"
                                 Margin="5,0,0,5"
                                  Style="{StaticResource labelStyleBold}">Control Items</Label>
@@ -238,7 +228,7 @@
                            Margin="10,10,5,0"
                            Style="{StaticResource labelStyleBold}">Accounts</Label>
             <ScrollViewer VerticalScrollBarVisibility="Auto">
-                <ListView Background="#FFE6E6E6"
+                <ListView 
                                       Height="460"
                                       Margin="5,5,5,10"
                                       IsTabStop="False"
