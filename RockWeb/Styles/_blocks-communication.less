@@ -173,11 +173,12 @@ iframe.email-body {
 // 5. SMS Conversations
 // -------------------------
 
-.sms-conversations {
+.sms-conversations-container {
   display: -ms-flexbox;
   display: flex;
   -ms-flex-wrap: wrap;
   flex-wrap: wrap;
+  position: relative;
 
   > div {
     position: relative;
@@ -206,9 +207,12 @@ iframe.email-body {
   .conversation-list {
     position: relative;
     flex-grow: 0;
-    min-width: 320px;
+    min-width: 300px;
     max-height: ~"calc(100vh - 200px)";
     border-right: 1px solid rgba(0,0,0, .2);
+    @media (min-width: @screen-sm-min) {
+      min-width: 320px;
+    }
 
     @media (min-width: @screen-md-min) {
       min-width: 360px;
@@ -314,10 +318,17 @@ iframe.email-body {
     -webkit-box-direction: normal;
   }
 
+  .conversation-back {
+    display: none;
+    @media (max-width: 599px) {
+      display: block;
+    }
+  }
+
   @media (max-width: 599px) {
     .conversation-panel {
       position: absolute;
-      top: 5.6rem;
+      top: 0;
       left: 0;
       z-index: 21;
       display: -webkit-box;
@@ -326,11 +337,10 @@ iframe.email-body {
       display: -ms-flexbox;
       display: flex;
       width: 100%;
-      height: -webkit-calc(100% - 5.6rem);
-      height: calc(100% - 5.6rem);
+      height: 100%;
       background-color: #fff;
-      -webkit-box-shadow: 0 1px 5px 0 rgba(0,0,0,.2), 0 2px 2px 0 rgba(0,0,0,.14), 0 3px 1px -2px rgba(0,0,0,.12);
-      box-shadow: 0 1px 5px 0 rgba(0,0,0,.2), 0 2px 2px 0 rgba(0,0,0,.14), 0 3px 1px -2px rgba(0,0,0,.12);
+      // -webkit-box-shadow: 0 1px 5px 0 rgba(0,0,0,.2), 0 2px 2px 0 rgba(0,0,0,.14), 0 3px 1px -2px rgba(0,0,0,.12);
+      // box-shadow: 0 1px 5px 0 rgba(0,0,0,.2), 0 2px 2px 0 rgba(0,0,0,.14), 0 3px 1px -2px rgba(0,0,0,.12);
       -webkit-transition: transform .3s cubic-bezier(.4,0,1,1);
       transition: transform .3s cubic-bezier(.4,0,1,1);
       -webkit-transform: translateX(103%);
@@ -382,7 +392,7 @@ iframe.email-body {
       max-width: 75%;
       padding: 10px 14px;
       border-radius: 20px;
-      background-color: #f1f0f0;
+      background-color: #f3f3f3;
       color: #000;
       overflow-wrap: break-word;
       word-wrap: break-word;

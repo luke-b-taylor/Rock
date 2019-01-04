@@ -636,6 +636,8 @@ namespace RockWeb.Blocks.Communication
             tbNewMessage.Visible = true;
             btnSend.Visible = true;
 
+            upConversation.Attributes.Add("class","conversation-panel has-focus");
+
             foreach ( GridViewRow row in gRecipients.Rows )
             {
                 row.RemoveCssClass( "selected" );

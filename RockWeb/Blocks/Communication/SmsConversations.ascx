@@ -29,7 +29,7 @@
 
             <Rock:NotificationBox ID="nbNoNumbers" runat="server" NotificationBoxType="Warning" Text="No SMS numbers are available to view." Visible="false"></Rock:NotificationBox>
 
-            <div class="sms-conversations">
+            <div class="sms-conversations-container">
                 <div class="conversation-list">
                     <asp:LinkButton ID="btnCreateNewMessage" runat="server" CssClass="btn btn-default btn-block btn-new-message" OnClick="btnCreateNewMessage_Click"><i class="fa fa-comments"></i>&nbsp;New Message</asp:LinkButton>
                     <asp:UpdatePanel ID="upRecipients" runat="server" class="overflow-scroll">
@@ -62,6 +62,9 @@
                         <Rock:HiddenFieldWithClass ID="hfSelectedRecipientId" runat="server" CssClass="js-selected-recipient-id" />
                         <Rock:HiddenFieldWithClass ID="hfSelectedMessageKey" runat="server" CssClass="js-selected-message-key" />
                         <div class="header">
+                            <a href="#" class="conversation-back js-back pull-left margin-r-md">
+                                <i class="fa fa-chevron-left"></i>
+                            </a>
                             <asp:literal ID="litSelectedRecipientDescription" runat="server"></asp:literal>
                             <asp:LinkButton ID="lbLinkConversation" runat="server" Text="Link To Person" Visible="false" CssClass="btn btn-default btn-xs pull-right" OnClick="lbLinkConversation_Click"></asp:LinkButton>
                         </div>
@@ -111,7 +114,7 @@
             </Content>
         </Rock:ModalDialog>
 
-        <Rock:ModalDialog ID="mdLinkConversation" runat="server" Title="Link to Person" OnSaveClick="mdLinkConversation_SaveClick" OnCancelScript="clearActiveDialog();">
+        <Rock:ModalDialog ID="mdLinkConversation" runat="server" Title="Link Phone Number to Person" OnSaveClick="mdLinkConversation_SaveClick" OnCancelScript="clearActiveDialog();">
             <Content>
                 <%--<asp:HiddenField ID="hfMessageKey" runat="server" />--%>
                 <asp:HiddenField ID="hfActiveTab" runat="server" />
@@ -170,13 +173,9 @@
                 var objDiv = $(".messages-outer-container")[0];
                 objDiv.scrollTop = objDiv.scrollHeight;
 
-                $('.js-input-message').keypress(function (e) {
-                var key = e.which;
-                if(key == 13)  // the enter key code
-                {
-                    $('.js-send-text-button').click();
+                $("#<%=upConversation.ClientID %> .js-back").click(function() {
+                    $('#<%=upConversation.ClientID %>').removeClass("has-focus");
                     return false;
-                }
                 });
             });
 
@@ -199,7 +198,6 @@
                     // Set X and Y positions back to the scrollbar
                     // after partial postback
                     $('#<%=upRecipients.ClientID %>').scrollTop(yPos);
-                    $('#<%=upConversation.ClientID %>').addClass("has-focus");
                     $('#<%=tbNewMessage.ClientID %>').focus();
                 }
             }
