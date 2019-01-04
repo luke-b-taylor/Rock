@@ -232,7 +232,7 @@ namespace Rock.Model
                     UNION
                     SELECT 
 	                       rec.[PersonAliasId] AS FromPersonAliasId
-	                    , '' AS MessageKey
+	                    , COALESCE( pn.[CountryCode], '1' ) + pn.[Number] AS MessageKey
 	                    , COALESCE(p.[NickName], p.[FirstName]) + ' ' + p.LastName AS FullName
 	                    , c.[CreatedDateTime]
 	                    , c.[SMSMessage] 
@@ -252,7 +252,7 @@ namespace Rock.Model
                     WHERE CreatedDateTime = (
 	                    SELECT MAX(cte2.CreatedDateTime) 
 	                    FROM cte cte2 
-	                    WHERE cte2.[FromPersonAliasId] = cte1.[FromPersonAliasId])
+	                    WHERE cte2.[MessageKey] = cte1.[MessageKey])
                     ORDER BY CreatedDateTime DESC";
 
             return Rock.Data.DbService.GetDataSet( sql, CommandType.Text, sqlParams );
