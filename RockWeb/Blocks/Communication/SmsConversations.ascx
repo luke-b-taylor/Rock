@@ -41,7 +41,7 @@
                                                 <Rock:HiddenFieldWithClass ID="hfMessageKey" runat="server" CssClass="js-messageKey" Value='<%# Eval("MessageKey") %>' />
 
                                                 <div class="layout-row">
-                                                    <asp:Label ID="lblName" runat="server" Text='<%# Eval("FullName") ?? Eval("MessageKey") %>' Class="sms-name"></asp:Label>
+                                                    <asp:Label ID="lblName" runat="server" Text='<%# Eval("FullName") ?? Rock.Model.PhoneNumber.FormattedNumber( "", (string)Eval( "MessageKey" ) ) %>' Class="sms-name"></asp:Label>
                                                     <div class="sms-date flex-noshrink"><asp:Literal ID="litDateTime" runat="server" Text='<%# Eval("HumanizedCreatedDateTime") %>'></asp:Literal></div>
                                                 </div>
                                                 <div class="message-truncate"><asp:Literal ID="litMessagePart" runat="server" Text='<%# Eval("SMSMessage") %>'></asp:Literal></div>
