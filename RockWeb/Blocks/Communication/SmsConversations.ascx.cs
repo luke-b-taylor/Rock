@@ -396,8 +396,10 @@ namespace RockWeb.Blocks.Communication
                 using ( var rockContext = new RockContext() )
                 {
                     var personAliasService = new PersonAliasService( rockContext );
-                    var currentPerson = personAliasService.GetPerson( recipientId.ValueAsInt() );
-                    var mergeFields = Rock.Lava.LavaHelper.GetCommonMergeFields( RockPage, currentPerson );
+                    var recipientPerson = personAliasService.GetPerson( recipientId.ValueAsInt() );
+                    var mergeFields = Rock.Lava.LavaHelper.GetCommonMergeFields( RockPage, CurrentPerson );
+                    mergeFields.Add( "Person", recipientPerson );
+
                     html = lava.ResolveMergeFields( mergeFields );
                 }
             }
