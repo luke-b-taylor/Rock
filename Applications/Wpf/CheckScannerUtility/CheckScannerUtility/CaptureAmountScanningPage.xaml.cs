@@ -107,6 +107,7 @@ namespace Rock.Apps.CheckScannerUtility
                 imgFront.Source = bitmapImageFront;
                 Rock.Wpf.WpfHelper.FadeIn( imgFront, 100 );
                 lblFront.Visibility = Visibility.Visible;
+                colFrontImage.Width = new GridLength( 1, GridUnitType.Star );
             }
             else
             {
@@ -313,10 +314,10 @@ namespace Rock.Apps.CheckScannerUtility
 
             var currentTotals = SumAllAccountEntries();
             var test = ScanningPageUtility.TotalAmountScanned;
-            this.lblAmountScannedValue.Content = string.Format( "$ {0}", ScanningPageUtility.TotalAmountScanned );
-            this.lblAmountRemaininValue.Content = string.Format( "$ {0}", ScanningPageUtility.BatchAmount - ScanningPageUtility.TotalAmountScanned );
+            this.lblAmountScannedValue.Content = string.Format( new System.Globalization.CultureInfo("en-US"), "{0:C}", ScanningPageUtility.TotalAmountScanned );
+            this.lblAmountRemaininValue.Content = string.Format( new System.Globalization.CultureInfo( "en-US" ), "{0:C}", ScanningPageUtility.BatchAmount - ScanningPageUtility.TotalAmountScanned );
 
-            this.lblAmountScannedValue.Content = string.Format( "$ {0}", currentTotals );
+            this.lblAmountScannedValue.Content = string.Format( new System.Globalization.CultureInfo( "en-US" ), "{0:C}", currentTotals );
             if ( remainingItemsToScan == 0 )
             {
                 this.btnComplete.Visibility = Visibility.Visible;
