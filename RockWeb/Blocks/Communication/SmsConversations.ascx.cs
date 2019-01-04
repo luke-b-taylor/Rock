@@ -422,7 +422,7 @@ namespace RockWeb.Blocks.Communication
                 }
             }
 
-            litSelectedRecipientDescription.Text = string.Format("<span class='header-lava'>{0}</span>", html);
+            litSelectedRecipientDescription.Text = string.Format("<div class='header-lava pull-left'>{0}</div>", html);
         }
 
         private void UpdateReadProperty( string messageKey )
@@ -472,7 +472,7 @@ namespace RockWeb.Blocks.Communication
             {
                 case "MDNEWMESSAGE":
                     mdNewMessage.Show();
-                    lblMdNewMessageSendingSMSNumber.Text = "SMS Number: " + ddlSmsNumbers.SelectedItem.Text.Truncate(25);
+                    lblMdNewMessageSendingSMSNumber.Text = PhoneNumber.FormattedNumber( "", ddlSmsNumbers.SelectedItem.Text );
                     break;
                 case "MDLINKCONVERSATION":
                     mdLinkConversation.Show();
@@ -642,6 +642,7 @@ namespace RockWeb.Blocks.Communication
             }
 
             e.Row.AddCssClass( "selected" );
+            e.Row.RemoveCssClass( "unread" );
 
             if ( recipientId.Value == "-1" )
             {
@@ -826,7 +827,7 @@ namespace RockWeb.Blocks.Communication
             dvpNewPersonConnectionStatus.Required = false;
 
             hfActiveTab.Value = string.Empty;
-            
+
             mdLinkConversation.Hide();
             HideDialog();
             LoadResponseListing();
@@ -842,12 +843,8 @@ namespace RockWeb.Blocks.Communication
                 if (messageKey.Value != string.Empty )
                 {
                     var divCommunication = ( HtmlGenericControl ) e.Item.FindControl( "divCommunication" );
-                    var divCommunicationBody = ( HtmlGenericControl ) e.Item.FindControl( "divCommunicationBody" );
-                    divCommunication.RemoveCssClass( "by-us" );
-                    // divCommunication.RemoveCssClass( "pull-right" );
-                    // divCommunication.AddCssClass( "pull-left" );
-                    divCommunicationBody.RemoveCssClass( "bg-primary" );
-                    divCommunicationBody.AddCssClass( "bg-info" );
+                    divCommunication.RemoveCssClass( "outbound" );
+                    divCommunication.AddCssClass( "inbound" );
                 }
             }
         }

@@ -13,65 +13,70 @@
                 </div>
             </div>
 
-            <div class="js-sms-configuration panel-body" style="display: none">
-                <div class="col-md-3">
-                    <Rock:Toggle ID="tglShowRead" runat="server" Label="Show Read" OnCheckedChanged="tglShowRead_CheckedChanged" OnText="Yes" OffText="No" Checked="true" ButtonSizeCssClass="btn-sm" />
+            <div class="js-sms-configuration" style="display: none">
+                <div class="well margin-b-none"><div class="row">
+                    <%-- The list of phone numbers that do not have "Enable Mobile Conversations" enabled --%>
+                    <div class="col-md-3">
+                        <Rock:Toggle ID="tglShowRead" runat="server" Label="Show Read Messages" OnCheckedChanged="tglShowRead_CheckedChanged" OnText="Yes" OffText="No" Checked="true" ButtonSizeCssClass="btn-sm" />
+                    </div>
+                    <div class="col-md-3">
+                        <Rock:RockDropDownList ID="ddlSmsNumbers" runat="server" Label="SMS Number" AutoPostBack="true" OnSelectedIndexChanged="ddlSmsNumbers_SelectedIndexChanged" CssClass="input-sm" />
+                        <asp:Label ID="lblSelectedSmsNumber" runat="server" visible="false" />
+                    </div></div>
                 </div>
-                <div class="col-md-3">
-                    <Rock:RockDropDownList ID="ddlSmsNumbers" runat="server" Label="SMS Number" AutoPostBack="true" OnSelectedIndexChanged="ddlSmsNumbers_SelectedIndexChanged" CssClass="input-sm" />
-                    <asp:Label ID="lblSelectedSmsNumber" runat="server" visible="false" />
-                </div>
+
             </div>
 
-            <div>
-                <Rock:NotificationBox ID="nbNoNumbers" runat="server" NotificationBoxType="Warning" Text="No SMS numbers are available to view." Visible="false"></Rock:NotificationBox>
+            <Rock:NotificationBox ID="nbNoNumbers" runat="server" NotificationBoxType="Warning" Text="No SMS numbers are available to view." Visible="false"></Rock:NotificationBox>
 
-                <div class="sms-conversations">
-                    <div class="messages">
+            <div class="sms-conversations">
+                <div class="conversation-list">
                     <asp:LinkButton ID="btnCreateNewMessage" runat="server" CssClass="btn btn-default btn-block btn-new-message" OnClick="btnCreateNewMessage_Click"><i class="fa fa-comments"></i>&nbsp;New Message</asp:LinkButton>
-                    <asp:UpdatePanel ID="upRecipients"  runat="server">
+                    <asp:UpdatePanel ID="upRecipients" runat="server" class="overflow-scroll">
                         <ContentTemplate>
                             <Rock:Grid ID="gRecipients" runat="server" OnRowSelected="gRecipients_RowSelected" OnRowDataBound="gRecipients_RowDataBound" ShowHeader="false" ShowActionRow="false" DisplayType="Light" EnableResponsiveTable="False">
                                 <Columns>
                                     <Rock:RockBoundField DataField="RecipientId" Visible="false"></Rock:RockBoundField>
                                     <Rock:RockTemplateField>
                                         <ItemTemplate>
-                                            <div>
                                                 <Rock:HiddenFieldWithClass ID="hfRecipientId" runat="server" CssClass="js-recipientId" Value='<%# Eval("RecipientId") %>' />
                                                 <Rock:HiddenFieldWithClass ID="hfMessageKey" runat="server" CssClass="js-messageKey" Value='<%# Eval("MessageKey") %>' />
 
                                                 <div class="layout-row">
                                                     <asp:Label ID="lblName" runat="server" Text='<%# Eval("FullName") ?? Rock.Model.PhoneNumber.FormattedNumber( "", (string)Eval( "MessageKey" ) ) %>' Class="sms-name"></asp:Label>
-                                                    <div class="sms-date flex-noshrink"><asp:Literal ID="litDateTime" runat="server" Text='<%# Eval("HumanizedCreatedDateTime") %>'></asp:Literal></div>
+                                                    <div class="date"><asp:Literal ID="litDateTime" runat="server" Text='<%# Eval("HumanizedCreatedDateTime") %>'></asp:Literal></div>
                                                 </div>
-                                                <div class="message-truncate"><asp:Literal ID="litMessagePart" runat="server" Text='<%# Eval("SMSMessage") %>'></asp:Literal></div>
-                                            </div>
+                                                <div class="message-truncate">
+                                                    <asp:Literal ID="litMessagePart" runat="server" Text='<%# Eval("SMSMessage") %>'></asp:Literal>
+                                                </div>
                                         </ItemTemplate>
                                     </Rock:RockTemplateField>
                                 </Columns>
                             </Rock:Grid>
                         </ContentTemplate>
                     </asp:UpdatePanel>
-                    </div>
+                </div>
 
-                    <asp:UpdatePanel ID="upConversation" runat="server" class="conversations"><ContentTemplate>
+                <asp:UpdatePanel ID="upConversation" runat="server" class="conversation-panel">
+                    <ContentTemplate>
                         <Rock:HiddenFieldWithClass ID="hfSelectedRecipientId" runat="server" CssClass="js-selected-recipient-id" />
                         <Rock:HiddenFieldWithClass ID="hfSelectedMessageKey" runat="server" CssClass="js-selected-message-key" />
                         <div class="header">
                             <asp:literal ID="litSelectedRecipientDescription" runat="server"></asp:literal>
-                            <asp:LinkButton ID="lbLinkConversation" runat="server" Text="Link To Person" Visible="false" CssClass="btn btn-primary btn-sm" OnClick="lbLinkConversation_Click"></asp:LinkButton>
+                            <asp:LinkButton ID="lbLinkConversation" runat="server" Text="Link To Person" Visible="false" CssClass="btn btn-default btn-xs pull-right" OnClick="lbLinkConversation_Click"></asp:LinkButton>
                         </div>
                         <div class="messages-outer-container">
-                            <div class="messages-container">
+                            <div class="conversation">
                                 <asp:Repeater ID="rptConversation" runat="server" OnItemDataBound="rptConversation_ItemDataBound" Visible="false">
                                     <ItemTemplate>
-                                        <div class="message by-us" id="divCommunication" runat="server">
+                                        <div class="message outbound" id="divCommunication" runat="server">
                                             <Rock:HiddenFieldWithClass ID="hfCommunicationRecipientId" runat="server" Value='<%# Eval("RecipientId") %>' />
                                             <Rock:HiddenFieldWithClass ID="hfCommunicationMessageKey" runat="server" Value='<%# Eval("MessageKey") %>' />
-                                            <div class="bubble bg-primary" id="divCommunicationBody" runat="server">
-                                            <%# Eval("SMSMessage") %>
+                                            <div class="bubble" id="divCommunicationBody" runat="server"><%# Eval("SMSMessage") %></div>
+                                            <div class="message-meta">
+                                                <span class="sender-name"><%# Eval("FullName") %></span>
+                                                <span class="date" title="<%# Eval("CreatedDateTime")%>"><%# Eval("HumanizedCreatedDateTime") %></span>
                                             </div>
-                                            <div class="sms-send small" title='<%# Eval("CreatedDateTime")%>'><%# Eval("FullName") %> - <%# Eval("HumanizedCreatedDateTime") %></div>
                                         </div>
                                     </ItemTemplate>
                                     <FooterTemplate>
@@ -83,12 +88,10 @@
 
                         <div class="footer">
                             <Rock:RockTextBox ID="tbNewMessage" runat="server" TextMode="multiline" Rows="1" Placeholder="Type a message" CssClass="js-input-message" Visible="false" autofocus></Rock:RockTextBox>
-                            <Rock:BootstrapButton ID="btnSend" runat="server" CssClass="btn btn-primary js-send-text-button" Text="Send" OnClick="btnSend_Click" Visible="false"></Rock:BootstrapButton>
+                            <Rock:BootstrapButton ID="btnSend" runat="server" CssClass="btn btn-primary js-send-text-button" Text="Send" DataLoadingText="Sending..." OnClick="btnSend_Click" Visible="false"></Rock:BootstrapButton>
                         </div>
-
-                    </ContentTemplate></asp:UpdatePanel>
-
-                </div>
+                    </ContentTemplate>
+                </asp:UpdatePanel>
 
             </div>
 
@@ -104,7 +107,7 @@
                 <Rock:PersonPicker ID="ppRecipient" runat="server" Label="Recipient" ValidationGroup="vgMobileTextEditor" RequiredErrorMessage="Please select an SMS recipient." Required="true" />
 
                 <%-- multi-line textbox --%>
-                <Rock:RockTextBox ID="tbSMSTextMessage" runat="server" CssClass="js-sms-text-message" TextMode="MultiLine" Rows="3" Required="true" ValidationGroup="vgMobileTextEditor" RequiredErrorMessage="Message is required" ValidateRequestMode="Disabled" />
+                <Rock:RockTextBox ID="tbSMSTextMessage" runat="server" CssClass="js-sms-text-message" TextMode="MultiLine" Rows="3" Placeholder="Type a message" Required="true" ValidationGroup="vgMobileTextEditor" RequiredErrorMessage="Message is required" ValidateRequestMode="Disabled" />
             </Content>
         </Rock:ModalDialog>
 
@@ -115,7 +118,7 @@
 
                 <ul class="nav nav-pills margin-b-md">
                     <li id="liNewPerson" runat="server" class="active"><a href='#<%=divNewPerson.ClientID%>' data-toggle="pill">Add New Person</a></li>
-                    <li id="liExistingPerson" runat="server"><a href='#<%=divExistingPerson.ClientID%>' data-toggle="pill">Add Existing Person</a></li>
+                    <li id="liExistingPerson" runat="server"><a href='#<%=divExistingPerson.ClientID%>' data-toggle="pill">Link Existing Person</a></li>
                 </ul>
 
                 <Rock:NotificationBox ID="nbAddPerson" runat="server" Heading="Please correct the following:" NotificationBoxType="Danger" Visible="false" />
@@ -180,6 +183,29 @@
             function clearActiveDialog() {
                 $('#<%=hfActiveDialog.ClientID %>').val('');
             }
+
+            var yPos;
+            var prm = Sys.WebForms.PageRequestManager.getInstance();
+
+            function BeginRequestHandler(sender, args) {
+                if ($('#<%=upRecipients.ClientID %>') != null) {
+                    // Get X and Y positions of scrollbar before the partial postback
+                    yPos = $('#<%=upRecipients.ClientID %>').scrollTop();
+                }
+            }
+
+            function EndRequestHandler(sender, args) {
+                if ($('#<%=upRecipients.ClientID %>') != null) {
+                    // Set X and Y positions back to the scrollbar
+                    // after partial postback
+                    $('#<%=upRecipients.ClientID %>').scrollTop(yPos);
+                    $('#<%=upConversation.ClientID %>').addClass("has-focus");
+                    $('#<%=tbNewMessage.ClientID %>').focus();
+                }
+            }
+
+            prm.add_beginRequest(BeginRequestHandler);
+            prm.add_endRequest(EndRequestHandler);
         </script>
     </ContentTemplate>
 </asp:UpdatePanel>
