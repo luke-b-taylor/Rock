@@ -44,7 +44,7 @@
                                                     <asp:Label ID="lblName" runat="server" Text='<%# Eval("FullName") ?? Eval("MessageKey") %>' Class="sms-name"></asp:Label>
                                                     <div class="sms-date flex-noshrink"><asp:Literal ID="litDateTime" runat="server" Text='<%# Eval("CreatedDateTime") %>'></asp:Literal></div>
                                                 </div>
-                                                <div class="message-truncate"><asp:Literal ID="litMessagePart" runat="server" Text='<%# Eval("LastMessagePart") %>'></asp:Literal></div>
+                                                <div class="message-truncate"><asp:Literal ID="litMessagePart" runat="server" Text='<%# Eval("SMSMessage") %>'></asp:Literal></div>
                                             </div>
                                         </ItemTemplate>
                                     </Rock:RockTemplateField>
@@ -66,12 +66,12 @@
                                 <asp:Repeater ID="rptConversation" runat="server" OnItemDataBound="rptConversation_ItemDataBound" Visible="false">
                                     <ItemTemplate>
                                         <div class="message by-us" id="divCommunication" runat="server">
-                                            <Rock:HiddenFieldWithClass ID="hfCommunicationRecipientId" runat="server" Value='<%# Eval("FromPersonAliasId") %>' />
+                                            <Rock:HiddenFieldWithClass ID="hfCommunicationRecipientId" runat="server" Value='<%# Eval("RecipientId") %>' />
                                             <Rock:HiddenFieldWithClass ID="hfCommunicationMessageKey" runat="server" Value='<%# Eval("MessageKey") %>' />
                                             <div class="bubble bg-primary" id="divCommunicationBody" runat="server">
-                                            <%# Eval("Response") %>
+                                            <%# Eval("SMSMessage") %>
                                             </div>
-                                            <div class="sms-send small">Ted Decker - <%# Eval("CreatedDateTime") %></div>
+                                            <div class="sms-send small"><%# Eval("FullName") %> - <%# Eval("CreatedDateTime") %></div>
                                         </div>
                                     </ItemTemplate>
                                     <FooterTemplate>
@@ -82,8 +82,8 @@
                         </div>
 
                         <div class="footer">
-                            <Rock:RockTextBox ID="tbNewMessage" runat="server" TextMode="multiline" Rows="1" Placeholder="Type a message" CssClass="js-input-message" autofocus></Rock:RockTextBox>
-                            <Rock:BootstrapButton ID="btnSend" runat="server" CssClass="btn btn-primary js-send-text-button" Text="Send" OnClick="btnSend_Click"></Rock:BootstrapButton>
+                            <Rock:RockTextBox ID="tbNewMessage" runat="server" TextMode="multiline" Rows="1" Placeholder="Type a message" CssClass="js-input-message" Visible="false" autofocus></Rock:RockTextBox>
+                            <Rock:BootstrapButton ID="btnSend" runat="server" CssClass="btn btn-primary js-send-text-button" Text="Send" OnClick="btnSend_Click" Visible="false"></Rock:BootstrapButton>
                         </div>
 
                     </ContentTemplate></asp:UpdatePanel>

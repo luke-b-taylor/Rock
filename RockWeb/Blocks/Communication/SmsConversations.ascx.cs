@@ -309,7 +309,7 @@ namespace RockWeb.Blocks.Communication
                         MessageKey = r.Field<string>("MessageKey"),
                         FullName = r.Field<string>("FullName"),
                         CreatedDateTime = r.Field<DateTime>("CreatedDateTime"),
-                        LastMessagePart = r.Field<string>("SMSMessage"),
+                        SMSMessage = r.Field<string>("SMSMessage"),
                         IsRead = r.Field<bool>("IsRead")
                     } )
                     .ToList();
@@ -333,9 +333,7 @@ namespace RockWeb.Blocks.Communication
             var communicationResponseService = new CommunicationResponseService( new RockContext() );
             var responses = communicationResponseService.GetConversation( recipientId, smsPhoneDefinedValueId.Value );
 
-            rptConversation.Visible = true;
-            rptConversation.DataSource = responses.Tables[0];
-            rptConversation.DataBind();
+            BindConversationRepeater( responses );
         }
 
         private void LoadResponsesForRecipient( string messageKey )
@@ -350,8 +348,25 @@ namespace RockWeb.Blocks.Communication
             var communicationResponseService = new CommunicationResponseService( new RockContext() );
             var responses = communicationResponseService.GetConversation( messageKey, smsPhoneDefinedValueId.Value );
 
+            BindConversationRepeater( responses );
+        }
+
+        private void BindConversationRepeater( DataSet responses )
+        {
+            var communicationItems = responses.Tables[0].AsEnumerable()
+                .Select( r => new ResponseListItem
+                {
+                    RecipientId = r.Field<int?>("FromPersonAliasId"),
+                    MessageKey = r.Field<string>("MessageKey"),
+                    FullName = r.Field<string>("FullName"),
+                    CreatedDateTime = r.Field<DateTime>("CreatedDateTime"),
+                    SMSMessage = r.Field<string>("SMSMessage"),
+                    IsRead = r.Field<bool>("IsRead")
+                } )
+                .ToList();
+
             rptConversation.Visible = true;
-            rptConversation.DataSource = responses.Tables[0];
+            rptConversation.DataSource = communicationItems;
             rptConversation.DataBind();
         }
 
@@ -402,13 +417,16 @@ namespace RockWeb.Blocks.Communication
             new CommunicationResponseService( new RockContext() ).UpdateReadPropertyByMessageKey( messageKey, smsPhoneDefinedValueId.Value );
         }
 
+        /// <summary>
+        /// POCO to store communication info
+        /// </summary>
         protected class ResponseListItem
         {
             public int? RecipientId { get; set; }
             public string MessageKey { get; set; }
             public string FullName { get; set; }
             public DateTime? CreatedDateTime { get; set; }
-            public string LastMessagePart { get; set; }
+            public string SMSMessage { get; set; }
             public bool IsRead { get; set; }
         }
 

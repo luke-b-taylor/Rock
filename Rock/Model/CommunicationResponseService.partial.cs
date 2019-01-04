@@ -48,18 +48,33 @@ namespace Rock.Model
             sqlParams.Add( "@smsMediumEntityTypeId", EntityTypeCache.Get( SystemGuid.EntityType.COMMUNICATION_MEDIUM_SMS ).Id );
 
             string sql = @"
-                SELECT [Response], [CreatedDateTime], [FromPersonAliasId], [MessageKey]
+                SELECT 
+	                  COALESCE(cr.[FromPersonAliasId], -1) AS FromPersonAliasId
+	                , cr.[MessageKey]
+	                , COALESCE( p.[NickName], p.[FirstName] ) + ' ' + p.LastName AS FullName
+	                , cr.[CreatedDateTime]
+	                , cr.[Response] AS SMSMessage
+	                , cr.[IsRead]
                 FROM [CommunicationResponse] cr
-                WHERE ( cr.[FromPersonAliasId] = @personAliasId )
-                    AND cr.[RelatedSmsFromDefinedValueId] = @releatedSmsFromDefinedValueId
+                LEFT JOIN [PersonAlias] pa ON cr.[FromPersonAliasId] = pa.[Id]
+                LEFT JOIN [Person] p ON pa.[PersonId] = p.[Id]
+                WHERE cr.[RelatedSmsFromDefinedValueId] = @releatedSmsFromDefinedValueId
                     AND cr.[RelatedMediumEntityTypeId] = @smsMediumEntityTypeId
+	                AND cr.[FromPersonAliasId] = @personAliasId
                 UNION
-                SELECT c.[SMSMessage], c.[CreatedDateTime], c.[SenderPersonAliasId], ''
+                SELECT 
+	                    c.[SenderPersonAliasId] AS FromPersonAliasId
+	                , '' AS MessageKey
+	                , COALESCE(p.[NickName], p.[FirstName]) + ' ' + p.LastName AS FullName
+	                , c.[CreatedDateTime]
+	                , c.[SMSMessage] 
+	                , CONVERT(bit, 1) -- Communications from Rock are always considered read
                 FROM [Communication] c
-                JOIN [CommunicationRecipient] rec ON c.[Id] = rec.[CommunicationId]
-                WHERE rec.[PersonAliasId] = @personAliasId
-                    AND c.[SMSFromDefinedValueId] = @releatedSmsFromDefinedValueId
-                ORDER BY [CreatedDateTime]";
+                JOIN [PersonAlias] pa ON c.[SenderPersonAliasId] = pa.[Id]
+                JOIN [Person] p ON pa.[PersonId] = p.[Id]
+                WHERE c.[SMSFromDefinedValueId] = @releatedSmsFromDefinedValueId
+	                AND c.[Id] IN ( SELECT CommunicationId FROM [CommunicationRecipient] WHERE [PersonAliasId] = @personAliasId)
+                ORDER BY CreatedDateTime ASC";
 
             var set = Rock.Data.DbService.GetDataSet( sql, CommandType.Text, sqlParams );
 
@@ -67,8 +82,8 @@ namespace Rock.Model
         }
 
         /// <summary>
-        /// Gets the conversation for a message key. Use this if a person was not able to be
-        /// determined.
+        /// Gets the conversation for a message key. Use this if a person was not able to be determined. This will only
+        /// show incoming messages as outgoing messages require a person object with an SMS enabled number.
         /// </summary>
         /// <param name="messageKey">The message key.</param>
         /// <param name="relatedSmsFromDefinedValueId">The related SMS from defined value identifier.</param>
@@ -81,12 +96,20 @@ namespace Rock.Model
             sqlParams.Add( "@smsMediumEntityTypeId", EntityTypeCache.Get( SystemGuid.EntityType.COMMUNICATION_MEDIUM_SMS ).Id );
 
             string sql = @"
-                SELECT [Response], [CreatedDateTime], [FromPersonAliasId], [MessageKey]
+                SELECT 
+	                  COALESCE(cr.[FromPersonAliasId], -1) AS FromPersonAliasId
+	                , cr.[MessageKey]
+	                , COALESCE( p.[NickName], p.[FirstName] ) + ' ' + p.LastName AS FullName
+	                , cr.[CreatedDateTime]
+	                , cr.[Response] AS SMSMessage
+	                , cr.[IsRead]
                 FROM [CommunicationResponse] cr
-                WHERE ( cr.[MessageKey] = @messageKey )
-                    AND cr.[RelatedSmsFromDefinedValueId] = @releatedSmsFromDefinedValueId
+                LEFT JOIN [PersonAlias] pa ON cr.[FromPersonAliasId] = pa.[Id]
+                LEFT JOIN [Person] p ON pa.[PersonId] = p.[Id]
+                WHERE cr.[RelatedSmsFromDefinedValueId] = @releatedSmsFromDefinedValueId
                     AND cr.[RelatedMediumEntityTypeId] = @smsMediumEntityTypeId
-                ORDER BY [CreatedDateTime]";
+	                AND cr.[MessageKey] = @messageKey
+                ORDER BY CreatedDateTime ASC";
 
             var set = Rock.Data.DbService.GetDataSet( sql, CommandType.Text, sqlParams );
 
@@ -209,7 +232,7 @@ namespace Rock.Model
                     UNION
                     SELECT 
 	                       rec.[PersonAliasId] AS FromPersonAliasId
-	                    , COALESCE( pn.[CountryCode], '1' ) + pn.[Number] AS MessageKey
+	                    , '' AS MessageKey
 	                    , COALESCE(p.[NickName], p.[FirstName]) + ' ' + p.LastName AS FullName
 	                    , c.[CreatedDateTime]
 	                    , c.[SMSMessage] 
@@ -229,7 +252,7 @@ namespace Rock.Model
                     WHERE CreatedDateTime = (
 	                    SELECT MAX(cte2.CreatedDateTime) 
 	                    FROM cte cte2 
-	                    WHERE cte2.[MessageKey] = cte1.[MessageKey])
+	                    WHERE cte2.[FromPersonAliasId] = cte1.[FromPersonAliasId])
                     ORDER BY CreatedDateTime DESC";
 
             return Rock.Data.DbService.GetDataSet( sql, CommandType.Text, sqlParams );
