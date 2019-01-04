@@ -12,7 +12,7 @@ namespace Rock.Tests.Communications
 {
     public class TwilioTests
     {
-        [Fact]
+        [Fact(Skip = "Dependant on a DB. Useful for debugging and adding data.")]
         public void ProcessResponseTestToRockWithKnownNumbers()
         {
             string toPhone = "+16237777794";
@@ -24,7 +24,7 @@ namespace Rock.Tests.Communications
             sms.ProcessResponse( toPhone, fromPhone, message, out errorMessage );
         }
 
-        [Fact]
+        [Fact(Skip = "Dependant on a DB. Useful for debugging and adding data.")]
         public void ProcessResponseTestToRockWithUnknownSenderNumber()
         {
             string toPhone = "+16237777794";
