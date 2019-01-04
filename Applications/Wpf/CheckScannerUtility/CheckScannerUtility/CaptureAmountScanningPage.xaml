@@ -182,6 +182,7 @@
             </StackPanel>
         </StackPanel>
         <StackPanel Grid.Row="1" Grid.Column="1"  HorizontalAlignment="Stretch" >
+            <StackPanel Name="spControlItemProgressbar" Visibility="Hidden">
             <Label Name="lblControlItems"
                                 Margin="5,0,0,5"
                                  Style="{StaticResource labelStyleBold}">Control Items</Label>
@@ -195,14 +196,16 @@
                     <ColumnDefinition/>
                 </Grid.ColumnDefinitions>
                 <StackPanel Grid.Column="0" Orientation="Horizontal">
-                    <Label Name="lblItemsScanned" Margin="0,0,5,0" Style="{StaticResource labelStyleSmall}">Items Scanned:</Label>
+                    <Label Name="lblItemsScannedCaption" Margin="0,0,5,0" Style="{StaticResource labelStyleSmall}">Items Scanned:</Label>
                     <Label Name="lblItemScannedValue"  Style="{StaticResource labelStyleSmall}"/>
                 </StackPanel>
                 <StackPanel Grid.Column="1" Orientation="Horizontal">
-                    <Label Name="lblItemsRemaining" Margin="0,0,0,3" Style="{StaticResource labelStyleSmall}">Remaining:</Label>
+                        <Label Name="lblItemsRemainingCaption" Margin="0,0,0,3" Style="{StaticResource labelStyleSmall}">Remaining:</Label>
                     <Label Name="lblItemCountRemainingValue" Margin="0,0,0,3" Style="{StaticResource labelStyleSmall}" />
                 </StackPanel>
             </Grid>
+            </StackPanel>
+            <StackPanel Name="spControlAmountProgressBar" Visibility="Hidden">
             <Label Name="lblControlAmounts"
                            Margin="5,0,0,5"
                                  Style="{StaticResource labelStyleBold}">Control Amounts</Label>
@@ -216,14 +219,15 @@
                     <ColumnDefinition />
                 </Grid.ColumnDefinitions>
                 <StackPanel Grid.Column="0" HorizontalAlignment="Stretch" Orientation="Horizontal">
-                    <Label Name="lblAmountScanned" Margin="0,0,0,2" Style="{StaticResource labelStyleSmall}">Scanned:</Label>
+                    <Label Name="lblAmountScannedCaption" Margin="0,0,0,2" Style="{StaticResource labelStyleSmall}">Scanned:</Label>
                     <Label Name="lblAmountScannedValue" Margin="0,0,0,3" Style="{StaticResource labelStyleSmall}" />
                 </StackPanel>
                 <StackPanel Grid.Column="1" Orientation="Horizontal">
-                    <Label Name="lblRemaining" Margin="5,0,0,0" Style="{StaticResource labelStyleSmall}">Remaining:</Label>
+                        <Label Name="lblAmountRemainingCaption" Margin="5,0,0,0" Style="{StaticResource labelStyleSmall}">Remaining:</Label>
                     <Label Name="lblAmountRemaininValue" Style="{StaticResource labelStyleSmall}" />
-                </StackPanel>
+                </StackPanel>     
             </Grid>
+            </StackPanel>
             <Label Name="lblAccounts"
                            Margin="10,10,5,0"
                            Style="{StaticResource labelStyleBold}">Accounts</Label>
@@ -241,7 +245,7 @@
                         <DataTemplate>
                             <StackPanel>
                                 <Label Name="lblAccount" Style="{StaticResource labelStyle}"  Content="{Binding AccountDisplayName}"  />
-                                <TextBox behaviors:NumberOnlyBehaviour.IsEnabled="True" behaviors:NumberOnlyBehaviour.AllowDecimals="True" HorizontalAlignment="Stretch" Margin="5" Focusable="True" Text="{Binding Amount,Mode=TwoWay}">
+                                <TextBox behaviors:NumberOnlyBehaviour.IsEnabled="True" behaviors:NumberOnlyBehaviour.AllowDecimals="True"  HorizontalAlignment="Stretch" Margin="5" Focusable="True" Text="{Binding Amount,Mode=TwoWay}">
                                     <TextBox.Style>
                                         <Style TargetType="TextBox">
                                             <Style.Triggers>

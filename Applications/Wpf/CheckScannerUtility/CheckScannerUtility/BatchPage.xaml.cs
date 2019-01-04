@@ -979,6 +979,7 @@ namespace Rock.Apps.CheckScannerUtility
                 bindingList.ListChanged += bindingList_ListChanged;
 
                 grdBatchItems.DataContext = bindingList;
+                ScanningPageUtility.CurrentBatches = bindingList.ToList();
                 DisplayTransactionCount();
             };
 

@@ -22,6 +22,7 @@ using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using Rock.Apps.CheckScannerUtility.Models;
@@ -81,14 +82,21 @@ namespace Rock.Apps.CheckScannerUtility
             SyncAnyExistingTransaction();
             LoadAccountInfo();
             ShowStartupPage();
-            this.btnComplete.Visibility = Visibility.Hidden;
+            InitalizeControls();
             //Update Progress bar is equivalent to ShowUploadStatus on Scanning Page
             InitializeFirstScan();
         }
 
+        private void InitalizeControls()
+        {
+            this.btnComplete.Visibility = Visibility.Hidden;
+            this.btnNext.Visibility = Visibility.Visible;
+            pbControlAmounts.Foreground = Brushes.Blue;
+        }
+
         private void SyncAnyExistingTransaction()
         {
-          
+           
         }
 
         /// <summary>
@@ -271,8 +279,8 @@ namespace Rock.Apps.CheckScannerUtility
         /// </summary>
         private void LoadAccountInfo()
         {
-            InitializeProgressBarsOfSelectedBatch();
             RockConfig rockConfig = RockConfig.Load();
+            InitializeProgressBarsOfSelectedBatch(rockConfig);
             var client = new RockRestClient( rockConfig.RockBaseUrl );
             client.Login( rockConfig.Username, rockConfig.Password );
             var allAccounts = client.GetData<List<FinancialAccount>>( "api/FinancialAccounts" );
@@ -280,23 +288,35 @@ namespace Rock.Apps.CheckScannerUtility
 
         }
 
-        private void InitializeProgressBarsOfSelectedBatch()
+        private void InitializeProgressBarsOfSelectedBatch(RockConfig rockConfig)
         {
+
             ScanningPageUtility.TotalAmountScanned = 0;
+            var selectedBatch = ScanningPageUtility.batchPage.SelectedFinancialBatch;
+
             if ( ScanningPageUtility.batchPage.SelectedFinancialBatch != null )
             {
-                var selectedBatch = ScanningPageUtility.batchPage.SelectedFinancialBatch;
-                ScanningPageUtility.BatchAmount = selectedBatch.ControlAmount;
-                this.pbControlAmounts.Minimum = 0;
-                this.pbControlAmounts.Maximum = 100;
+                if ( rockConfig.RequireControlAmount )
+                {
+                   
+                    ScanningPageUtility.BatchAmount = selectedBatch.ControlAmount;
+                    this.pbControlAmounts.Minimum = 0;
+                    this.pbControlAmounts.Maximum = 100;
+                    this.spControlAmountProgressBar.Visibility = Visibility.Visible;
 
-                //Control Amount
-                ScanningPageUtility.BatchAmount = selectedBatch.ControlAmount;
-                //Control Item Count
-                ScanningPageUtility.ItemsToProcess = selectedBatch.ControlItemCount;
-                this.pbControlItems.Minimum = 0;
-                this.pbControlItems.Maximum = ScanningPageUtility.ItemsToProcess != null ? (int)ScanningPageUtility.ItemsToProcess: 0;
-                this.UpdateProgessBarSection();
+                }
+
+                if ( rockConfig.RequireControlItemCount )
+                {
+                    //Control Amount
+                    ScanningPageUtility.BatchAmount = selectedBatch.ControlAmount;
+                    //Control Item Count
+                    ScanningPageUtility.ItemsToProcess = selectedBatch.ControlItemCount;
+                    this.pbControlItems.Minimum = 0;
+                    this.pbControlItems.Maximum = ScanningPageUtility.ItemsToProcess != null ? ( int ) ScanningPageUtility.ItemsToProcess : 0;
+                    this.spControlItemProgressbar.Visibility = Visibility.Visible;
+                    this.UpdateProgressBarLegend();
+              }
             }
 
         }
@@ -306,25 +326,51 @@ namespace Rock.Apps.CheckScannerUtility
             ScanningPageUtility.ShowScannerStatus( xportState, statusColor, status, ref this.shapeStatus );
         }
 
-        private void UpdateProgessBarSection()
+        private void UpdateProgressBarLegend()
         {
-            //Control Items
             var remainingItemsToScan = ScanningPageUtility.ItemsToProcess - ScanningPageUtility.ItemsUploaded;
-            this.lblItemCountRemainingValue.Content = remainingItemsToScan;
-            this.lblItemScannedValue.Content = ScanningPageUtility.ItemsUploaded;
+            if ( spControlItemProgressbar.Visibility == Visibility.Visible )
+            {
+                //Control Items
+                this.lblItemCountRemainingValue.Content = remainingItemsToScan;
+                this.lblItemScannedValue.Content = ScanningPageUtility.ItemsUploaded;
+            }
 
-            var currentTotals = SumAllAccountEntries();
-            var test = ScanningPageUtility.TotalAmountScanned;
-            this.lblAmountScannedValue.Content = string.Format( new System.Globalization.CultureInfo("en-US"), "{0:C}", ScanningPageUtility.TotalAmountScanned );
-            this.lblAmountRemaininValue.Content = string.Format( new System.Globalization.CultureInfo( "en-US" ), "{0:C}", ScanningPageUtility.BatchAmount - ScanningPageUtility.TotalAmountScanned );
+            if ( spControlAmountProgressBar.Visibility == Visibility.Visible )
+            {
+                var currentTotals = SumAllAccountEntries();
+                if ( ScanningPageUtility.TotalAmountScanned > ScanningPageUtility.BatchAmount )
+                {
+                    pbControlAmounts.Value = 100;
+                    pbControlAmounts.Foreground = Brushes.Red;
+                    SetAmountlegendInvalid();
+                }
+                this.lblAmountRemaininValue.Content = string.Format( new System.Globalization.CultureInfo( "en-US" ), "{0:C}", ScanningPageUtility.BatchAmount - ScanningPageUtility.TotalAmountScanned );
+                this.lblAmountScannedValue.Content = string.Format( new System.Globalization.CultureInfo( "en-US" ), "{0:C}", currentTotals );
+               
+            }
 
-            this.lblAmountScannedValue.Content = string.Format( new System.Globalization.CultureInfo( "en-US" ), "{0:C}", currentTotals );
             if ( remainingItemsToScan == 0 )
             {
+                if ( ScanningPageUtility.BatchAmount != ScanningPageUtility.TotalAmountScanned )
+                {
+                    pbControlAmounts.Foreground = Brushes.Red;
+                    SetAmountlegendInvalid();
+                }
+
                 this.btnComplete.Visibility = Visibility.Visible;
                 this.btnNext.Visibility = Visibility.Hidden;
             }
         }
+
+        private void SetAmountlegendInvalid()
+        {
+            lblAmountScannedCaption.Foreground = Brushes.Red;
+            lblAmountRemainingCaption.Foreground = Brushes.Red;
+            lblAmountScannedValue.Foreground = Brushes.Red;
+            lblAmountRemaininValue.Foreground = Brushes.Red;
+        }
+
         /// <summary>
         /// Filters the accounts by configured.
         /// Returns only the values checked in the Rock config settings
@@ -397,11 +443,13 @@ namespace Rock.Apps.CheckScannerUtility
             {
                 item.Amount = 0;
             }
+            lvAccounts.SelectedIndex = 0;
             this.lblRoutingNumber.Content = string.Empty;
             this.lblCheckNumber.Content = string.Empty;
             lblAccountNumber.Content = string.Empty;
             this.lblOtherData.Content = string.Empty;
             this.pnlPromptForUpload.Visibility = Visibility.Collapsed;
+           
 
         }
 
@@ -789,10 +837,17 @@ namespace Rock.Apps.CheckScannerUtility
         }
         private void UpdateProgressBars( int itemsUploaded )
         {
-            //TODO: UPDATE Progress Bars
-            this.pbControlItems.Value = itemsUploaded;
-            this.pbControlAmounts.Value = ScanningPageUtility.GetPercentageAmountComplete();
-            this.UpdateProgessBarSection();
+            if ( spControlItemProgressbar.Visibility == Visibility.Visible )
+            {
+                this.pbControlItems.Value = itemsUploaded;
+            }
+            if ( spControlAmountProgressBar.Visibility == Visibility.Visible )
+            {
+
+                this.pbControlAmounts.Value = ScanningPageUtility.GetPercentageAmountComplete();
+            }
+
+            this.UpdateProgressBarLegend();
 
 
         }

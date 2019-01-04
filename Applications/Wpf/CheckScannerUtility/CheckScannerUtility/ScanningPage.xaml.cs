@@ -34,7 +34,7 @@ namespace Rock.Apps.CheckScannerUtility
     public partial class ScanningPage : System.Windows.Controls.Page
     {
 
-
+        private bool _isDoubleSided = false;
 
         public BatchPage batchPage { get { return ScanningPageUtility.batchPage; } }
 
@@ -199,6 +199,7 @@ namespace Rock.Apps.CheckScannerUtility
             pnlPromptForUpload.Visibility = Visibility.Collapsed;
         }
 
+
         /// <summary>
         /// Displays the scanned document information.
         /// </summary>
@@ -223,21 +224,25 @@ namespace Rock.Apps.CheckScannerUtility
 
             if ( scannedDocInfo.BackImageData != null )
             {
+                this._isDoubleSided = true;
                 BitmapImage bitmapImageBack = new BitmapImage();
                 bitmapImageBack.BeginInit();
                 bitmapImageBack.StreamSource = new MemoryStream( scannedDocInfo.BackImageData );
                 bitmapImageBack.EndInit();
                 imgBack.Source = bitmapImageBack;
+                imgBack.Width = GetImageWidth();
+                imgFront.Width = GetImageWidth();
                 Rock.Wpf.WpfHelper.FadeIn( imgBack, 100 );
                 lblBack.Visibility = Visibility.Visible;
-                colBackImage.Width = new GridLength( 1, GridUnitType.Star );
             }
             else
             {
+                this._isDoubleSided = false;
                 imgBack.Source = null;
                 lblBack.Visibility = Visibility.Hidden;
-                colBackImage.Width = new GridLength( 0, GridUnitType.Star );
             }
+
+
 
             if ( scannedDocInfo.IsCheck )
             {
@@ -252,6 +257,15 @@ namespace Rock.Apps.CheckScannerUtility
             {
                 pnlChecks.Visibility = Visibility.Collapsed;
             }
+        }
+
+        private double GetImageWidth()
+        {
+            if ( _isDoubleSided )
+            {
+                return this.RenderSize.Width * .7;
+            }
+            return this.RenderSize.Width * .9;
         }
 
         /// <summary>
