@@ -203,9 +203,7 @@ public class Lava : IHttpHandler
             {
                 dictionary.Add( "Body", JsonConvert.DeserializeObject( (string)dictionary["RawBody"] ) );
             }
-            catch
-            {
-            }
+            catch { }
         }
         else if ( request.ContentType == "application/x-www-form-urlencoded" )
         {
@@ -213,9 +211,7 @@ public class Lava : IHttpHandler
             {
                 dictionary.Add( "Body", request.Form.Cast<string>().ToDictionary( q => q, q => request.Form[q] ) );
             }
-            catch
-            {
-            }
+            catch { }
         }
         else if ( request.ContentType == "application/xml" )
         {
@@ -226,9 +222,7 @@ public class Lava : IHttpHandler
                 string jsonText = JsonConvert.SerializeXmlNode( doc );
                 dictionary.Add( "Body", JsonConvert.DeserializeObject( ( jsonText ) ) );
             }
-            catch
-            {
-            }
+            catch { }
         }
 
         // Add the headers
@@ -239,7 +233,11 @@ public class Lava : IHttpHandler
         dictionary.Add( "Headers", headers );
 
         // Add the cookies
-        dictionary.Add( "Cookies", request.Cookies.Cast<string>().ToDictionary( q => q, q => request.Cookies[q].Value ) );
+        try
+        {
+			dictionary.Add( "Cookies", request.Cookies.Cast<string>().ToDictionary( q => q, q => request.Cookies[q].Value ) );
+        }
+        catch { }
 
         return dictionary;
     }

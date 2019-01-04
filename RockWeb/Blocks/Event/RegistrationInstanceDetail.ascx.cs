@@ -65,7 +65,15 @@ namespace RockWeb.Blocks.Event
         private Dictionary<int, PhoneNumber> _homePhoneNumbers = new Dictionary<int, PhoneNumber>();
         private List<int> _waitListOrder = null;
         private bool _isExporting = false;
-        
+
+        /// <summary>
+        /// Gets or sets the available registration attributes where IsGridColumn = true
+        /// </summary>
+        /// <value>
+        /// The available attributes.
+        /// </value>
+        public List<AttributeCache> AvailableRegistrationAttributesForGrid { get; set; }
+
         #endregion
 
         #region Properties
@@ -121,6 +129,8 @@ namespace RockWeb.Blocks.Event
         protected override void LoadViewState( object savedState )
         {
             base.LoadViewState( savedState );
+
+            AvailableRegistrationAttributesForGrid = ViewState["AvailableRegistrationAttributesForGrid"] as List<AttributeCache>;
 
             ActiveTab = ( ViewState["ActiveTab"] as string ) ?? string.Empty;
             RegistrantFields = ViewState["RegistrantFields"] as List<RegistrantFormField>;
@@ -326,6 +336,8 @@ namespace RockWeb.Blocks.Event
         {
             ViewState["RegistrantFields"] = RegistrantFields;
             ViewState["ActiveTab"] = ActiveTab;
+
+            ViewState["AvailableRegistrationAttributesForGrid"] = AvailableRegistrationAttributesForGrid;
 
             return base.SaveViewState();
         }
@@ -696,53 +708,45 @@ namespace RockWeb.Blocks.Event
                 bool hasPayments = payments.Any();
                 decimal totalPaid = hasPayments ? payments.Select( p => p.Amount ).DefaultIfEmpty().Sum() : 0.0m;
 
-                var hfHasPayments = e.Row.FindControl( "hfHasPayments" ) as HiddenFieldWithClass;
-                if ( hfHasPayments != null )
-                {
-                    hfHasPayments.Value = hasPayments.ToString();
-                }
-
                 // Set the Cost
                 decimal discountedCost = registration.DiscountedCost;
-                var lCost = e.Row.FindControl( "lCost" ) as Label;
-                if ( lCost != null )
+                var lRegistrationCost = e.Row.FindControl( "lRegistrationCost" ) as Literal;
+                if ( lRegistrationCost != null )
                 {
-                    lCost.Visible = _instanceHasCost || discountedCost > 0.0M;
-                    lCost.Text = discountedCost.FormatAsCurrency();
+                    lRegistrationCost.Visible = _instanceHasCost || discountedCost > 0.0M;
+                    lRegistrationCost.Text = string.Format( "<span class='label label-info'>{0}</span>", discountedCost.FormatAsCurrency() );
                 }
 
                 var discountCode = registration.DiscountCode;
-                var lDiscount = e.Row.FindControl( "lDiscount" ) as Label;
+                var lDiscount = e.Row.FindControl( "lDiscount" ) as Literal;
                 if ( lDiscount != null )
                 {
                     lDiscount.Visible = _instanceHasCost && !string.IsNullOrEmpty( discountCode );
-                    lDiscount.Text = discountCode;
+                    lDiscount.Text = string.Format( "<span class='label label-default'>{0}</span>", discountCode );
                 }
 
-                var lBalance = e.Row.FindControl( "lBalance" ) as Label;
+                var lBalance = e.Row.FindControl( "lBalance" ) as Literal;
                 if ( lBalance != null )
                 {
                     decimal balanceDue = registration.DiscountedCost - totalPaid;
                     lBalance.Visible = _instanceHasCost || discountedCost > 0.0M;
-                    lBalance.Text = balanceDue.FormatAsCurrency();
+                    string balanceCssClass;
                     if ( balanceDue > 0.0m )
                     {
-                        lBalance.AddCssClass( "label-danger" );
-                        lBalance.RemoveCssClass( "label-warning" );
-                        lBalance.RemoveCssClass( "label-success" );
+                        balanceCssClass = "label-danger";
                     }
                     else if ( balanceDue < 0.0m )
                     {
-                        lBalance.RemoveCssClass( "label-danger" );
-                        lBalance.AddCssClass( "label-warning" );
-                        lBalance.RemoveCssClass( "label-success" );
+                        balanceCssClass = "label-warning";
                     }
                     else
                     {
-                        lBalance.RemoveCssClass( "label-danger" );
-                        lBalance.RemoveCssClass( "label-warning" );
-                        lBalance.AddCssClass( "label-success" );
+                        balanceCssClass = "label-success";
                     }
+
+                    lBalance.Text = string.Format(
+    @"<span class='label {0}'>{1}</span>
+    <input type='hidden' class='js-has-payments' value='{2}' />", balanceCssClass, balanceDue.FormatAsCurrency(), hasPayments.ToTrueFalse() );
                 }
             }
         }
@@ -752,7 +756,6 @@ namespace RockWeb.Blocks.Event
         /// </summary>
         /// <param name="sender">The source of the event.</param>
         /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
-        /// <exception cref="System.NotImplementedException"></exception>
         protected void gRegistrations_AddClick( object sender, EventArgs e )
         {
             NavigateToLinkedPage( "RegistrationPage", "RegistrationId", 0, "RegistrationInstanceId", hfRegistrationInstanceId.ValueAsInt() );
@@ -933,9 +936,7 @@ namespace RockWeb.Blocks.Event
                                 var values = attribute.FieldType.Field.GetFilterValues( filterControl, field.Attribute.QualifierValues, Rock.Reporting.FilterMode.SimpleFilter );
                                 fRegistrants.SaveUserPreference( attribute.Key, attribute.Name, attribute.FieldType.Field.GetFilterValues( filterControl, attribute.QualifierValues, Rock.Reporting.FilterMode.SimpleFilter ).ToJson() );
                             }
-                            catch
-                            {
-                            }
+                            catch { }
                         }
                     }
                 }
@@ -1075,9 +1076,7 @@ namespace RockWeb.Blocks.Event
                         e.Value = attribute.FieldType.Field.FormatFilterValues( attribute.QualifierValues, values );
                         return;
                     }
-                    catch
-                    {
-                    }
+                    catch { }
                 }
             }
 
@@ -1331,7 +1330,6 @@ namespace RockWeb.Blocks.Event
         /// </summary>
         /// <param name="sender">The source of the event.</param>
         /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
-        /// <exception cref="System.NotImplementedException"></exception>
         private void gRegistrants_AddClick( object sender, EventArgs e )
         {
             NavigateToLinkedPage( "RegistrationPage", "RegistrationId", 0, "RegistrationInstanceId", hfRegistrationInstanceId.ValueAsInt() );
@@ -1747,7 +1745,6 @@ namespace RockWeb.Blocks.Event
         /// </summary>
         /// <param name="sender">The source of the event.</param>
         /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
-        /// <exception cref="System.NotImplementedException"></exception>
         protected void gLinkages_AddClick( object sender, EventArgs e )
         {
             NavigateToLinkedPage( "LinkagePage", "LinkageId", 0, "RegistrationInstanceId", hfRegistrationInstanceId.ValueAsInt() );
@@ -1840,10 +1837,7 @@ namespace RockWeb.Blocks.Event
                         item.EntityId = (int)key;
                         entitySet.Items.Add( item );
                     }
-                    catch
-                    {
-                        // ignore
-                    }
+                    catch { }
                 }
 
                 if ( entitySet.Items.Any() )
@@ -1866,7 +1860,6 @@ namespace RockWeb.Blocks.Event
         /// </summary>
         /// <param name="sender">The source of the event.</param>
         /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
-        /// <exception cref="System.NotImplementedException"></exception>
         private void gWaitList_AddClick( object sender, EventArgs e )
         {
             NavigateToLinkedPage( "RegistrationPage", "RegistrationId", 0, "RegistrationInstanceId", hfRegistrationInstanceId.ValueAsInt() );
@@ -1977,9 +1970,7 @@ namespace RockWeb.Blocks.Event
                                 var values = attribute.FieldType.Field.GetFilterValues( filterControl, field.Attribute.QualifierValues, Rock.Reporting.FilterMode.SimpleFilter );
                                 fWaitList.SaveUserPreference( "WL-" + attribute.Key, attribute.Name, attribute.FieldType.Field.GetFilterValues( filterControl, attribute.QualifierValues, Rock.Reporting.FilterMode.SimpleFilter ).ToJson() );
                             }
-                            catch
-                            {
-                            }
+                            catch { }
                         }
                     }
                 }
@@ -2123,9 +2114,7 @@ namespace RockWeb.Blocks.Event
                             e.Value = attribute.FieldType.Field.FormatFilterValues( attribute.QualifierValues, values );
                             return;
                         }
-                        catch
-                        {
-                        }
+                        catch { }
                     }
                 }
 
@@ -2505,7 +2494,7 @@ namespace RockWeb.Blocks.Event
 
         public void ShowDetail( int itemId )
         {
-            throw new NotImplementedException();
+            ShowDetail();
         }
 
         /// <summary>
@@ -2550,6 +2539,19 @@ namespace RockWeb.Blocks.Event
                     registrationInstance.RegistrationTemplate = new RegistrationTemplateService( rockContext )
                         .Get( registrationInstance.RegistrationTemplateId );
                 }
+
+                AvailableRegistrationAttributesForGrid = new List<AttributeCache>();
+
+                int entityTypeId = new Registration().TypeId;
+                foreach ( var attributeCache in new AttributeService( new RockContext() ).GetByEntityTypeQualifier( entityTypeId, "RegistrationTemplateId", registrationInstance.RegistrationTemplateId.ToString(), false )
+                    .Where( a => a.IsGridColumn )
+                    .OrderBy( a => a.Order )
+                    .ThenBy( a => a.Name )
+                    .ToAttributeCacheList() )
+                {
+                    AvailableRegistrationAttributesForGrid.Add( attributeCache );
+                }
+
 
                 hlType.Visible = registrationInstance.RegistrationTemplate != null;
                 hlType.Text = registrationInstance.RegistrationTemplate != null ? registrationInstance.RegistrationTemplate.Name : string.Empty;
@@ -3385,7 +3387,7 @@ namespace RockWeb.Blocks.Event
                         registrantAttributes = RegistrantFields
                             .Where( f =>
                                 f.Attribute != null &&
-                                f.FieldSource == RegistrationFieldSource.RegistrationAttribute )
+                                f.FieldSource == RegistrationFieldSource.RegistrantAttribute )
                             .Select( f => f.Attribute )
                             .ToList();
                         registrantAttributeIds = registrantAttributes.Select( a => a.Id ).Distinct().ToList();
@@ -4253,9 +4255,7 @@ namespace RockWeb.Blocks.Event
                                         var values = JsonConvert.DeserializeObject<List<string>>( savedValue );
                                         attribute.FieldType.Field.SetFilterValues( registrantsControl, attribute.QualifierValues, values );
                                     }
-                                    catch
-                                    {
-                                    }
+                                    catch { }
                                 }
                             }
                         }
@@ -4290,9 +4290,7 @@ namespace RockWeb.Blocks.Event
                                         var values = JsonConvert.DeserializeObject<List<string>>( savedValue );
                                         attribute.FieldType.Field.SetFilterValues( groupPlacementsControl, attribute.QualifierValues, values );
                                     }
-                                    catch
-                                    {
-                                    }
+                                    catch { }
                                 }
                             }
                         }
@@ -4325,9 +4323,7 @@ namespace RockWeb.Blocks.Event
                                     var values = JsonConvert.DeserializeObject<List<string>>( savedValue );
                                     attribute.FieldType.Field.SetFilterValues( waitListControl, attribute.QualifierValues, values );
                                 }
-                                catch
-                                {
-                                }
+                                catch { }
                             }
                         }
 
@@ -4382,6 +4378,31 @@ namespace RockWeb.Blocks.Event
             groupPickerField.HeaderText = "Group";
             groupPickerField.RootGroupId = gpGroupPlacementParentGroup.SelectedValueAsInt();
             gGroupPlacements.Columns.Add( groupPickerField );
+
+            // Remove attribute columns
+            foreach ( var column in gRegistrations.Columns.OfType<AttributeField>().ToList() )
+            {
+                gRegistrations.Columns.Remove( column );
+            }
+
+            if ( AvailableRegistrationAttributesForGrid != null )
+            {
+                var registrantsField = gRegistrations.ColumnsOfType<RockTemplateField>().FirstOrDefault( a => a.HeaderText == "Registrants" );
+                int columnInsertIndex = gRegistrations.Columns.IndexOf( registrantsField ) + 1;
+                foreach ( var attributeCache in AvailableRegistrationAttributesForGrid )
+                {
+                    bool columnExists = gRegistrations.Columns.OfType<AttributeField>().FirstOrDefault( a => a.AttributeId == attributeCache.Id ) != null;
+                    if ( !columnExists )
+                    {
+                        AttributeField boundField = new AttributeField();
+                        boundField.DataField = attributeCache.Key;
+                        boundField.AttributeId = attributeCache.Id;
+                        boundField.HeaderText = attributeCache.Name;
+                        boundField.ItemStyle.HorizontalAlign = attributeCache.FieldType.Field.AlignValue;
+                        gRegistrations.Columns.Insert( columnInsertIndex++, boundField );
+                    }
+                }
+            }
         }
 
         #endregion
@@ -4960,7 +4981,7 @@ namespace RockWeb.Blocks.Event
                         registrantAttributes = RegistrantFields
                             .Where( f =>
                                 f.Attribute != null &&
-                                f.FieldSource == RegistrationFieldSource.RegistrationAttribute )
+                                f.FieldSource == RegistrationFieldSource.RegistrantAttribute )
                             .Select( f => f.Attribute )
                             .ToList();
                         registrantAttributeIds = registrantAttributes.Select( a => a.Id ).Distinct().ToList();
@@ -5499,7 +5520,7 @@ namespace RockWeb.Blocks.Event
                         registrantAttributes = RegistrantFields
                             .Where( f =>
                                 f.Attribute != null &&
-                                f.FieldSource == RegistrationFieldSource.RegistrationAttribute )
+                                f.FieldSource == RegistrationFieldSource.RegistrantAttribute )
                             .Select( f => f.Attribute )
                             .ToList();
                         registrantAttributeIds = registrantAttributes.Select( a => a.Id ).Distinct().ToList();
@@ -5835,9 +5856,7 @@ namespace RockWeb.Blocks.Event
                                 var values = attribute.FieldType.Field.GetFilterValues( filterControl, field.Attribute.QualifierValues, Rock.Reporting.FilterMode.SimpleFilter );
                                 fGroupPlacements.SaveUserPreference( "GroupPlacements-" + attribute.Key, attribute.Name, attribute.FieldType.Field.GetFilterValues( filterControl, attribute.QualifierValues, Rock.Reporting.FilterMode.SimpleFilter ).ToJson() );
                             }
-                            catch
-                            {
-                            }
+                            catch { }
                         }
                     }
                 }
@@ -5981,9 +6000,7 @@ namespace RockWeb.Blocks.Event
                             e.Value = attribute.FieldType.Field.FormatFilterValues( attribute.QualifierValues, values );
                             return;
                         }
-                        catch
-                        {
-                        }
+                        catch { }
                     }
                 }
 
