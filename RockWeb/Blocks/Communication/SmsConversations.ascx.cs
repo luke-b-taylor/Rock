@@ -309,6 +309,7 @@ namespace RockWeb.Blocks.Communication
                         MessageKey = r.Field<string>("MessageKey"),
                         FullName = r.Field<string>("FullName"),
                         CreatedDateTime = r.Field<DateTime>("CreatedDateTime"),
+                        HumanizedCreatedDateTime = Humanizer.DateHumanizeExtensions.Humanize(r.Field<DateTime>("CreatedDateTime")),
                         SMSMessage = r.Field<string>("SMSMessage"),
                         IsRead = r.Field<bool>("IsRead")
                     } )
@@ -360,6 +361,7 @@ namespace RockWeb.Blocks.Communication
                     MessageKey = r.Field<string>("MessageKey"),
                     FullName = r.Field<string>("FullName"),
                     CreatedDateTime = r.Field<DateTime>("CreatedDateTime"),
+                    HumanizedCreatedDateTime = Humanizer.DateHumanizeExtensions.Humanize(r.Field<DateTime>("CreatedDateTime")),
                     SMSMessage = r.Field<string>("SMSMessage"),
                     IsRead = r.Field<bool>("IsRead")
                 } )
@@ -428,6 +430,7 @@ namespace RockWeb.Blocks.Communication
             public string MessageKey { get; set; }
             public string FullName { get; set; }
             public DateTime? CreatedDateTime { get; set; }
+            public string HumanizedCreatedDateTime { get; set; }
             public string SMSMessage { get; set; }
             public bool IsRead { get; set; }
         }

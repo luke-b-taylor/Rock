@@ -42,7 +42,7 @@
 
                                                 <div class="layout-row">
                                                     <asp:Label ID="lblName" runat="server" Text='<%# Eval("FullName") ?? Eval("MessageKey") %>' Class="sms-name"></asp:Label>
-                                                    <div class="sms-date flex-noshrink"><asp:Literal ID="litDateTime" runat="server" Text='<%# Eval("CreatedDateTime") %>'></asp:Literal></div>
+                                                    <div class="sms-date flex-noshrink"><asp:Literal ID="litDateTime" runat="server" Text='<%# Eval("HumanizedCreatedDateTime") %>'></asp:Literal></div>
                                                 </div>
                                                 <div class="message-truncate"><asp:Literal ID="litMessagePart" runat="server" Text='<%# Eval("SMSMessage") %>'></asp:Literal></div>
                                             </div>
@@ -71,7 +71,7 @@
                                             <div class="bubble bg-primary" id="divCommunicationBody" runat="server">
                                             <%# Eval("SMSMessage") %>
                                             </div>
-                                            <div class="sms-send small"><%# Eval("FullName") %> - <%# Eval("CreatedDateTime") %></div>
+                                            <div class="sms-send small" title='<%# Eval("CreatedDateTime")%>'><%# Eval("FullName") %> - <%# Eval("HumanizedCreatedDateTime") %></div>
                                         </div>
                                     </ItemTemplate>
                                     <FooterTemplate>
