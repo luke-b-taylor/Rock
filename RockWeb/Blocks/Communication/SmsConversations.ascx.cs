@@ -17,27 +17,20 @@
 using System;
 using System.ComponentModel;
 using System.Collections.Generic;
-using System.Data.Entity;
+using System.Data;
 using System.Linq;
-using System.Runtime.Caching;
-using System.Text;
 using System.Web.UI;
 using System.Web.UI.HtmlControls;
 using System.Web.UI.WebControls;
-using System.Xml.Linq;
-using System.Xml.Xsl;
 
 using Rock;
 using Rock.Attribute;
-using Rock.Communication;
 using Rock.Data;
 using Rock.Model;
 using Rock.Security;
 using Rock.Web.Cache;
 using Rock.Web.UI;
-using Rock.Web.UI.Controls.Communication;
 using Rock.Web.UI.Controls;
-using System.Data;
 
 namespace RockWeb.Blocks.Communication
 {
@@ -309,7 +302,7 @@ namespace RockWeb.Blocks.Communication
                         MessageKey = r.Field<string>("MessageKey"),
                         FullName = r.Field<string>("FullName"),
                         CreatedDateTime = r.Field<DateTime>("CreatedDateTime"),
-                        HumanizedCreatedDateTime = Humanizer.DateHumanizeExtensions.Humanize(r.Field<DateTime>("CreatedDateTime")),
+                        HumanizedCreatedDateTime = HumanizeDateTime( r.Field<DateTime>( "CreatedDateTime" ) ),
                         SMSMessage = r.Field<string>("SMSMessage"),
                         IsRead = r.Field<bool>("IsRead")
                     } )
@@ -357,11 +350,11 @@ namespace RockWeb.Blocks.Communication
             var communicationItems = responses.Tables[0].AsEnumerable()
                 .Select( r => new ResponseListItem
                 {
-                    RecipientId = r.Field<int?>("FromPersonAliasId"),
-                    MessageKey = r.Field<string>("MessageKey"),
-                    FullName = r.Field<string>("FullName"),
-                    CreatedDateTime = r.Field<DateTime>("CreatedDateTime"),
-                    HumanizedCreatedDateTime = Humanizer.DateHumanizeExtensions.Humanize(r.Field<DateTime>("CreatedDateTime")),
+                    RecipientId = r.Field<int?>( "FromPersonAliasId" ),
+                    MessageKey = r.Field<string>( "MessageKey" ),
+                    FullName = r.Field<string>( "FullName" ),
+                    CreatedDateTime = r.Field<DateTime>( "CreatedDateTime" ),
+                    HumanizedCreatedDateTime = HumanizeDateTime( r.Field<DateTime>( "CreatedDateTime" ) ),
                     SMSMessage = r.Field<string>("SMSMessage"),
                     IsRead = r.Field<bool>("IsRead")
                 } )
@@ -370,6 +363,29 @@ namespace RockWeb.Blocks.Communication
             rptConversation.Visible = true;
             rptConversation.DataSource = communicationItems;
             rptConversation.DataBind();
+        }
+
+        /// <summary>
+        /// Humanizes the date time to relative if not on the same day and short time if it is.
+        /// </summary>
+        /// <param name="dateTime">The date time.</param>
+        /// <returns></returns>
+        private string HumanizeDateTime( DateTime? dateTime )
+        {
+            if ( dateTime == null )
+            {
+                return string.Empty;
+            }
+
+            DateTime dtCompare = RockDateTime.Now;
+
+            if ( dtCompare.Date == dateTime.Value.Date )
+            {
+                return dateTime.Value.ToShortTimeString();
+            }
+
+            // Method Name "Truncate" collision between Humanizer and Rock ExtensionMethods so have to call as a static with full name.
+            return Humanizer.DateHumanizeExtensions.Humanize( dateTime, true, dtCompare, null );
         }
 
         private void PopulatePersonLava( RowEventArgs e )
