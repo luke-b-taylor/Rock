@@ -16,7 +16,8 @@
         </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
             <RowDefinition Height="1*" />
-            <RowDefinition Height="Auto" />
+            <RowDefinition  />
+            <RowDefinition  Height="Auto"/>
         </Grid.RowDefinitions>
 
         <!-- Transaction Details -->
@@ -58,8 +59,21 @@
             <Label Name="lblCurrencyType"
                    Content="7/16/9999 12:00 AM"
                    Style="{StaticResource labelStyleDd}" />
-        </StackPanel>
 
+        </StackPanel>
+        <!-- Financial Transactions-->
+        <StackPanel Grid.Row="1" Grid.ColumnSpan="1" Margin="10">
+            <StackPanel HorizontalAlignment="Left" Background="White">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <DataGrid x:Name="lvAccountDetails" AutoGenerateColumns="False" >
+                        <DataGrid.Columns>
+                            <DataGridTextColumn   Header="Account Name" Binding = "{Binding AccountDisplayName}" Width="Auto" />
+                            <DataGridTextColumn  Header="Amount" Binding = "{Binding Amount,StringFormat=C}" Width="Auto" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </ScrollViewer>
+            </StackPanel>
+        </StackPanel>
         <!-- Check Images -->
         <Grid Grid.Row="0"
               Grid.Column="1"
@@ -99,10 +113,10 @@
                    HorizontalAlignment="Left"
                    VerticalAlignment="Top"
                    Source="images/check-image.png" />
-        </Grid>
 
+        </Grid>
         <StackPanel Grid.ColumnSpan="2"
-                    Grid.Row="1"
+                    Grid.Row="2"
                     Margin="8">
             <Button Name="btnClose"
                     Style="{StaticResource buttonStyle}"

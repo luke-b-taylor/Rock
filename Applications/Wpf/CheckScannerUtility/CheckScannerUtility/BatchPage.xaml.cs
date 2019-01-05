@@ -417,6 +417,8 @@ namespace Rock.Apps.CheckScannerUtility
         {
             RockConfig config = RockConfig.Load();
             RockRestClient client = new RockRestClient( config.RockBaseUrl );
+
+
             client.Login( config.Username, config.Password );
             List<FinancialBatch> pendingBatches = client.GetDataByEnum<List<FinancialBatch>>( "api/FinancialBatches", "Status", BatchStatus.Pending );
 
@@ -630,7 +632,7 @@ namespace Rock.Apps.CheckScannerUtility
         /// </summary>
         private void NavigateToOptionsPage()
         {
-            var optionsPage = new SetAccountsForAmountsToSave( this );
+            var optionsPage = new OptionsPage( this );
             this.NavigationService.Navigate( optionsPage );
         }
 
@@ -955,8 +957,13 @@ namespace Rock.Apps.CheckScannerUtility
             {
                 ee.Result = null;
 
-                transactions = client.GetData<List<FinancialTransaction>>( "api/FinancialTransactions/", string.Format( "BatchId eq {0}", selectedBatch.Id ) );
+                transactions = client.GetData<List<FinancialTransaction>>( "api/FinancialTransactions/", string.Format( "BatchId eq {0} &$expand=TransactionDetails", selectedBatch.Id ) );
             };
+            bw.DoWork += ( o, s ) =>
+            {  var allAccounts = client.GetData<List<FinancialAccount>>( "api/FinancialAccounts" );
+                ScanningPageUtility.Accounts = allAccounts;
+            };
+
 
             bw.RunWorkerCompleted += delegate( object s, RunWorkerCompletedEventArgs ee )
             {

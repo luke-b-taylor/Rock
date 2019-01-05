@@ -5,11 +5,11 @@ using System.ComponentModel;
 
 namespace Rock.Apps.CheckScannerUtility.Models
 {
-    public class DisplayAccount : INotifyPropertyChanged
+    public class DisplayAccountModel : INotifyPropertyChanged
     {
         private bool _accountIsChecked;
         private string _accountDisplayName;
-        private ObservableCollection<DisplayAccount> _children;
+        private ObservableCollection<DisplayAccountModel> _children;
 
         public event PropertyChangedEventHandler PropertyChanged;
 
@@ -34,7 +34,7 @@ namespace Rock.Apps.CheckScannerUtility.Models
             }
         }
 
-        public ObservableCollection<DisplayAccount> Children
+        public ObservableCollection<DisplayAccountModel> Children
         {
             get { return _children; }
             set

@@ -28,7 +28,6 @@ namespace Rock.Apps.CheckScannerUtility
             BatchAmount = 0;
     }
 
-       
         public static BatchPage batchPage { get; set; }
         public static string DebugLogFilePath { get; set; }
 
@@ -45,6 +44,7 @@ namespace Rock.Apps.CheckScannerUtility
         public static decimal TotalAmountScanned { get; set; }
         public static decimal BatchAmount { get;set; }
         public static List<FinancialTransaction> CurrentBatches { get; set; }
+        public static List<FinancialAccount> Accounts { get; set; }
 
         public static void ResumeScanning()
         {
@@ -166,7 +166,7 @@ namespace Rock.Apps.CheckScannerUtility
         /// Uploads the scanned item.
         /// </summary>
         /// <param name="scannedDocInfo">The scanned document information.</param>
-        public static void UploadScannedItem( ScannedDocInfo scannedDocInfo, Action<int> UpdateProgressBarCallback = null, List<DisplayAccountValue> accounts = null )
+        public static void UploadScannedItem( ScannedDocInfo scannedDocInfo, Action<int> UpdateProgressBarCallback = null, List<DisplayAccountValueModel> accounts = null )
         {
             RockRestClient client = EnsureUploadScanRestClient();
 
@@ -279,7 +279,7 @@ namespace Rock.Apps.CheckScannerUtility
         }
 
     
-        private static void AddFinancialTransactionDetailForEachAccount( List<DisplayAccountValue> accounts,FinancialTransaction financialTransaction )
+        private static void AddFinancialTransactionDetailForEachAccount( List<DisplayAccountValueModel> accounts,FinancialTransaction financialTransaction )
         {
             var tranactionDetails = new List<FinancialTransactionDetail>();
             if ( financialTransaction.TransactionDetails == null )

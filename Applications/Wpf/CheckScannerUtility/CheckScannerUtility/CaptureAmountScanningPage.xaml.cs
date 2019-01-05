@@ -40,7 +40,7 @@ namespace Rock.Apps.CheckScannerUtility
        
         private ScannedDocInfo _currentscannedDocInfo = null;
      
-        public ObservableCollection<DisplayAccountValue> _displayAccountValuesContext { get; set; }
+        public ObservableCollection<DisplayAccountValueModel> _displayAccountValuesContext { get; set; }
 
 
         /// <summary>
@@ -380,12 +380,12 @@ namespace Rock.Apps.CheckScannerUtility
         private void LoadFilteredAccountsIntoListView( List<FinancialAccount> allAccounts, RockConfig rockConfig )
         {
             var filteredAccounts = allAccounts.Where( a => rockConfig.SelectedAccountForAmountsIds.Contains( a.Id ) );
-            var displayAccountValues = new ObservableCollection<DisplayAccountValue>();
+            var displayAccountValues = new ObservableCollection<DisplayAccountValueModel>();
             int index = 0;
             foreach ( var account in filteredAccounts )
             {
 
-                displayAccountValues.Add( new DisplayAccountValue { Account = account,AccountDisplayName = account.Name, Index = index } );
+                displayAccountValues.Add( new DisplayAccountValueModel { Account = account,AccountDisplayName = account.Name, Index = index } );
                 index++;
             }
 
@@ -401,7 +401,7 @@ namespace Rock.Apps.CheckScannerUtility
             decimal sum = 0;
             if ( this._displayAccountValuesContext != null )
             {
-                foreach ( DisplayAccountValue accountValue in this._displayAccountValuesContext )
+                foreach ( DisplayAccountValueModel accountValue in this._displayAccountValuesContext )
                 {
                     sum += accountValue.Amount;
 
@@ -439,7 +439,7 @@ namespace Rock.Apps.CheckScannerUtility
         private void ClearPreviousCheckValues()
         {
             lblScanCheckWarningDuplicate.Visibility = Visibility.Collapsed;
-            foreach ( DisplayAccountValue item in lvAccounts.Items )
+            foreach ( DisplayAccountValueModel item in lvAccounts.Items )
             {
                 item.Amount = 0;
             }
@@ -862,7 +862,7 @@ namespace Rock.Apps.CheckScannerUtility
             var textbox = sender as System.Windows.Controls.TextBox;
             if ( textbox != null )
             {
-                var dataContext = textbox.DataContext as DisplayAccountValue;
+                var dataContext = textbox.DataContext as DisplayAccountValueModel;
                 if ( dataContext != null )
                 {
                     if ( dataContext.Index == 0 )

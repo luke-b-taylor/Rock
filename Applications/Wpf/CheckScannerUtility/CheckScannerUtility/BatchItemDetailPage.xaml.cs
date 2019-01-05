@@ -14,11 +14,13 @@
 // limitations under the License.
 // </copyright>
 //
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Windows;
 using System.Windows.Media.Imaging;
+using Rock.Apps.CheckScannerUtility.Models;
 using Rock.Client;
 using Rock.Net;
 
@@ -35,6 +37,7 @@ namespace Rock.Apps.CheckScannerUtility
         public BatchItemDetailPage()
         {
             InitializeComponent();
+           
         }
 
         /// <summary>
@@ -71,6 +74,8 @@ namespace Rock.Apps.CheckScannerUtility
         private void Page_Loaded( object sender, RoutedEventArgs e )
         {
             var financialTransaction = this.FinancialTransaction;
+            LoadFinancialTransactionDetails( financialTransaction );
+
             var images = financialTransaction.Images.OrderBy( a => a.Order ).ToList();
 
             RockConfig config = RockConfig.Load();
@@ -139,6 +144,29 @@ namespace Rock.Apps.CheckScannerUtility
             {
                 lblCurrencyType.Content = string.Empty;
             }
+        }
+
+        private void LoadFinancialTransactionDetails( FinancialTransaction financialTransaction )
+        {
+            List<DisplayFinancialTransactionDetailModel> displayFinancialTransaction = new List<DisplayFinancialTransactionDetailModel>();
+            foreach ( var detail in financialTransaction.TransactionDetails )
+            {
+                displayFinancialTransaction.Add( new DisplayFinancialTransactionDetailModel { AccountDisplayName = GetAccountNameById(detail.AccountId),Amount=detail.Amount} );
+            }
+
+            this.lvAccountDetails.ItemsSource = displayFinancialTransaction;
+        }
+
+        private string GetAccountNameById( int accountId )
+        {
+            var accounts = ScanningPageUtility.Accounts;
+            if (accounts != null )
+            {
+                return accounts.Where( acc => acc.Id == accountId ).Select( acc => acc.Name ).FirstOrDefault();
+
+            }
+
+            return "";
         }
     }
 }

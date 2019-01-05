@@ -34,21 +34,22 @@ namespace Rock.Apps.CheckScannerUtility
     /// </summary>
     /// <seealso cref="System.Windows.Controls.Page" />
     /// <seealso cref="System.Windows.Markup.IComponentConnector" />
-    public partial class SetAccountsForAmountsToSave : System.Windows.Controls.Page
+    public partial class OptionsPage : System.Windows.Controls.Page
     {
         private RockRestClient _Client;
         private List<FinancialAccount> _allAccounts;
         private RockConfig _rockConfig;
-        private ObservableCollection<DisplayAccount> _displayAccounts = new ObservableCollection<DisplayAccount>();
+        private ObservableCollection<DisplayAccountModel> _displayAccounts = new ObservableCollection<DisplayAccountModel>();
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="SetAccountsForAmountsToSave"/> class.
+        /// Initializes a new instance of the <see cref="OptionsPage"/> class.
         /// </summary>
-        public SetAccountsForAmountsToSave( BatchPage batchPage )
+        public OptionsPage( BatchPage batchPage )
         {
             InitializeComponent();
             this.BatchPage = batchPage;
             this._rockConfig = RockConfig.Load();
+          
         }
 
         /// <summary>
@@ -64,10 +65,9 @@ namespace Rock.Apps.CheckScannerUtility
         /// </summary>
         private void ShowDetail()
         {
+            LoadFinancialAccounts();
             LoadDeviceDropDown();
             LoadBatchCampusDropDown();
-            LoadFinancialAccounts();
-
             lblAlert.Visibility = Visibility.Collapsed;
             GetConfigValues();
 
@@ -80,7 +80,6 @@ namespace Rock.Apps.CheckScannerUtility
         {
             var client = this.RestClient;
             _allAccounts = client.GetData<List<FinancialAccount>>( "api/FinancialAccounts" );
-
             SetParentChildAccounts( _allAccounts); 
             icAccountsForBatches.Items.Clear();       
             icAccountsForBatches.ItemsSource = _displayAccounts;
@@ -93,7 +92,7 @@ namespace Rock.Apps.CheckScannerUtility
 
         
 
-        public void AddParentChild( DisplayAccount displayAccount, int id, int? parentId )
+        public void AddParentChild( DisplayAccountModel displayAccount, int id, int? parentId )
         {
             // keep a map of each id to the node
             _map.Add( id, displayAccount );
@@ -106,10 +105,10 @@ namespace Rock.Apps.CheckScannerUtility
             else
             {
                 // Find the parent in the map and add node as it's child node
-                var parent = ( DisplayAccount ) _map[parentId];
+                var parent = ( DisplayAccountModel ) _map[parentId];
                 if ( parent.Children == null )
                 {
-                    parent.Children = new ObservableCollection<DisplayAccount>();
+                    parent.Children = new ObservableCollection<DisplayAccountModel>();
                 }
                 parent.Children.Add( displayAccount );
             }
@@ -119,7 +118,7 @@ namespace Rock.Apps.CheckScannerUtility
         {
             foreach ( var account in accounts )
             {
-                var parentDisplayAccount = new DisplayAccount();
+                var parentDisplayAccount = new DisplayAccountModel();
                     var children = _allAccounts.Where( a => a.ParentAccountId != null && a.ParentAccountId == account.Id ).ToList();
                     parentDisplayAccount.AccountDisplayName = account.Name;
                     parentDisplayAccount.IsAccountChecked = _rockConfig.SelectedAccountForAmountsIds.Contains( account.Id );
@@ -384,7 +383,7 @@ namespace Rock.Apps.CheckScannerUtility
             List<int> selectedAccounts = new List<int>();
             foreach ( var item in icAccountsForBatches.Items )
             {
-                var displayAccount = item as DisplayAccount;
+                var displayAccount = item as DisplayAccountModel;
                 SetParentChildIdsToSave( displayAccount, ref selectedAccounts );
             }
 
@@ -397,7 +396,7 @@ namespace Rock.Apps.CheckScannerUtility
         /// Accounts Are Hierarchical so we have to recursively walk the object
         /// </summary>
         /// <param name="displayAccount">The display account.</param>
-        private void SetParentChildIdsToSave( DisplayAccount displayAccount, ref List<int> selectedAccounts )
+        private void SetParentChildIdsToSave( DisplayAccountModel displayAccount, ref List<int> selectedAccounts )
         {
             if ( displayAccount != null && displayAccount.IsAccountChecked == true )
             {

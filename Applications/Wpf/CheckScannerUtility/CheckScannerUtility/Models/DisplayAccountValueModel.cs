@@ -1,12 +1,9 @@
-﻿
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using Rock.Client;
 
 namespace Rock.Apps.CheckScannerUtility.Models
 {
-    public class DisplayAccountValue : INotifyPropertyChanged
+    public class DisplayAccountValueModel : INotifyPropertyChanged
     {
         private string _accountDisplayName;
         private decimal _amount;
