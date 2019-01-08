@@ -82,6 +82,9 @@
     <Reference Include="dotless.Core, Version=1.5.2.0, Culture=neutral, PublicKeyToken=96b446c9e63eae34, processorArchitecture=MSIL">
       <HintPath>..\packages\dotless.1.5.2\lib\dotless.Core.dll</HintPath>
     </Reference>
+    <Reference Include="Dropbox.Api, Version=4.0.0.0, Culture=neutral, PublicKeyToken=310f0e82fbb45d01, processorArchitecture=MSIL">
+      <HintPath>..\packages\Dropbox.Api.4.9.3\lib\net45\Dropbox.Api.dll</HintPath>
+    </Reference>
     <Reference Include="Elasticsearch.Net, Version=2.0.0.0, Culture=neutral, PublicKeyToken=96c599bbe3e70f5d, processorArchitecture=MSIL">
       <HintPath>..\packages\Elasticsearch.Net.2.4.6\lib\net45\Elasticsearch.Net.dll</HintPath>
     </Reference>
@@ -435,6 +438,7 @@
     <Compile Include="Reporting\DataFilter\Person\InteractionsFilter.cs" />
     <Compile Include="Reporting\DataSelect\Person\InteractionCountSelect.cs" />
     <Compile Include="Reporting\DataSelect\Person\InteractionDateSelect.cs" />
+    <Compile Include="Storage\AssetStorage\DropboxComponent.cs" />
     <Compile Include="SystemGuid\ContentChannelType.cs" />
     <Compile Include="Utility\EntityCoding\CodingHelper.cs" />
     <Compile Include="Utility\EntityCoding\EncodedEntity.cs" />
