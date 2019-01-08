@@ -49,7 +49,6 @@ namespace Rock.Apps.CheckScannerUtility
             InitializeComponent();
             this.BatchPage = batchPage;
             this._rockConfig = RockConfig.Load();
-          
         }
 
         /// <summary>

@@ -14,7 +14,6 @@
 // limitations under the License.
 // </copyright>
 //
-using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -37,7 +36,7 @@ namespace Rock.Apps.CheckScannerUtility
         public BatchItemDetailPage()
         {
             InitializeComponent();
-           
+
         }
 
         /// <summary>
@@ -78,9 +77,14 @@ namespace Rock.Apps.CheckScannerUtility
 
             var images = financialTransaction.Images.OrderBy( a => a.Order ).ToList();
 
-            RockConfig config = RockConfig.Load();
+            RockConfig config = RockConfig.Load(); 
             RockRestClient client = new RockRestClient( config.RockBaseUrl );
             client.Login( config.Username, config.Password );
+
+            if (config.CaptureAmountOnScan == false)
+            {
+                spFinanialTransactionSummary.Visibility = Visibility.Collapsed;
+            }
 
             if ( images.Count > 0 )
             {
@@ -150,22 +154,24 @@ namespace Rock.Apps.CheckScannerUtility
         {
             decimal sum = 0;
             List<DisplayFinancialTransactionDetailModel> displayFinancialTransaction = new List<DisplayFinancialTransactionDetailModel>();
-            foreach ( var detail in financialTransaction.TransactionDetails )
+            if ( financialTransaction.TransactionDetails != null )
             {
-                sum += detail.Amount;
-                displayFinancialTransaction.Add( new DisplayFinancialTransactionDetailModel { AccountDisplayName = GetAccountNameById(detail.AccountId),Amount=detail.Amount} );
+                foreach ( var detail in financialTransaction.TransactionDetails )
+                {
+                    sum += detail.Amount;
+                    displayFinancialTransaction.Add( new DisplayFinancialTransactionDetailModel { AccountDisplayName = GetAccountNameById( detail.AccountId ), Amount = detail.Amount } );
+                }
             }
-
             this.lvAccountDetails.ItemsSource = displayFinancialTransaction;
-            this.lblTotal.Content = sum.ToString("C");
-       
-          
+            this.lblTotal.Content = sum.ToString( "C" );
+
+
         }
 
         private string GetAccountNameById( int accountId )
         {
             var accounts = ScanningPageUtility.Accounts;
-            if (accounts != null )
+            if ( accounts != null )
             {
                 return accounts.Where( acc => acc.Id == accountId ).Select( acc => acc.Name ).FirstOrDefault();
 

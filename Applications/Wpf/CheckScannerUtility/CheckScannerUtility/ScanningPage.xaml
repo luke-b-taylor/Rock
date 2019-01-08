@@ -9,6 +9,45 @@
       Title="ScanningPage"
       Loaded="Page_Loaded"
       Style="{StaticResource pageBackground}">
+    <Page.Resources>
+        <Style x:Key="GridSplitterPreviewStyle" >
+            <Setter Property="Control.Template">
+                <Setter.Value>
+                    <ControlTemplate>
+                        <Rectangle Fill="#80000000"/>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="GridSplitterStyle1" TargetType="{x:Type GridSplitter}">
+            <Setter Property="Background"
+                Value="{DynamicResource {x:Static SystemColors.ControlBrushKey}}"/>
+            <Setter Property="PreviewStyle" Value="{StaticResource GridSplitterPreviewStyle}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type GridSplitter}">
+                        <Border BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            Background="{TemplateBinding Background}"
+                            CornerRadius="5">
+                            <Canvas RenderOptions.EdgeMode="Aliased" UseLayoutRounding="True"
+                                Height="6" VerticalAlignment="Center"
+                                Width="50" HorizontalAlignment="Center">
+                                <Line X1="0" X2="50" Y1="0" Y2="0"
+                                  Stroke="White" StrokeThickness="1"/>
+                                <Line X1="0" X2="50" Y1="1" Y2="1"
+                                  Stroke="#A0A0A0" StrokeThickness="1"/>
+                                <Line X1="0" X2="50" Y1="4" Y2="4"
+                                  Stroke="White" StrokeThickness="1"/>
+                                <Line X1="0" X2="50" Y1="5" Y2="5"
+                                  Stroke="#A0A0A0" StrokeThickness="1"/>
+                            </Canvas>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Page.Resources>
 
     <Grid>
         <Grid.RowDefinitions>
@@ -149,10 +188,24 @@
                     </StackPanel>
                 </Grid>
             </StackPanel>
-
-            
         </StackPanel>
-
+        <GridSplitter Name="gridSplitter" Grid.Row="1" 
+              Grid.ColumnSpan="2" 
+              HorizontalAlignment="Stretch" 
+              VerticalAlignment="Top"
+              ResizeDirection="Rows"       
+              Height="5"
+              Visibility="Hidden"
+              Style="{DynamicResource GridSplitterStyle1}">
+             <GridSplitter.Background>
+                <LinearGradientBrush EndPoint="0.5,0" StartPoint="0.5,1">
+                    <GradientStop Color="#A0A0A0" Offset="0"/>
+                    <GradientStop Color="#E5E5E5" Offset="0.15"/>
+                    <GradientStop Color="#ECECEC" Offset="0.8"/>
+                    <GradientStop Color="#E5E5E5" Offset="1"/>
+                </LinearGradientBrush>
+            </GridSplitter.Background>
+        </GridSplitter>
         <!-- Front/Back Grid for either Check or Other-->
         <Grid Name="grdFrontBack"
               VerticalAlignment="Top"
@@ -176,7 +229,7 @@
                    Margin="8"
                    Style="{StaticResource labelStyleBannerTitle}">Click Start to begin</Label>
 
-            <ScrollViewer Grid.Row="1" Grid.ColumnSpan="2" Height="420" Margin="10" VerticalScrollBarVisibility="Auto"  VerticalAlignment="Bottom">
+            <StackPanel Grid.ColumnSpan="2">
                 <StackPanel Name="spImages">
                     <Label Name="lblFront"
                    VerticalAlignment="Bottom"
@@ -200,7 +253,7 @@
                    VerticalAlignment="Top"
                    Source="images/check-image.png" />
                 </StackPanel>
-            </ScrollViewer>
+            </StackPanel>
         </Grid>
 
         <StackPanel Grid.ColumnSpan="2" Grid.Row="1" VerticalAlignment="Bottom">

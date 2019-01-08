@@ -69,6 +69,7 @@ namespace Rock.Apps.CheckScannerUtility
         public void ShowScannedDocStatusAndUpload( ScannedDocInfo scannedDocInfo )
         {
             lblExceptions.Visibility = Visibility.Collapsed;
+            gridSplitter.Visibility = Visibility.Hidden;
 
             DisplayScannedDocInfo( scannedDocInfo );
 
@@ -158,6 +159,7 @@ namespace Rock.Apps.CheckScannerUtility
         /// </summary>
         private void ShowUploadWarnings( ScannedDocInfo scannedDocInfo )
         {
+            gridSplitter.Visibility = Visibility.Visible;
             var rockConfig = RockConfig.Load();
             ScanningPageUtility.ConfirmUploadBadScannedDoc = scannedDocInfo;
             lblScanCheckWarningDuplicate.Visibility = scannedDocInfo.Duplicate ? Visibility.Visible : Visibility.Collapsed;
@@ -186,6 +188,7 @@ namespace Rock.Apps.CheckScannerUtility
 
             lblScanItemUploadSuccess.Visibility = Visibility.Collapsed;
             pnlPromptForUpload.Visibility = Visibility.Collapsed;
+            gridSplitter.Visibility = Visibility.Hidden;
         }
 
         /// <summary>
@@ -263,7 +266,7 @@ namespace Rock.Apps.CheckScannerUtility
         {
             if ( _isDoubleSided )
             {
-                return this.RenderSize.Width * .7;
+                return this.RenderSize.Width * .6;
             }
             return this.RenderSize.Width * .9;
         }
@@ -344,6 +347,7 @@ namespace Rock.Apps.CheckScannerUtility
             System.Diagnostics.Debug.WriteLine( string.Format( "{0} : rangerScanner_TransportFeedingStopped, reason:", DateTime.Now.ToString( "o" ), rangerFeedingStoppedReason.ConvertToString() ) );
             if ( pnlPromptForUpload.Visibility != Visibility.Visible )
             {
+               
                 btnStart.IsEnabled = true;
             }
 

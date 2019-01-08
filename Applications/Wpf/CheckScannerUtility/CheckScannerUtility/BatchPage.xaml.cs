@@ -1111,7 +1111,10 @@ namespace Rock.Apps.CheckScannerUtility
                     financialTransaction.Images = client.GetData<List<FinancialTransactionImage>>( "api/FinancialTransactionImages", string.Format( "TransactionId eq {0}", financialTransaction.Id ) );
                     BatchItemDetailPage.batchPage = this;
                     BatchItemDetailPage.FinancialTransaction = financialTransaction;
-                    this.NavigationService.Navigate( BatchItemDetailPage );
+                    if ( this.NavigationService != null )
+                    {
+                        this.NavigationService.Navigate( BatchItemDetailPage );
+                    }
                 }
             }
             catch ( Exception ex )

@@ -40,8 +40,9 @@ namespace Rock.Apps.CheckScannerUtility
     {
        
         private ScannedDocInfo _currentscannedDocInfo = null;
-       
-     
+        private bool _isDoubleSided = false;
+
+
         public ObservableCollection<DisplayAccountValueModel> _displayAccountValuesContext { get; set; }
 
 
@@ -77,6 +78,7 @@ namespace Rock.Apps.CheckScannerUtility
         /// <param name="e">The <see cref="RoutedEventArgs"/> instance containing the event data.</param>
         private void Page_Loaded( object sender, RoutedEventArgs e )
         {
+            btnNext.IsEnabled = false;
             // set the uploadScannedItemClient to null and reconnect to ensure we have a fresh connection (just in case they changed the url, or if the connection died for some other reason)
             ScanningPageUtility.Initalize();
             InitalizeControls();
@@ -87,7 +89,6 @@ namespace Rock.Apps.CheckScannerUtility
             if ( ScanningPageUtility.KeepScanning )
             {
                 spCaptureAmount.Visibility = Visibility.Visible;
-                lvAccounts.IsEnabled = true;
                 ShowStartupPage();
                 InitializeFirstScan();
             }
@@ -102,7 +103,9 @@ namespace Rock.Apps.CheckScannerUtility
         {
             this.btnComplete.Visibility = Visibility.Hidden;
             this.btnNext.Visibility = Visibility.Visible;
+            this.btnNext.IsEnabled = false;
             SetAmountlegendInvalid(false);
+            gridSplitter.Visibility = Visibility.Hidden;
 
         }
 
@@ -113,11 +116,14 @@ namespace Rock.Apps.CheckScannerUtility
             foreach ( var financialTransacation in ScanningPageUtility.CurrentFinacialTransactions )
             {
                 var transactionDeatails = financialTransacation.TransactionDetails;
-                foreach ( var transactionDetail in transactionDeatails )
+                if (transactionDeatails != null )
                 {
-                    sum += transactionDetail.Amount;
-                  
+                    foreach ( var transactionDetail in transactionDeatails )
+                    {
+                        sum += transactionDetail.Amount;
+                    }
                 }
+                
                   ScanningPageUtility.ItemsScanned++;
                   ScanningPageUtility.ItemsUploaded++;
             }
@@ -154,16 +160,22 @@ namespace Rock.Apps.CheckScannerUtility
 
             if ( scannedDocInfo.BackImageData != null )
             {
+                this._isDoubleSided = true;
+                this.gridSplitter.Visibility = Visibility.Visible;
                 BitmapImage bitmapImageBack = new BitmapImage();
                 bitmapImageBack.BeginInit();
                 bitmapImageBack.StreamSource = new MemoryStream( scannedDocInfo.BackImageData );
                 bitmapImageBack.EndInit();
                 imgBack.Source = bitmapImageBack;
+                imgBack.Width = GetImageWidth();
+                imgFront.Width = GetImageWidth();
                 Rock.Wpf.WpfHelper.FadeIn( imgBack, 100 );
                 lblBack.Visibility = Visibility.Visible;
             }
             else
             {
+                this._isDoubleSided = false;
+                this.gridSplitter.Visibility = Visibility.Hidden;
                 imgBack.Source = null;
                 lblBack.Visibility = Visibility.Hidden;
             }
@@ -179,17 +191,51 @@ namespace Rock.Apps.CheckScannerUtility
             }
         }
 
-       
+        private double GetImageWidth()
+        {
+            if ( _isDoubleSided )
+            {
+                return this.RenderSize.Width * .6;
+            }
+            return this.RenderSize.Width * .9;
+        }
 
+
+        private void ShowNoAmountMessage()
+        {
+            MessageBox.Show( "No values have been entered", "No Amount Entered", MessageBoxButton.OK );
+            lvAccounts.SelectedIndex = 1;
+            lvAccounts.SelectedIndex = 0;
+        }
         private void BtnIgnoreAndUpload_Click( object sender, RoutedEventArgs e )
         {
+            if (!HasAmount())
+            {
+                ShowNoAmountMessage();
+                return;
+            }
             HideUploadWarningPrompts();
+            
+            
             var scannedDocInfo = ScanningPageUtility.ConfirmUploadBadScannedDoc;
             scannedDocInfo.Upload = true;
             ScanningPageUtility.UploadScannedItem( scannedDocInfo,(itemCount)=> { this.UpdateProgressBars( ScanningPageUtility.ItemsUploaded ); } );
             this.btnNext.IsEnabled = true;
             this.BtnNext_Click( sender, e );
 
+        }
+
+        private bool HasAmount()
+        {
+            foreach ( DisplayAccountValueModel account in lvAccounts.Items )
+            {
+                if ( account.Amount != null && account.Amount > 0 )
+                {
+                    return true;
+
+                }    
+            }
+            return false;    
         }
 
         /// <summary>
@@ -284,6 +330,7 @@ namespace Rock.Apps.CheckScannerUtility
             {
                 // update the bad micr warning to not include the btn instructions
                 lblScanCheckWarningBadMicr.Content = @"Unable to read check information";
+                btnNext.IsEnabled = false;
             }
 
             lblScanItemUploadSuccess.Visibility = Visibility.Collapsed;
@@ -298,7 +345,6 @@ namespace Rock.Apps.CheckScannerUtility
         {
             ScanningPageUtility.KeepScanning = true;
             lvAccounts.IsEnabled = true;
-            this.btnNext.IsEnabled = true;
             ScanningPageUtility.ResumeScanning();
         }
         
@@ -459,6 +505,13 @@ namespace Rock.Apps.CheckScannerUtility
 
         private void BtnNext_Click( object sender, System.Windows.RoutedEventArgs e )
         {
+
+            if (!HasAmount() && lblNoItemsFound.Visibility != Visibility.Visible)
+            {
+                ShowNoAmountMessage();
+                return;
+            }
+
             HandleCurrentDocInfo( () =>
              {
                  this._currentscannedDocInfo = null;
@@ -528,6 +581,7 @@ namespace Rock.Apps.CheckScannerUtility
                 if ( lblFront.Visibility != Visibility.Visible )
                 {
                     lblStartupInfo.Visibility = Visibility.Visible;
+                    btnNext.IsEnabled = true;
                 }
 
                 // show a "No Items" warning if they clicked Start but it stopped because of MainHopperEmpty
@@ -853,6 +907,7 @@ namespace Rock.Apps.CheckScannerUtility
             lblScanItemUploadSuccess.Visibility = Visibility.Collapsed;
             pnlPromptForUpload.Visibility = scannedDocInfo.Duplicate || scannedDocInfo.BadMicr ? Visibility.Visible : Visibility.Collapsed;
             btnClose.IsEnabled = true;
+            btnNext.IsEnabled = false;
         }
 
         /// <summary>
@@ -929,9 +984,25 @@ namespace Rock.Apps.CheckScannerUtility
                     var dataContext = textbox.DataContext as DisplayAccountValueModel;
                     dataContext.Amount = decimal.Parse( textbox.Text );
                 }
-                this.BtnNext_Click( sender, e );
+                if ( pnlPromptForUpload.Visibility != Visibility.Visible )
+                {
+                    this.BtnNext_Click( sender, e );
+                }
             }
 
+        }
+
+        /// <summary>
+        /// Handles the TextChanged event of the TextBox control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="TextChangedEventArgs"/> instance containing the event data.</param>
+        private void TextBox_TextChanged( object sender, TextChangedEventArgs e )
+        {
+            if ( pnlPromptForUpload.Visibility != Visibility.Visible )
+            {
+                btnNext.IsEnabled = true;
+            }
         }
     }
 }
