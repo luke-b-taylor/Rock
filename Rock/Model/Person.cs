@@ -2132,7 +2132,8 @@ namespace Rock.Model
         /// <returns></returns>
         public PhoneNumber GetPhoneNumber( Guid phoneType )
         {
-            return PhoneNumbers.FirstOrDefault( n => n.NumberTypeValue.Guid == phoneType );
+            int numberTypeValueId = DefinedValueCache.Get( phoneType ).Id;
+            return PhoneNumbers.FirstOrDefault( n => n.NumberTypeValueId == numberTypeValueId );
         }
 
         #endregion
