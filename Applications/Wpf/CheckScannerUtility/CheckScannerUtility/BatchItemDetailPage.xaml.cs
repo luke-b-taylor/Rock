@@ -148,13 +148,18 @@ namespace Rock.Apps.CheckScannerUtility
 
         private void LoadFinancialTransactionDetails( FinancialTransaction financialTransaction )
         {
+            decimal sum = 0;
             List<DisplayFinancialTransactionDetailModel> displayFinancialTransaction = new List<DisplayFinancialTransactionDetailModel>();
             foreach ( var detail in financialTransaction.TransactionDetails )
             {
+                sum += detail.Amount;
                 displayFinancialTransaction.Add( new DisplayFinancialTransactionDetailModel { AccountDisplayName = GetAccountNameById(detail.AccountId),Amount=detail.Amount} );
             }
 
             this.lvAccountDetails.ItemsSource = displayFinancialTransaction;
+            this.lblTotal.Content = sum.ToString("C");
+       
+          
         }
 
         private string GetAccountNameById( int accountId )

@@ -65,13 +65,31 @@
         <StackPanel Grid.Row="1" Grid.ColumnSpan="1" Margin="10">
             <StackPanel HorizontalAlignment="Left" Background="White">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
-                    <DataGrid x:Name="lvAccountDetails" AutoGenerateColumns="False" >
-                        <DataGrid.Columns>
-                            <DataGridTextColumn   Header="Account Name" Binding = "{Binding AccountDisplayName}" Width="Auto" />
-                            <DataGridTextColumn  Header="Amount" Binding = "{Binding Amount,StringFormat=C}" Width="Auto" />
-                        </DataGrid.Columns>
-                    </DataGrid>
+                    <StackPanel>
+                        <DataGrid x:Name="lvAccountDetails" RowHeaderWidth="0" AutoGenerateColumns="False" CanUserAddRows="False" CanUserResizeRows="False" >
+                            <DataGrid.Columns>
+                                <DataGridTextColumn   Header="Account Name" Binding = "{Binding AccountDisplayName}"  Width="Auto" />
+                                <DataGridTextColumn   Header="Amount" Binding = "{Binding Amount,StringFormat=C}" Width="Auto">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="HorizontalAlignment" Value="Right" />
+                                            <Setter Property="Margin" Value="0,0,5,0" />
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                        <Grid Width="{Binding ActualWidth, ElementName=lvAccountDetails}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition />
+                                <ColumnDefinition />
+                            </Grid.ColumnDefinitions>
+                            <Label Grid.Column="0" Name="lblTotalCaption"  HorizontalAlignment="Left" Content="Total:" FontWeight="Bold" />
+                            <Label Grid.Column="1" Name="lblTotal" HorizontalAlignment="Right" Margin="0,0,10,0" />
+                        </Grid>
+                    </StackPanel>
                 </ScrollViewer>
+                
             </StackPanel>
         </StackPanel>
         <!-- Check Images -->

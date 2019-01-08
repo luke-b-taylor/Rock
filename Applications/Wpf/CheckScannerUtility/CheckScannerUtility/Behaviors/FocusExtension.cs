@@ -26,7 +26,7 @@ namespace Rock.Apps.CheckScannerUtility
         {
             Control control = d as Control;
             if ( ( bool ) e.NewValue )
-            {
+            { 
                 control.Dispatcher.BeginInvoke( new Action( () =>
                 {
                     Keyboard.Focus( control );

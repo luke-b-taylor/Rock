@@ -23,6 +23,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using Rock.Apps.CheckScannerUtility.Models;
@@ -39,6 +40,7 @@ namespace Rock.Apps.CheckScannerUtility
     {
        
         private ScannedDocInfo _currentscannedDocInfo = null;
+       
      
         public ObservableCollection<DisplayAccountValueModel> _displayAccountValuesContext { get; set; }
 
@@ -77,26 +79,53 @@ namespace Rock.Apps.CheckScannerUtility
         {
             // set the uploadScannedItemClient to null and reconnect to ensure we have a fresh connection (just in case they changed the url, or if the connection died for some other reason)
             ScanningPageUtility.Initalize();
+            InitalizeControls();
             ScanningPageUtility.UploadScannedItemClient = null;
             ScanningPageUtility.EnsureUploadScanRestClient();
-            SyncAnyExistingTransaction();
             LoadAccountInfo();
-            ShowStartupPage();
-            InitalizeControls();
-            //Update Progress bar is equivalent to ShowUploadStatus on Scanning Page
-            InitializeFirstScan();
+            SyncAnyExistingTransaction();
+            if ( ScanningPageUtility.KeepScanning )
+            {
+                spCaptureAmount.Visibility = Visibility.Visible;
+                lvAccounts.IsEnabled = true;
+                ShowStartupPage();
+                InitializeFirstScan();
+            }
+            else
+            {
+                spCaptureAmount.Visibility = Visibility.Collapsed;
+                lvAccounts.IsEnabled = false;
+            }
         }
 
         private void InitalizeControls()
         {
             this.btnComplete.Visibility = Visibility.Hidden;
             this.btnNext.Visibility = Visibility.Visible;
-            pbControlAmounts.Foreground = Brushes.Blue;
+            SetAmountlegendInvalid(false);
+
         }
 
         private void SyncAnyExistingTransaction()
         {
-           
+            decimal sum = 0;
+            ScanningPageUtility.KeepScanning = ( ScanningPageUtility.CurrentFinacialTransactions.Count < ScanningPageUtility.ItemsToProcess);
+            foreach ( var financialTransacation in ScanningPageUtility.CurrentFinacialTransactions )
+            {
+                var transactionDeatails = financialTransacation.TransactionDetails;
+                foreach ( var transactionDetail in transactionDeatails )
+                {
+                    sum += transactionDetail.Amount;
+                  
+                }
+                  ScanningPageUtility.ItemsScanned++;
+                  ScanningPageUtility.ItemsUploaded++;
+            }
+
+            ScanningPageUtility.TotalAmountScanned += sum;
+            UpdateProgressBars( ScanningPageUtility.ItemsScanned );
+       
+
         }
 
         /// <summary>
@@ -159,6 +188,7 @@ namespace Rock.Apps.CheckScannerUtility
             scannedDocInfo.Upload = true;
             ScanningPageUtility.UploadScannedItem( scannedDocInfo,(itemCount)=> { this.UpdateProgressBars( ScanningPageUtility.ItemsUploaded ); } );
             this.btnNext.IsEnabled = true;
+            this.BtnNext_Click( sender, e );
 
         }
 
@@ -342,8 +372,7 @@ namespace Rock.Apps.CheckScannerUtility
                 if ( ScanningPageUtility.TotalAmountScanned > ScanningPageUtility.BatchAmount )
                 {
                     pbControlAmounts.Value = 100;
-                    pbControlAmounts.Foreground = Brushes.Red;
-                    SetAmountlegendInvalid();
+                    SetAmountlegendInvalid(true);
                 }
                 this.lblAmountRemaininValue.Content = string.Format( new System.Globalization.CultureInfo( "en-US" ), "{0:C}", ScanningPageUtility.BatchAmount - ScanningPageUtility.TotalAmountScanned );
                 this.lblAmountScannedValue.Content = string.Format( new System.Globalization.CultureInfo( "en-US" ), "{0:C}", currentTotals );
@@ -354,21 +383,23 @@ namespace Rock.Apps.CheckScannerUtility
             {
                 if ( ScanningPageUtility.BatchAmount != ScanningPageUtility.TotalAmountScanned )
                 {
-                    pbControlAmounts.Foreground = Brushes.Red;
-                    SetAmountlegendInvalid();
+                    SetAmountlegendInvalid(true);
                 }
 
+                this.pbControlAmounts.Value = 100;
                 this.btnComplete.Visibility = Visibility.Visible;
                 this.btnNext.Visibility = Visibility.Hidden;
+                ScanningPageUtility.KeepScanning = false;
             }
         }
 
-        private void SetAmountlegendInvalid()
+        private void SetAmountlegendInvalid(bool isInvalid)
         {
-            lblAmountScannedCaption.Foreground = Brushes.Red;
-            lblAmountRemainingCaption.Foreground = Brushes.Red;
-            lblAmountScannedValue.Foreground = Brushes.Red;
-            lblAmountRemaininValue.Foreground = Brushes.Red;
+            lblAmountScannedCaption.Foreground = isInvalid? Brushes.Red: Brushes.Black;
+            lblAmountRemainingCaption.Foreground = isInvalid ? Brushes.Red : Brushes.Black;
+            lblAmountScannedValue.Foreground = isInvalid ? Brushes.Red : Brushes.Black;
+            lblAmountRemaininValue.Foreground = isInvalid ? Brushes.Red : Brushes.Black;
+            pbControlAmounts.Foreground = isInvalid ? Brushes.Red : Brushes.Blue;
         }
 
         /// <summary>
@@ -403,8 +434,10 @@ namespace Rock.Apps.CheckScannerUtility
             {
                 foreach ( DisplayAccountValueModel accountValue in this._displayAccountValuesContext )
                 {
-                    sum += accountValue.Amount;
-
+                    if ( accountValue.Amount != null )
+                    {
+                        sum += (decimal)accountValue.Amount;
+                    }
                 }
                 ScanningPageUtility.TotalAmountScanned += sum;
             }
@@ -430,18 +463,25 @@ namespace Rock.Apps.CheckScannerUtility
              {
                  this._currentscannedDocInfo = null;
                  this.ClearPreviousCheckValues();
-                 ScanningPageUtility.ResumeScanning();
-
+                 var remainingItemsToScan = ScanningPageUtility.ItemsToProcess - ScanningPageUtility.ItemsUploaded;
+                 if ( remainingItemsToScan > 0 )
+                 {
+                    ScanningPageUtility.ResumeScanning();
+                 }
              } );
 
         }
 
+        /// <summary>
+        /// Clears the previous check values.
+        /// Set the controls back to 0 for next check
+        /// </summary>
         private void ClearPreviousCheckValues()
         {
             lblScanCheckWarningDuplicate.Visibility = Visibility.Collapsed;
             foreach ( DisplayAccountValueModel item in lvAccounts.Items )
             {
-                item.Amount = 0;
+                item.Amount = null;
             }
             lvAccounts.SelectedIndex = 0;
             this.lblRoutingNumber.Content = string.Empty;
@@ -871,6 +911,27 @@ namespace Rock.Apps.CheckScannerUtility
                     }
                 }
             }
+        }
+
+        /// <summary>
+        /// Handles the KeyDown event of the TextBox control.
+        /// This allow for user to process enter key
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="System.Windows.Input.KeyEventArgs"/> instance containing the event data.</param>
+        private void TextBox_KeyDown( object sender, System.Windows.Input.KeyEventArgs e )
+        {
+            var textbox = sender as TextBox;
+            if ( e.Key == Key.Return )
+            {
+                if ( !string.IsNullOrEmpty( textbox.Text ) )
+                {
+                    var dataContext = textbox.DataContext as DisplayAccountValueModel;
+                    dataContext.Amount = decimal.Parse( textbox.Text );
+                }
+                this.BtnNext_Click( sender, e );
+            }
+
         }
     }
 }

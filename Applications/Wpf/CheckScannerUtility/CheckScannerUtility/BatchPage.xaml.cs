@@ -376,6 +376,17 @@ namespace Rock.Apps.CheckScannerUtility
 
                 this.FirstPageLoad = false;
             }
+
+            CheckBatchCompleted();
+        }
+
+        private void CheckBatchCompleted()
+        {
+            if ( ScanningPageUtility.ItemsToProcess != null && ScanningPageUtility.ItemsUploaded == ScanningPageUtility.ItemsToProcess)
+            {
+                btnScan.IsEnabled = false;
+            }
+          
         }
 
         /// <summary>
@@ -604,6 +615,8 @@ namespace Rock.Apps.CheckScannerUtility
         private void btnScan_Click( object sender, RoutedEventArgs e )
         {
             var rockConfig = RockConfig.Load();
+
+            ScanningPageUtility.CurrentFinacialTransactions = (grdBatchItems.DataContext as BindingList<FinancialTransaction>).ToList();
 
             // make sure we can connect (
             // NOTE: If ranger is powered down after the app starts, it might report that is is connected.  We'll catch that later when they actually start scanning
@@ -897,6 +910,7 @@ namespace Rock.Apps.CheckScannerUtility
         /// <param name="selectedBatch">The selected batch.</param>
         private void UpdateBatchUI( FinancialBatch selectedBatch )
         {
+            this.btnScan.IsEnabled = true;
             if ( selectedBatch == null )
             {
                 grdBatchItems.DataContext = null;
@@ -986,10 +1000,10 @@ namespace Rock.Apps.CheckScannerUtility
                 bindingList.ListChanged += bindingList_ListChanged;
 
                 grdBatchItems.DataContext = bindingList;
-                ScanningPageUtility.CurrentBatches = bindingList.ToList();
-                DisplayTransactionCount();
+                ScanningPageUtility.CurrentFinacialTransactions = bindingList.ToList();
+                DisplayTransactionCount(rockConfig.CaptureAmountOnScan);
+               
             };
-
             this.Cursor = Cursors.Wait;
             bw.RunWorkerAsync();
         }
@@ -1027,19 +1041,23 @@ namespace Rock.Apps.CheckScannerUtility
         /// <summary>
         /// Displays the transaction count.
         /// </summary>
-        private void DisplayTransactionCount()
+        private void DisplayTransactionCount(bool captureBatchAmount = false)
         {
             var list = grdBatchItems.DataContext as BindingList<FinancialTransaction>;
             if ( list != null )
             {
                 int listCount = list.Count();
                 lblCount.Content = string.Format( "{0} item{1}", listCount, listCount != 1 ? "s" : string.Empty );
+                if ( captureBatchAmount && this.SelectedFinancialBatch.ControlItemCount == listCount )
+                {
+                    this.btnScan.IsEnabled = false;
+                }
             }
             else
             {
                 lblCount.Content = "none";
             }
-
+            
             Rock.Wpf.WpfHelper.FadeIn( lblCount );
         }
 

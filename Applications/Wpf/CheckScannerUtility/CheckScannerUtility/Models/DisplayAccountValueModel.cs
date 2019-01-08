@@ -6,7 +6,7 @@ namespace Rock.Apps.CheckScannerUtility.Models
     public class DisplayAccountValueModel : INotifyPropertyChanged
     {
         private string _accountDisplayName;
-        private decimal _amount;
+        private decimal? _amount;
 
         public event PropertyChangedEventHandler PropertyChanged;
 
@@ -21,7 +21,7 @@ namespace Rock.Apps.CheckScannerUtility.Models
                 PropertyChanged?.Invoke( this, new PropertyChangedEventArgs( "AccountDisplayName" ) );
             }
         }
-        public decimal Amount
+        public decimal? Amount
         {
             get { return _amount; }
             set

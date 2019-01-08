@@ -32,7 +32,7 @@
                 </Ellipse>
             </StackPanel>
         </StackPanel>
-        <StackPanel Grid.Row="1" VerticalAlignment="Bottom" Background="LightGray" Grid.Column="0" Margin="0,0,0,10"  HorizontalAlignment="Stretch" >
+        <StackPanel Name="spCaptureAmount" Grid.Row="1" VerticalAlignment="Bottom" Background="LightGray" Grid.Column="0" Margin="0,0,0,10"  HorizontalAlignment="Stretch" >
             <Label Name="lblExceptions"
                        Style="{StaticResource labelStyleAlertError}"
                        Content="ERROR: --"
@@ -245,12 +245,13 @@
                         <DataTemplate>
                             <StackPanel>
                                 <Label Name="lblAccount" Style="{StaticResource labelStyle}"  Content="{Binding AccountDisplayName}"  />
-                                <TextBox behaviors:NumberOnlyBehaviour.IsEnabled="True" behaviors:NumberOnlyBehaviour.AllowDecimals="True"  HorizontalAlignment="Stretch" Margin="5" Focusable="True" Text="{Binding Amount,Mode=TwoWay}">
+                                <TextBox behaviors:NumberOnlyBehaviour.IsEnabled="True" behaviors:NumberOnlyBehaviour.AllowDecimals="True" KeyDown="TextBox_KeyDown"  HorizontalAlignment="Stretch" Margin="5" Focusable="True" Text="{Binding Amount,Mode=TwoWay}">
                                     <TextBox.Style>
                                         <Style TargetType="TextBox">
                                             <Style.Triggers>
                                                 <DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=ListViewItem}}" Value="True">
                                                     <Setter Property="local:FocusExtension.IsFocused" Value="True" />
+                                                    <Setter Property="Text" Value="{x:Null}" />
                                                 </DataTrigger>
                                             </Style.Triggers>
                                         </Style>

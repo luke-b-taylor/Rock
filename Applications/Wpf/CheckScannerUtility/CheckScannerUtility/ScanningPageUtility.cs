@@ -43,7 +43,7 @@ namespace Rock.Apps.CheckScannerUtility
 
         public static decimal TotalAmountScanned { get; set; }
         public static decimal BatchAmount { get;set; }
-        public static List<FinancialTransaction> CurrentBatches { get; set; }
+        public static List<FinancialTransaction> CurrentFinacialTransactions { get; set; }
         public static List<FinancialAccount> Accounts { get; set; }
 
         public static void ResumeScanning()
@@ -289,7 +289,7 @@ namespace Rock.Apps.CheckScannerUtility
             foreach ( var displayAccount in accounts )
             {
                 var account = displayAccount.Account;
-                financialTransaction.TransactionDetails.Add( new FinancialTransactionDetail { AccountId = account.Id,Amount= displayAccount.Amount,Guid=Guid.NewGuid()} ); 
+                financialTransaction.TransactionDetails.Add( new FinancialTransactionDetail { AccountId = account.Id,Amount=(decimal) displayAccount.Amount,Guid=Guid.NewGuid()} ); 
             }
         }
 
@@ -392,6 +392,7 @@ namespace Rock.Apps.CheckScannerUtility
 
         public static double GetPercentageAmountComplete()
         {
+            var ret = Math.Round( ( double ) ( 100 * TotalAmountScanned ) / ( double ) BatchAmount ); 
             return ( double ) Math.Round( ( double ) ( 100 * TotalAmountScanned) / ( double ) BatchAmount );
         }
 
