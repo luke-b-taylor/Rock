@@ -18,11 +18,16 @@ using System;
 using System.Collections.Generic;
 using System.Data.Entity;
 using System.Data.Entity.Spatial;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
+using System.Web.UI.WebControls;
+
 using Rock;
-using Rock.Web.Cache;
+using Rock.BulkExport;
 using Rock.Data;
+using Rock.Web.Cache;
+using Rock.Web.UI.Controls;
 
 namespace Rock.Model
 {
@@ -754,6 +759,181 @@ namespace Rock.Model
                 .Where( p =>
                     ( p.RecordStatusValueId == recordStatusId || ( recordStatusId == null && p.RecordStatusValueId == null ) ) )
                 .ToList();
+        }
+
+        /// <summary>
+        /// Gets an export of Person Records
+        /// </summary>
+        /// <param name="page">The page being requested (where first page is 1).</param>
+        /// <param name="pageSize">The number of records to provide per page. NOTE: This is limited to the 'API Max Items Per Page' global attribute.</param>
+        /// <param name="exportOptions">The export options.</param>
+        /// <returns></returns>
+        public PeopleExport GetPeopleExport( int page, int pageSize, ExportOptions exportOptions )
+        {
+            Stopwatch stopwatch = Stopwatch.StartNew();
+            IQueryable<Person> personQry;
+            SortProperty sortProperty;
+            if ( exportOptions.SortBy.IsNotNullOrWhiteSpace() )
+            {
+                sortProperty = new SortProperty { Direction = exportOptions.SortDirection, Property = exportOptions.SortBy };
+            }
+            else
+            {
+                sortProperty = new SortProperty { Direction = exportOptions.SortDirection, Property = "Id" };
+            }
+
+            RockContext rockContext = this.Context as RockContext;
+
+            if ( exportOptions.DataViewId.HasValue )
+            {
+                var dataView = new DataViewService( rockContext ).GetNoTracking( exportOptions.DataViewId.Value );
+                if ( dataView != null )
+                {
+                    List<string> errorMessages = null;
+                    personQry = dataView.GetQuery( sortProperty, rockContext, null, out errorMessages ) as IQueryable<Person>;
+                    if ( personQry == null )
+                    {
+                        throw new Exception( "Invalid DataView EntityType" );
+                    }
+                }
+                else
+                {
+                    throw new ArgumentException( $"Invalid DataViewId: {exportOptions.DataViewId} " );
+                }
+            }
+            else
+            {
+                personQry = this.Queryable( true, true );
+                if ( sortProperty != null )
+                {
+                    personQry = personQry.Sort( sortProperty );
+                }
+            }
+
+            if ( exportOptions.ModifiedSince.HasValue )
+            {
+                personQry = personQry.Where( a => a.ModifiedDateTime.HasValue && a.ModifiedDateTime >= exportOptions.ModifiedSince.Value );
+            }
+
+            var skip = ( page - 1 ) * pageSize;
+
+            PeopleExport peopleExport = new PeopleExport();
+            peopleExport.Page = page;
+            peopleExport.PageSize = pageSize;
+            peopleExport.TotalCount = personQry.Count();
+
+            var peopleExportInitMS = stopwatch.Elapsed.TotalMilliseconds;
+            stopwatch.Restart();
+
+            var pagedPersonQry = personQry
+                .Include( a => a.PhoneNumbers )
+                .AsNoTracking()
+                .Skip( skip )
+                .Take( pageSize );
+
+            var personList = pagedPersonQry
+                .ToList();
+
+            var toListMS = stopwatch.Elapsed.TotalMilliseconds;
+            stopwatch.Restart();
+
+            var familyGroupTypeId = GroupTypeCache.Get( Rock.SystemGuid.GroupType.GROUPTYPE_FAMILY ).Id;
+
+            Guid homeAddressGuid = Rock.SystemGuid.DefinedValue.GROUP_LOCATION_TYPE_HOME.AsGuid();
+
+            int homeAddressDefinedValueId = DefinedValueCache.Get( homeAddressGuid ).Id;
+
+            Dictionary<int, Location> personIdHomeLocationsLookup = new GroupMemberService( rockContext ).AsNoFilter()
+                .Where( m => m.Group.GroupTypeId == familyGroupTypeId && pagedPersonQry.Any( p => p.Id == m.PersonId ) )
+                .OrderBy( a => a.PersonId )
+                .Select( m => new
+                {
+                    m.PersonId,
+                    GroupOrder = m.GroupOrder ?? int.MaxValue,
+                    Location = m.Group.GroupLocations.Where( a => a.GroupLocationTypeValueId == homeAddressDefinedValueId && a.IsMailingLocation ).Select( a => a.Location ).FirstOrDefault()
+                } )
+                .AsNoTracking()
+                .ToList()
+                .GroupBy( a => a.PersonId )
+                .Select( a => new
+                {
+                    PersonId = a.Key,
+                    Location = a.OrderBy( v => v.GroupOrder ).Select( s => s.Location ).FirstOrDefault()
+                } )
+                .ToDictionary( k => k.PersonId, v => v.Location );
+
+            var personHomeLocationsLookupMS = stopwatch.Elapsed.TotalMilliseconds;
+            stopwatch.Restart();
+
+            var globalAttributes = GlobalAttributesCache.Get();
+            string publicAppRoot = globalAttributes.GetValue( "PublicApplicationRoot" ).EnsureTrailingForwardslash();
+
+            peopleExport.Persons = personList.Select( p => new PersonExport( p, personIdHomeLocationsLookup, publicAppRoot ) ).ToList();
+            var personExportsMS = stopwatch.Elapsed.TotalMilliseconds;
+            stopwatch.Restart();
+
+            if ( exportOptions.AttributeList?.Any() == true )
+            {
+                var attributeIdsList = exportOptions.AttributeList.Select( a => a.Id ).ToList();
+                var attributeValuesQuery = new AttributeValueService( rockContext ).Queryable()
+                    .Where( a => attributeIdsList.Contains( a.AttributeId ) )
+                    .Where( a => pagedPersonQry.Any( p => p.Id == a.EntityId.Value ) )
+                    .Select( a => new
+                    {
+                        PersonId = a.EntityId.Value,
+                        AttributeId = a.AttributeId,
+                        AttributeValue = a.Value
+                    } );
+
+                var attributeValuesList = attributeValuesQuery.ToList();
+
+                var attributeValuesLookup = attributeValuesList.GroupBy( a => a.PersonId ).ToDictionary( k => k.Key, v => v.Select( a => new AttributeValueCache { AttributeId = a.AttributeId, EntityId = a.PersonId, Value = a.AttributeValue } ) );
+                Dictionary<string, object> defaultAttributeValues;
+                if ( exportOptions.AttributeReturnType == AttributeReturnType.Formatted )
+                {
+                    defaultAttributeValues = exportOptions.AttributeList.ToDictionary( k => k.Key, v => ( object ) v.DefaultValueAsFormatted );
+                }
+                else
+                {
+                    defaultAttributeValues = exportOptions.AttributeList.ToDictionary( k => k.Key, v => v.DefaultValueAsType );
+                }
+
+                foreach ( var personExport in peopleExport.Persons )
+                {
+                    var databaseAttributeValues = attributeValuesLookup.GetValueOrNull( personExport.Id );
+                    personExport.AttributesExport = new AttributesExport();
+
+                    // initialize with DefaultValues 
+                    personExport.AttributesExport.AttributeValues = new Dictionary<string, object>( defaultAttributeValues );
+
+                    // update with values specific to Person
+                    if ( databaseAttributeValues?.Any() == true )
+                    {
+                        foreach ( var databaseAttributeValue in databaseAttributeValues )
+                        {
+                            var attributeCache = AttributeCache.Get( databaseAttributeValue.AttributeId );
+                            if ( exportOptions.AttributeReturnType == AttributeReturnType.Formatted )
+                            {
+                                personExport.AttributesExport.AttributeValues[attributeCache.Key] = databaseAttributeValue.ValueFormatted;
+                            }
+                            else
+                            {
+                                personExport.AttributesExport.AttributeValues[attributeCache.Key] = databaseAttributeValue.ValueAsType;
+                            }
+                        }
+                    }
+                }
+            }
+
+            var attributeValuesLookupMS = stopwatch.Elapsed.TotalMilliseconds;
+            stopwatch.Restart();
+
+            var json = peopleExport.ToJson();
+            var toJSONMS = stopwatch.Elapsed.TotalMilliseconds;
+
+            Debug.WriteLine( $"peopleExportInitMS:{peopleExportInitMS}ms, toListMS:{toListMS}ms, personHomeLocationsLookupMS:{personHomeLocationsLookupMS}ms, personExportsMS:{personExportsMS}ms, attributeValuesLookupMS:{attributeValuesLookupMS}ms, toJSONMS:{toJSONMS}ms" );
+
+            return peopleExport;
         }
 
         /// <summary>

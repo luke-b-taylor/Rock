@@ -17,7 +17,6 @@
 using System;
 using System.Collections.Generic;
 using System.Data.Entity;
-using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
@@ -25,11 +24,11 @@ using System.Text;
 using System.Web;
 using System.Web.Http;
 using System.Web.Http.OData;
+using Rock.BulkExport;
 using Rock.Data;
 using Rock.Model;
 using Rock.Rest.Filters;
 using Rock.Web.Cache;
-using Rock.Web.UI.Controls;
 
 namespace Rock.Rest.Controllers
 {
@@ -458,6 +457,7 @@ namespace Rock.Rest.Controllers
             if ( person != null )
             {
                 GetPersonSearchDetails( personSearchResult, person );
+
                 // Generate the HTML for the ConnectionStatus; "label-success" matches the default config of the
                 // connection status badge on the Bio bar, but I think label-default works better here.
                 string connectionStatusHtml = string.IsNullOrWhiteSpace( personSearchResult.ConnectionStatus ) ? string.Empty : string.Format( "<span class='label label-default pull-right'>{0}</span>", personSearchResult.ConnectionStatus );
@@ -832,119 +832,57 @@ namespace Rock.Rest.Controllers
         /// <summary>
         /// Exports Person Records
         /// </summary>
-        /// <param name="page">The page.</param>
-        /// <param name="pageSize">Size of the page.</param>
-        /// <param name="sortBy">The sort by.</param>
-        /// <param name="sortDirection">The sort direction.</param>
-        /// <param name="dataViewId">The data view identifier.</param>
-        /// <param name="modifiedSince">The modified since.</param>
+        /// <param name="page">The page being requested (where first page is 1).</param>
+        /// <param name="pageSize">The number of records to provide per page. NOTE: This is limited to the 'API Max Items Per Page' global attribute.</param>
+        /// <param name="sortBy">Optional field to sort by. This must be a mapped property on the Person model.</param>
+        /// <param name="sortDirection">The sort direction (1 = Ascending, 0 = Descending). Default is 1 (Ascending).</param>
+        /// <param name="dataViewId">The optional data view to use for filtering.</param>
+        /// <param name="modifiedSince">The optional date/time to filter to only get newly updated items.</param>
+        /// <param name="attributeKeys">Optional comma-delimited list of attribute keys for the attribute values that should be included with each Person Export record.</param>
+        /// <param name="attributeReturnType">Raw/Formatted (default is Raw)</param>
         /// <returns></returns>
         [Authenticate, Secured]
         [HttpGet]
         [System.Web.Http.Route( "api/People/Export" )]
-        public PeopleExport Export( int page, int pageSize, string sortBy = null, int sortDirection = 0, int? dataViewId = null, DateTime? modifiedSince = null )
+        public PeopleExport Export(
+            int page,
+            int pageSize,
+            string sortBy = null,
+            System.Web.UI.WebControls.SortDirection sortDirection = System.Web.UI.WebControls.SortDirection.Ascending,
+            int? dataViewId = null,
+            DateTime? modifiedSince = null,
+            string attributeKeys = null,
+            AttributeReturnType attributeReturnType = AttributeReturnType.Raw
+            )
         {
             var rockContext = new RockContext();
             var personService = new PersonService( rockContext );
-            IQueryable<Person> personQry;
-            SortProperty sortProperty;
-            if ( sortBy.IsNotNullOrWhiteSpace() )
-            {
-                sortProperty = new SortProperty { Direction = ( System.Web.UI.WebControls.SortDirection ) sortDirection, Property = sortBy };
-            }
-            else
-            {
-                sortProperty = new SortProperty { Direction = ( System.Web.UI.WebControls.SortDirection ) sortDirection, Property = "Id" };
-            }
 
-            if ( dataViewId.HasValue )
+            List<AttributeCache> attributeList = null;
+
+            if ( attributeKeys.IsNotNullOrWhiteSpace() )
             {
-                var dataView = new DataViewService( rockContext ).GetNoTracking( dataViewId.Value );
-                if ( dataView != null )
-                {
-                    List<string> errorMessages = null;
-                    personQry = dataView.GetQuery( sortProperty, rockContext, null, out errorMessages ) as IQueryable<Person>;
-                    if ( personQry == null )
-                    {
-                        throw new HttpResponseException( System.Net.HttpStatusCode.BadRequest ) { Source = $"DataViewId: {dataViewId}" };
-                    }
-                }
-                else
-                {
-                    throw new HttpResponseException( System.Net.HttpStatusCode.NotFound ) { Source = $"DataViewId: {dataViewId}" };
-                }
-            }
-            else
-            {
-                personQry = personService.Queryable();
-                if ( sortProperty != null )
-                {
-                    personQry = personQry.Sort( sortProperty );
-                }
+                string[] attributeKeyList = attributeKeys?.Split( new char[] { ',' } );
+                var entityTypeIdPerson = EntityTypeCache.Get<Rock.Model.Person>().Id;
+                attributeList = new AttributeService( rockContext ).Queryable().Where( a => attributeKeyList.Contains( a.Key ) && a.EntityTypeId == entityTypeIdPerson ).ToCacheAttributeList();
             }
 
-            // todo: limit to global attribute
-            var fetchCount = pageSize;
+            // todo: limit to 'API Max Items Per Page' global attribute
+            var actualPageSize = pageSize;
 
-            var skip = ( page - 1 ) * fetchCount;
+            ExportOptions exportOptions = new ExportOptions
+            {
+                SortBy = sortBy,
+                SortDirection = sortDirection,
+                DataViewId = dataViewId,
+                ModifiedSince = modifiedSince,
+                AttributeList = attributeList,
+                AttributeReturnType = attributeReturnType
+            };
 
-            PeopleExport peopleExport = new PeopleExport();
-            peopleExport.Page = page;
-            peopleExport.PageSize = pageSize;
-            peopleExport.TotalCount = personQry.Count();
-
-            var pagedPersonQry = personQry
-                .Include( a => a.PhoneNumbers )
-                .AsNoTracking()
-                .Skip( skip )
-                .Take( fetchCount );
-
-            Stopwatch stopwatch = Stopwatch.StartNew();
-            var personList = pagedPersonQry
-                .ToList();
-
-            var toListMS = stopwatch.Elapsed.TotalMilliseconds;
-            stopwatch.Restart();
-
-            var familyGroupTypeId = GroupTypeCache.Get( Rock.SystemGuid.GroupType.GROUPTYPE_FAMILY ).Id;
-
-            Guid homeAddressGuid = Rock.SystemGuid.DefinedValue.GROUP_LOCATION_TYPE_HOME.AsGuid();
-
-            int homeAddressDefinedValueId = DefinedValueCache.GetId( homeAddressGuid ).Value;
-
-            Dictionary<int, Location> personIdHomeLocationsLookup = new GroupMemberService( rockContext ).AsNoFilter()
-                .Where( m => m.Group.GroupTypeId == familyGroupTypeId && pagedPersonQry.Any( p => p.Id == m.PersonId ) )
-                .OrderBy( a => a.PersonId )
-                .Select( m => new
-                {
-                    m.PersonId,
-                    GroupOrder = m.GroupOrder ?? int.MaxValue,
-                    Location = m.Group.GroupLocations.Where( a => a.GroupLocationTypeValueId == homeAddressDefinedValueId && a.IsMailingLocation ).Select( a => a.Location ).FirstOrDefault()
-                } )
-                .AsNoTracking()
-                .ToList()
-                .GroupBy( a => a.PersonId )
-                .Select( a => new
-                {
-                    PersonId = a.Key,
-                    Location = a.OrderBy( v => v.GroupOrder ).Select( s => s.Location ).FirstOrDefault()
-                } )
-                .ToDictionary( k => k.PersonId, v => v.Location );
-
-            var personHomeLocationsLookupMS = stopwatch.Elapsed.TotalMilliseconds;
-            stopwatch.Restart();
-
-            peopleExport.Persons = personList.Select( p => new PersonExport( p, personIdHomeLocationsLookup ) ).ToList();
-            var personExportsMS = stopwatch.Elapsed.TotalMilliseconds;
-            stopwatch.Restart();
-
-            var json = peopleExport.ToJson();
-            var toJSONMS = stopwatch.Elapsed.TotalMilliseconds;
-
-            Debug.WriteLine( $"{toListMS}ms, {personHomeLocationsLookupMS}ms, {personExportsMS}ms, {toJSONMS}ms" );
-
-            return peopleExport;
+            return personService.GetPeopleExport( page, actualPageSize, exportOptions );
         }
+
         #endregion
     }
 
@@ -1065,592 +1003,5 @@ namespace Rock.Rest.Controllers
         /// The picker item details person information HTML.
         /// </value>
         public string PickerItemDetailsPersonInfoHtml { get; set; }
-    }
-
-    /// <summary>
-    /// 
-    /// </summary>
-    [RockClientInclude( "Export record from ~/api/People/Export" )]
-    public class PeopleExport
-    {
-        /// <summary>
-        /// Gets or sets the page (1 based) that is included in this export
-        /// </summary>
-        /// <value>
-        /// The page.
-        /// </value>
-        public int Page { get; set; }
-
-        /// <summary>
-        /// The PageSize that was specified
-        /// </summary>
-        /// <value>
-        /// The size of the page.
-        /// </value>
-        public int PageSize { get; set; }
-
-        /// <summary>
-        /// Gets or sets the total number of records (all pages)
-        /// </summary>
-        /// <value>
-        /// The total count.
-        /// </value>
-        public int TotalCount { get; set; }
-
-        /// <summary>
-        /// Gets or sets the list persons in this page of the PeopleExport
-        /// </summary>
-        /// <value>
-        /// The persons.
-        /// </value>
-        public List<PersonExport> Persons { get; set; }
-    }
-
-    /// <summary>
-    /// Export record from ~/api/People/Export
-    /// </summary>
-    [RockClientInclude( "Export of Person record from ~/api/People/Export" )]
-    public class PersonExport
-    {
-
-        /// <summary>
-        /// The person
-        /// </summary>
-        private Person _person;
-
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="PersonExport" /> class.
-        /// </summary>
-        /// <param name="person">The person.</param>
-        /// <param name="personIdHomeLocationsLookup">The person identifier home locations lookup.</param>
-        public PersonExport( Person person, Dictionary<int, Location> personIdHomeLocationsLookup )
-        {
-            _person = person;
-            this.HomeAddress = new LocationExport( personIdHomeLocationsLookup.GetValueOrNull( person.Id ) );
-        }
-
-        /// <summary>
-        /// Gets the identifier.
-        /// </summary>
-        /// <value>
-        /// The identifier.
-        /// </value>
-        public int Id => _person.Id;
-
-        /// <summary>
-        /// The Person's salutation title.
-        /// </summary>
-        /// <value>
-        /// The title.
-        /// </value>
-        public string Title
-        {
-            get
-            {
-                if ( _person.TitleValueId.HasValue )
-                {
-                    return DefinedValueCache.GetValue( _person.TitleValueId.Value );
-                }
-
-                return null;
-            }
-        }
-
-        /// <summary>
-        /// Gets the first name.
-        /// </summary>
-        /// <value>
-        /// The first name.
-        /// </value>
-        public string FirstName => _person.FirstName;
-
-        /// <summary>
-        /// Gets the name of the nick.
-        /// </summary>
-        /// <value>
-        /// The name of the nick.
-        /// </value>
-        public string NickName => _person.NickName;
-
-        /// <summary>
-        /// Gets the name of the middle.
-        /// </summary>
-        /// <value>
-        /// The name of the middle.
-        /// </value>
-        public string MiddleName => _person.MiddleName;
-
-        /// <summary>
-        /// Gets the last name.
-        /// </summary>
-        /// <value>
-        /// The last name.
-        /// </value>
-        public string LastName => _person.LastName;
-
-        /// <summary>
-        /// Gets the suffix.
-        /// </summary>
-        /// <value>
-        /// The suffix.
-        /// </value>
-        public string Suffix
-        {
-            get
-            {
-                if ( _person.SuffixValueId.HasValue )
-                {
-                    return DefinedValueCache.GetValue( _person.SuffixValueId.Value );
-                }
-
-                return null;
-            }
-        }
-
-        /// <summary>
-        /// Gets the photo URL.
-        /// </summary>
-        /// <value>
-        /// The photo URL.
-        /// </value>
-        public string PhotoUrl => _person.PhotoUrl;
-
-        /// <summary>
-        /// Gets the birth day.
-        /// </summary>
-        /// <value>
-        /// The birth day.
-        /// </value>
-        public int? BirthDay => _person.BirthDay;
-
-        /// <summary>
-        /// Gets the birth month.
-        /// </summary>
-        /// <value>
-        /// The birth month.
-        /// </value>
-        public int? BirthMonth => _person.BirthMonth;
-
-        /// <summary>
-        /// Gets the birth year.
-        /// </summary>
-        /// <value>
-        /// The birth year.
-        /// </value>
-        public int? BirthYear => _person.BirthYear;
-
-        /// <summary>
-        /// Gets the gender.
-        /// </summary>
-        /// <value>
-        /// The gender.
-        /// </value>
-        public string Gender => _person.Gender.ConvertToString();
-
-        /// <summary>
-        /// Gets the marital status value identifier.
-        /// </summary>
-        /// <value>
-        /// The marital status value identifier.
-        /// </value>
-        public int? MaritalStatusValueId => _person.MaritalStatusValueId;
-
-        /// <summary>
-        /// Gets the marital status.
-        /// </summary>
-        /// <value>
-        /// The marital status.
-        /// </value>
-        public string MaritalStatus
-        {
-            get
-            {
-                if ( _person.MaritalStatusValueId.HasValue )
-                {
-                    return DefinedValueCache.GetValue( _person.MaritalStatusValueId.Value );
-                }
-
-                return null;
-            }
-        }
-
-        /// <summary>
-        /// Gets the anniversary date.
-        /// </summary>
-        /// <value>
-        /// The anniversary date.
-        /// </value>
-        public DateTime? AnniversaryDate => _person.AnniversaryDate;
-
-        /// <summary>
-        /// Gets the graduation year.
-        /// </summary>
-        /// <value>
-        /// The graduation year.
-        /// </value>
-        public int? GraduationYear => _person.GraduationYear;
-
-        /// <summary>
-        /// Gets the giving group identifier.
-        /// </summary>
-        /// <value>
-        /// The giving group identifier.
-        /// </value>
-        public int? GivingGroupId => _person.GivingGroupId;
-
-        /// <summary>
-        /// Gets the giving identifier.
-        /// </summary>
-        /// <value>
-        /// The giving identifier.
-        /// </value>
-        public string GivingId => _person.GivingId;
-
-        /// <summary>
-        /// Gets the giving leader identifier.
-        /// </summary>
-        /// <value>
-        /// The giving leader identifier.
-        /// </value>
-        public int GivingLeaderId => _person.GivingLeaderId;
-
-        /// <summary>
-        /// Gets the email.
-        /// </summary>
-        /// <value>
-        /// The email.
-        /// </value>
-        public string Email => _person.Email;
-
-        /// <summary>
-        /// Gets the age classification.
-        /// </summary>
-        /// <value>
-        /// The age classification.
-        /// </value>
-        public string AgeClassification => _person.AgeClassification.ConvertToString();
-
-        /// <summary>
-        /// Gets the primary family identifier.
-        /// </summary>
-        /// <value>
-        /// The primary family identifier.
-        /// </value>
-        public int? PrimaryFamilyId => _person.PrimaryFamilyId;
-
-        /// <summary>
-        /// Gets the deceased date.
-        /// </summary>
-        /// <value>
-        /// The deceased date.
-        /// </value>
-        public DateTime? DeceasedDate => _person.DeceasedDate;
-
-        /// <summary>
-        /// Gets a value indicating whether this instance is business.
-        /// </summary>
-        /// <value>
-        ///   <c>true</c> if this instance is business; otherwise, <c>false</c>.
-        /// </value>
-        public bool IsBusiness => _person.IsBusiness();
-
-        /// <summary>
-        /// Gets the home phone.
-        /// </summary>
-        /// <value>
-        /// The home phone.
-        /// </value>
-        public string HomePhone
-        {
-            get
-            {
-                return _person.GetPhoneNumber( Rock.SystemGuid.DefinedValue.PERSON_PHONE_TYPE_HOME.AsGuid() )?.Number;
-            }
-        }
-
-        /// <summary>
-        /// Gets the mobile phone.
-        /// </summary>
-        /// <value>
-        /// The mobile phone.
-        /// </value>
-        public string MobilePhone
-        {
-            get
-            {
-                return _person.GetPhoneNumber( Rock.SystemGuid.DefinedValue.PERSON_PHONE_TYPE_MOBILE.AsGuid() )?.Number;
-            }
-        }
-
-        /// <summary>
-        /// Gets the home address.
-        /// </summary>
-        /// <value>
-        /// The home address.
-        /// </value>
-        public LocationExport HomeAddress { get; private set; }
-
-        /// <summary>
-        /// Gets the record type value identifier.
-        /// </summary>
-        /// <value>
-        /// The record type value identifier.
-        /// </value>
-        public int? RecordTypeValueId => _person.RecordTypeValueId;
-
-        /// <summary>
-        /// Gets the type of the record.
-        /// </summary>
-        /// <value>
-        /// The type of the record.
-        /// </value>
-        public string RecordType
-        {
-            get
-            {
-                if ( _person.RecordTypeValueId.HasValue )
-                {
-                    return DefinedValueCache.GetValue( _person.RecordTypeValueId.Value );
-                }
-
-                return null;
-            }
-        }
-
-        /// <summary>
-        /// Gets the record status value identifier.
-        /// </summary>
-        /// <value>
-        /// The record status value identifier.
-        /// </value>
-        public int? RecordStatusValueId => _person.RecordStatusValueId;
-
-        /// <summary>
-        /// Gets the record status.
-        /// </summary>
-        /// <value>
-        /// The record status.
-        /// </value>
-        public string RecordStatus
-        {
-            get
-            {
-                if ( _person.RecordStatusValueId.HasValue )
-                {
-                    return DefinedValueCache.GetValue( _person.RecordStatusValueId.Value );
-                }
-
-                return null;
-            }
-        }
-
-        /// <summary>
-        /// Gets the record status last modified date time.
-        /// </summary>
-        /// <value>
-        /// The record status last modified date time.
-        /// </value>
-        public DateTime? RecordStatusLastModifiedDateTime => _person.RecordStatusLastModifiedDateTime;
-
-        /// <summary>
-        /// Gets the record status reason value identifier.
-        /// </summary>
-        /// <value>
-        /// The record status reason value identifier.
-        /// </value>
-        public int? RecordStatusReasonValueId => _person.RecordStatusReasonValueId;
-
-        /// <summary>
-        /// Gets the record status reason.
-        /// </summary>
-        /// <value>
-        /// The record status reason.
-        /// </value>
-        public string RecordStatusReason
-        {
-            get
-            {
-                if ( _person.RecordStatusReasonValueId.HasValue )
-                {
-                    return DefinedValueCache.GetValue( _person.RecordStatusReasonValueId.Value );
-                }
-
-                return null;
-            }
-        }
-
-        /// <summary>
-        /// Gets the connection status value identifier.
-        /// </summary>
-        /// <value>
-        /// The connection status value identifier.
-        /// </value>
-        public int? ConnectionStatusValueId => _person.ConnectionStatusValueId;
-
-        /// <summary>
-        /// Gets the connection status.
-        /// </summary>
-        /// <value>
-        /// The connection status.
-        /// </value>
-        public string ConnectionStatus
-        {
-            get
-            {
-                if ( _person.ConnectionStatusValueId.HasValue )
-                {
-                    return DefinedValueCache.GetValue( _person.ConnectionStatusValueId.Value );
-                }
-
-                return null;
-            }
-        }
-
-        /// <summary>
-        /// Gets a value indicating whether this instance is deceased.
-        /// </summary>
-        /// <value>
-        ///   <c>true</c> if this instance is deceased; otherwise, <c>false</c>.
-        /// </value>
-        public bool IsDeceased => _person.IsDeceased;
-
-        /// <summary>
-        /// Gets the created date time.
-        /// </summary>
-        /// <value>
-        /// The created date time.
-        /// </value>
-        public DateTime? CreatedDateTime => _person.CreatedDateTime;
-
-        /// <summary>
-        /// Gets the modified date time.
-        /// </summary>
-        /// <value>
-        /// The modified date time.
-        /// </value>
-        public DateTime? ModifiedDateTime => _person.ModifiedDateTime;
-
-        /// <summary>
-        /// Gets the unique identifier.
-        /// </summary>
-        /// <value>
-        /// The unique identifier.
-        /// </value>
-        public Guid Guid => _person.Guid;
-
-        /// <summary>
-        /// Gets the foreign key.
-        /// </summary>
-        /// <value>
-        /// The foreign key.
-        /// </value>
-        public string ForeignKey => _person.ForeignKey;
-
-        /// <summary>
-        /// Gets the foreign identifier.
-        /// </summary>
-        /// <value>
-        /// The foreign identifier.
-        /// </value>
-        public int? ForeignId => _person.ForeignId;
-
-        /// <summary>
-        /// Gets the foreign unique identifier.
-        /// </summary>
-        /// <value>
-        /// The foreign unique identifier.
-        /// </value>
-        public Guid? ForeignGuid => _person.ForeignGuid;
-    }
-
-    /// <summary>
-    /// 
-    /// </summary>
-    [RockClientInclude( "Export class for Addresses from ~/api/People/Export" )]
-    public class LocationExport
-    {
-        private Location _location;
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="LocationExport" /> class.
-        /// </summary>
-        /// <param name="location">The location.</param>
-        public LocationExport( Location location )
-        {
-            _location = location;
-        }
-
-        /// <summary>
-        /// Gets the latitude.
-        /// </summary>
-        /// <value>
-        /// The latitude.
-        /// </value>
-        public double? Latitude => _location?.Latitude;
-
-        /// <summary>
-        /// Gets the longitude.
-        /// </summary>
-        /// <value>
-        /// The longitude.
-        /// </value>
-        public double? Longitude => _location?.Longitude;
-
-        /// <summary>
-        /// Gets the street1.
-        /// </summary>
-        /// <value>
-        /// The street1.
-        /// </value>
-        public string Street1 => _location?.Street1;
-
-        /// <summary>
-        /// Gets the street2.
-        /// </summary>
-        /// <value>
-        /// The street2.
-        /// </value>
-        public string Street2 => _location?.Street2;
-
-        /// <summary>
-        /// Gets the city.
-        /// </summary>
-        /// <value>
-        /// The city.
-        /// </value>
-        public string City => _location?.City;
-
-        /// <summary>
-        /// Gets the state.
-        /// </summary>
-        /// <value>
-        /// The state.
-        /// </value>
-        public string State => _location?.State;
-
-        /// <summary>
-        /// Gets the postal code.
-        /// </summary>
-        /// <value>
-        /// The postal code.
-        /// </value>
-        public string PostalCode => _location?.PostalCode;
-
-        /// <summary>
-        /// Gets the country.
-        /// </summary>
-        /// <value>
-        /// The country.
-        /// </value>
-        public string Country => _location?.Country;
-
-        /// <summary>
-        /// Gets the county.
-        /// </summary>
-        /// <value>
-        /// The county.
-        /// </value>
-        public string County => _location?.County;
     }
 }
