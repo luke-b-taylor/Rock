@@ -64,16 +64,7 @@ namespace Rock.Apps.CheckScannerUtility
             {
                 var rangerScannerHostPage = new RangerScannerHostPage();
                 this.rangerScanner = rangerScannerHostPage.rangerScanner;
-
-                if ( rockConfig.CaptureAmountOnScan == true )
-                {
-                    this.BindRangeScannerEventsCaputureAmountScanningPage();
-                }
-                else
-                {
-                    this.BindRangeScannerEventsScanningPage();
-                }
-             
+                SetCaputureAmountOnScan();
                 this.rangerScanner.TransportNewState += rangerScanner_TransportNewState;
                 this.rangerScanner.TransportChangeOptionsState += rangerScanner_TransportChangeOptionsState;
 
@@ -96,6 +87,19 @@ namespace Rock.Apps.CheckScannerUtility
             catch
             {
                 // intentionally nothing.  means they don't have the Ranger driver
+            }
+        }
+
+        public void SetCaputureAmountOnScan()
+        {
+            var rockConfig = RockConfig.Load();
+            if ( rockConfig.CaptureAmountOnScan == true )
+            {
+                this.BindRangeScannerEventsCaputureAmountScanningPage();
+            }
+            else
+            {
+                this.BindRangeScannerEventsScanningPage();
             }
         }
 

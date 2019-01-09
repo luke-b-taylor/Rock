@@ -371,7 +371,7 @@ namespace Rock.Apps.CheckScannerUtility
             {
                 BatchPage.rangerScanner.ShutDown();
             }
-
+            BatchPage.SetCaputureAmountOnScan();
             BatchPage.ConnectToScanner();
 
             this.NavigationService.GoBack();
