@@ -414,7 +414,7 @@ namespace Rock.Apps.CheckScannerUtility
 
             if ( spControlAmountProgressBar.Visibility == Visibility.Visible )
             {
-                var currentTotals = SumAllAccountEntries();
+                var currentTotals = ScanningPageUtility.TotalAmountScanned  + SumAllAccountEntries();
                 if ( ScanningPageUtility.TotalAmountScanned > ScanningPageUtility.BatchAmount )
                 {
                     pbControlAmounts.Value = 100;
@@ -515,7 +515,7 @@ namespace Rock.Apps.CheckScannerUtility
             HandleCurrentDocInfo( () =>
              {
                  this._currentscannedDocInfo = null;
-                 this.ClearPreviousCheckValues();
+                 this.ResetUIForNextScan();
                  var remainingItemsToScan = ScanningPageUtility.ItemsToProcess - ScanningPageUtility.ItemsUploaded;
                  if ( remainingItemsToScan > 0 )
                  {
@@ -529,7 +529,7 @@ namespace Rock.Apps.CheckScannerUtility
         /// Clears the previous check values.
         /// Set the controls back to 0 for next check
         /// </summary>
-        private void ClearPreviousCheckValues()
+        private void ResetUIForNextScan()
         {
             lblScanCheckWarningDuplicate.Visibility = Visibility.Collapsed;
             foreach ( DisplayAccountValueModel item in lvAccounts.Items )
@@ -542,7 +542,7 @@ namespace Rock.Apps.CheckScannerUtility
             lblAccountNumber.Content = string.Empty;
             this.lblOtherData.Content = string.Empty;
             this.pnlPromptForUpload.Visibility = Visibility.Collapsed;
-           
+            this.rowTop.Height = new GridLength( .13, GridUnitType.Star );
 
         }
 
@@ -906,6 +906,10 @@ namespace Rock.Apps.CheckScannerUtility
             lblScanCheckWarningBadMicr.Visibility = scannedDocInfo.BadMicr ? Visibility.Visible : Visibility.Collapsed;
             lblScanItemUploadSuccess.Visibility = Visibility.Collapsed;
             pnlPromptForUpload.Visibility = scannedDocInfo.Duplicate || scannedDocInfo.BadMicr ? Visibility.Visible : Visibility.Collapsed;
+            if ( pnlPromptForUpload.Visibility == Visibility.Visible )
+            {
+                this.rowTop.Height = new GridLength( .6, GridUnitType.Star );
+            }
             btnClose.IsEnabled = true;
             btnNext.IsEnabled = false;
         }

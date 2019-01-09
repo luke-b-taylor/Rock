@@ -73,9 +73,9 @@
         <StackPanel Name="spBody" Grid.Row="1" Orientation="Horizontal" Grid.ColumnSpan="2" Background="AliceBlue" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"  >
             <Grid Name="gridCheckInfo" Grid.Column="0">
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition  Height="5" />
-                    <RowDefinition Height="*" />
+                    <RowDefinition Name="rowTop" Height="Auto" />
+                    <RowDefinition Name="rowMiddle" Height="5" />
+                    <RowDefinition Name="rowBottom" Height="*" />
                 </Grid.RowDefinitions>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition   />
