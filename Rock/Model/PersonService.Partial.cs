@@ -786,20 +786,7 @@ namespace Rock.Model
 
             if ( exportOptions.DataViewId.HasValue )
             {
-                var dataView = new DataViewService( rockContext ).GetNoTracking( exportOptions.DataViewId.Value );
-                if ( dataView != null )
-                {
-                    List<string> errorMessages = null;
-                    personQry = dataView.GetQuery( sortProperty, rockContext, null, out errorMessages ) as IQueryable<Person>;
-                    if ( personQry == null )
-                    {
-                        throw new Exception( "Invalid DataView EntityType" );
-                    }
-                }
-                else
-                {
-                    throw new ArgumentException( $"Invalid DataViewId: {exportOptions.DataViewId} " );
-                }
+                personQry = ModelExport.QueryFromDataView<Person>( rockContext, exportOptions.DataViewId.Value );
             }
             else
             {
@@ -826,13 +813,13 @@ namespace Rock.Model
             stopwatch.Restart();
 
             var pagedPersonQry = personQry
+                .Include( a => a.Aliases )
                 .Include( a => a.PhoneNumbers )
                 .AsNoTracking()
                 .Skip( skip )
                 .Take( pageSize );
 
-            var personList = pagedPersonQry
-                .ToList();
+            var personList = pagedPersonQry.ToList();
 
             var toListMS = stopwatch.Elapsed.TotalMilliseconds;
             stopwatch.Restart();
@@ -872,66 +859,14 @@ namespace Rock.Model
             var personExportsMS = stopwatch.Elapsed.TotalMilliseconds;
             stopwatch.Restart();
 
-            if ( exportOptions.AttributeList?.Any() == true )
-            {
-                var attributeIdsList = exportOptions.AttributeList.Select( a => a.Id ).ToList();
-                var attributeValuesQuery = new AttributeValueService( rockContext ).Queryable()
-                    .Where( a => attributeIdsList.Contains( a.AttributeId ) )
-                    .Where( a => pagedPersonQry.Any( p => p.Id == a.EntityId.Value ) )
-                    .Select( a => new
-                    {
-                        PersonId = a.EntityId.Value,
-                        AttributeId = a.AttributeId,
-                        AttributeValue = a.Value
-                    } );
+            AttributesExport.LoadAttributeValues( exportOptions, rockContext, peopleExport.Persons, pagedPersonQry );
 
-                var attributeValuesList = attributeValuesQuery.ToList();
-
-                var attributeValuesLookup = attributeValuesList.GroupBy( a => a.PersonId ).ToDictionary( k => k.Key, v => v.Select( a => new AttributeValueCache { AttributeId = a.AttributeId, EntityId = a.PersonId, Value = a.AttributeValue } ) );
-                Dictionary<string, object> defaultAttributeValues;
-                if ( exportOptions.AttributeReturnType == AttributeReturnType.Formatted )
-                {
-                    defaultAttributeValues = exportOptions.AttributeList.ToDictionary( k => k.Key, v => ( object ) v.DefaultValueAsFormatted );
-                }
-                else
-                {
-                    defaultAttributeValues = exportOptions.AttributeList.ToDictionary( k => k.Key, v => v.DefaultValueAsType );
-                }
-
-                foreach ( var personExport in peopleExport.Persons )
-                {
-                    var databaseAttributeValues = attributeValuesLookup.GetValueOrNull( personExport.Id );
-                    personExport.AttributesExport = new AttributesExport();
-
-                    // initialize with DefaultValues 
-                    personExport.AttributesExport.AttributeValues = new Dictionary<string, object>( defaultAttributeValues );
-
-                    // update with values specific to Person
-                    if ( databaseAttributeValues?.Any() == true )
-                    {
-                        foreach ( var databaseAttributeValue in databaseAttributeValues )
-                        {
-                            var attributeCache = AttributeCache.Get( databaseAttributeValue.AttributeId );
-                            if ( exportOptions.AttributeReturnType == AttributeReturnType.Formatted )
-                            {
-                                personExport.AttributesExport.AttributeValues[attributeCache.Key] = databaseAttributeValue.ValueFormatted;
-                            }
-                            else
-                            {
-                                personExport.AttributesExport.AttributeValues[attributeCache.Key] = databaseAttributeValue.ValueAsType;
-                            }
-                        }
-                    }
-                }
-            }
-
-            var attributeValuesLookupMS = stopwatch.Elapsed.TotalMilliseconds;
             stopwatch.Restart();
 
             var json = peopleExport.ToJson();
             var toJSONMS = stopwatch.Elapsed.TotalMilliseconds;
 
-            Debug.WriteLine( $"peopleExportInitMS:{peopleExportInitMS}ms, toListMS:{toListMS}ms, personHomeLocationsLookupMS:{personHomeLocationsLookupMS}ms, personExportsMS:{personExportsMS}ms, attributeValuesLookupMS:{attributeValuesLookupMS}ms, toJSONMS:{toJSONMS}ms" );
+            Debug.WriteLine( $"peopleExportInitMS:{peopleExportInitMS}ms, toListMS:{toListMS}ms, personHomeLocationsLookupMS:{personHomeLocationsLookupMS}ms, personExportsMS:{personExportsMS}ms, toJSONMS:{toJSONMS}ms" );
 
             return peopleExport;
         }

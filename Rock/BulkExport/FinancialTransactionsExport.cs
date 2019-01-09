@@ -23,16 +23,17 @@ namespace Rock.BulkExport
     /// <summary>
     /// 
     /// </summary>
-    [RockClientInclude( "Export result from ~/api/People/Export" )]
-    public class PeopleExport : ExportResult
+    /// <seealso cref="Rock.BulkExport.ExportResult" />
+    [RockClientInclude( "Export result from ~/api/FinancialTransactions/Export" )]
+    public class FinancialTransactionsExport : ExportResult
     {
         /// <summary>
-        /// Gets or sets the list persons in this page of the PeopleExport
+        /// Gets or sets the list financial transactions in this page of the FinancialTransactionsExport
         /// </summary>
         /// <value>
         /// The persons.
         /// </value>
         [DataMember]
-        public List<PersonExport> Persons { get; set; }
+        public List<FinancialTransactionExport> FinancialTransactions { get; set; }
     }
 }

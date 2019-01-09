@@ -14,25 +14,44 @@
 // limitations under the License.
 // </copyright>
 //
-using System.Collections.Generic;
 using System.Runtime.Serialization;
-using Rock.Data;
+using Newtonsoft.Json;
 
 namespace Rock.BulkExport
 {
     /// <summary>
     /// 
     /// </summary>
-    [RockClientInclude( "Export result from ~/api/People/Export" )]
-    public class PeopleExport : ExportResult
+    public abstract class ExportResult
     {
         /// <summary>
-        /// Gets or sets the list persons in this page of the PeopleExport
+        /// Gets or sets the page (1 based) that is included in this export
         /// </summary>
         /// <value>
-        /// The persons.
+        /// The page.
         /// </value>
+        [JsonProperty( Order = -4 )]
         [DataMember]
-        public List<PersonExport> Persons { get; set; }
+        public int Page { get; set; }
+
+        /// <summary>
+        /// The PageSize that was specified
+        /// </summary>
+        /// <value>
+        /// The size of the page.
+        /// </value>
+        [JsonProperty( Order = -3 )]
+        [DataMember]
+        public int PageSize { get; set; }
+
+        /// <summary>
+        /// Gets or sets the total number of records (all pages)
+        /// </summary>
+        /// <value>
+        /// The total count.
+        /// </value>
+        [JsonProperty( Order = -2 )]
+        [DataMember]
+        public int TotalCount { get; set; }
     }
 }

@@ -23,8 +23,8 @@ using System.Net.Http;
 using System.Web.Http;
 using System.Web.Http.OData;
 using Rock;
+using Rock.BulkExport;
 using Rock.Data;
-using Rock.Financial;
 using Rock.Model;
 using Rock.Rest.Filters;
 using Rock.Security;
@@ -369,10 +369,64 @@ namespace Rock.Rest.Controllers
             }
 
             // fetch all the possible PersonAliasIds that have this GivingID to help optimize the SQL
-            var personAliasIds = new PersonAliasService( (RockContext)this.Service.Context ).Queryable().Where( a => a.Person.GivingId == givingId ).Select( a => a.Id ).ToList();
+            var personAliasIds = new PersonAliasService( ( RockContext ) this.Service.Context ).Queryable().Where( a => a.Person.GivingId == givingId ).Select( a => a.Id ).ToList();
 
             // get the transactions for the person or all the members in the person's giving group (Family)
             return Get().Where( t => t.AuthorizedPersonAliasId.HasValue && personAliasIds.Contains( t.AuthorizedPersonAliasId.Value ) );
+        }
+
+        /// <summary>
+        /// Exports FinancialTransaction Records
+        /// </summary>
+        /// <param name="page">The page being requested (where first page is 1).</param>
+        /// <param name="pageSize">The number of records to provide per page. NOTE: This is limited to the 'API Max Items Per Page' global attribute.</param>
+        /// <param name="sortBy">Optional field to sort by. This must be a mapped property on the Person model.</param>
+        /// <param name="sortDirection">The sort direction (1 = Ascending, 0 = Descending). Default is 1 (Ascending).</param>
+        /// <param name="dataViewId">The optional data view to use for filtering.</param>
+        /// <param name="modifiedSince">The optional date/time to filter to only get newly updated items.</param>
+        /// <param name="attributeKeys">Optional comma-delimited list of attribute keys for the attribute values that should be included with each Person Export record.</param>
+        /// <param name="attributeReturnType">Raw/Formatted (default is Raw)</param>
+        /// <returns></returns>
+        [Authenticate, Secured]
+        [HttpGet]
+        [System.Web.Http.Route( "api/FinancialTransactions/Export" )]
+        public FinancialTransactionsExport Export(
+            int page,
+            int pageSize,
+            string sortBy = null,
+            System.Web.UI.WebControls.SortDirection sortDirection = System.Web.UI.WebControls.SortDirection.Ascending,
+            int? dataViewId = null,
+            DateTime? modifiedSince = null,
+            string attributeKeys = null,
+            AttributeReturnType attributeReturnType = AttributeReturnType.Raw
+        )
+        {
+            var rockContext = new RockContext();
+            var financialTransactionService = new FinancialTransactionService( rockContext );
+
+            List<AttributeCache> attributeList = null;
+
+            if ( attributeKeys.IsNotNullOrWhiteSpace() )
+            {
+                string[] attributeKeyList = attributeKeys?.Split( new char[] { ',' } );
+                var entityTypeIdFinancialTransaction = EntityTypeCache.Get<Rock.Model.FinancialTransaction>().Id;
+                attributeList = new AttributeService( rockContext ).Queryable().Where( a => attributeKeyList.Contains( a.Key ) && a.EntityTypeId == entityTypeIdFinancialTransaction ).ToCacheAttributeList();
+            }
+
+            // todo: limit to 'API Max Items Per Page' global attribute
+            var actualPageSize = pageSize;
+
+            ExportOptions exportOptions = new ExportOptions
+            {
+                SortBy = sortBy,
+                SortDirection = sortDirection,
+                DataViewId = dataViewId,
+                ModifiedSince = modifiedSince,
+                AttributeList = attributeList,
+                AttributeReturnType = attributeReturnType
+            };
+
+            return financialTransactionService.GetFinancialTransactionExport( page, actualPageSize, exportOptions );
         }
 
         #region helper classes

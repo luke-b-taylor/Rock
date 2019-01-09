@@ -16,6 +16,7 @@
 //
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.Serialization;
 using Rock.Data;
 using Rock.Model;
@@ -27,9 +28,8 @@ namespace Rock.BulkExport
     /// Export record from ~/api/People/Export
     /// </summary>
     [RockClientInclude( "Export of Person record from ~/api/People/Export" )]
-    public class PersonExport
+    public class PersonExport : ModelExport
     {
-
         /// <summary>
         /// The person
         /// </summary>
@@ -43,23 +43,32 @@ namespace Rock.BulkExport
         /// <param name="personIdHomeLocationsLookup">The person identifier home locations lookup.</param>
         /// <param name="publicApplicationRootUrl">The public application root URL.</param>
         public PersonExport( Person person, Dictionary<int, Location> personIdHomeLocationsLookup, string publicApplicationRootUrl )
+            : base( person )
         {
             _person = person;
             if ( publicApplicationRootUrl.IsNotNullOrWhiteSpace() )
             {
                 _publicApplicationRootUrl = new Uri( publicApplicationRootUrl );
             }
+
             this.HomeAddress = new LocationExport( personIdHomeLocationsLookup.GetValueOrNull( person.Id ) );
         }
 
         /// <summary>
-        /// Gets the identifier.
+        /// Gets the person alias ids.
         /// </summary>
         /// <value>
-        /// The identifier.
+        /// The person alias ids.
         /// </value>
         [DataMember]
-        public int Id => _person.Id;
+        public List<int> PersonAliasIds
+        {
+            get
+            {
+                // sort by PrimaryAliasId as the first one
+                return _person.Aliases.OrderBy( a => a.AliasPersonId == Id ).Select( a => a.Id ).ToList();
+            }
+        }
 
         /// <summary>
         /// The Person's salutation title.
@@ -165,7 +174,6 @@ namespace Rock.BulkExport
                 }
             }
         }
-
 
         /// <summary>
         /// Gets the birth day.
@@ -494,68 +502,5 @@ namespace Rock.BulkExport
         /// </value>
         [DataMember]
         public bool IsDeceased => _person.IsDeceased;
-
-        /// <summary>
-        /// Gets the created date time.
-        /// </summary>
-        /// <value>
-        /// The created date time.
-        /// </value>
-        [DataMember]
-        public DateTime? CreatedDateTime => _person.CreatedDateTime;
-
-        /// <summary>
-        /// Gets the modified date time.
-        /// </summary>
-        /// <value>
-        /// The modified date time.
-        /// </value>
-        [DataMember]
-        public DateTime? ModifiedDateTime => _person.ModifiedDateTime;
-
-        /// <summary>
-        /// Gets the unique identifier.
-        /// </summary>
-        /// <value>
-        /// The unique identifier.
-        /// </value>
-        [DataMember]
-        public Guid Guid => _person.Guid;
-
-        /// <summary>
-        /// Gets the foreign key.
-        /// </summary>
-        /// <value>
-        /// The foreign key.
-        /// </value>
-        [DataMember]
-        public string ForeignKey => _person.ForeignKey;
-
-        /// <summary>
-        /// Gets the foreign identifier.
-        /// </summary>
-        /// <value>
-        /// The foreign identifier.
-        /// </value>
-        [DataMember]
-        public int? ForeignId => _person.ForeignId;
-
-        /// <summary>
-        /// Gets the foreign unique identifier.
-        /// </summary>
-        /// <value>
-        /// The foreign unique identifier.
-        /// </value>
-        [DataMember]
-        public Guid? ForeignGuid => _person.ForeignGuid;
-
-        /// <summary>
-        /// Gets or sets the attributes export.
-        /// </summary>
-        /// <value>
-        /// The attributes export.
-        /// </value>
-        [DataMember]
-        public AttributesExport AttributesExport { get; set; } = null;
     }
 }

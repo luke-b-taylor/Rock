@@ -18,6 +18,7 @@ using System;
 using System.Collections.Generic;
 using System.Web.UI.WebControls;
 using Rock.Web.Cache;
+using Rock.Web.UI.Controls;
 
 namespace Rock.BulkExport
 {
@@ -73,5 +74,26 @@ namespace Rock.BulkExport
         /// The type of the attribute return.
         /// </value>
         public AttributeReturnType AttributeReturnType { get; set; }
+
+        /// <summary>
+        /// Gets the sort property from <see cref="SortBy"/> and <see cref="SortDirection"/>
+        /// </summary>
+        /// <value>
+        /// The sort property.
+        /// </value>
+        internal SortProperty SortProperty
+        {
+            get
+            {
+                if ( this.SortBy.IsNotNullOrWhiteSpace() )
+                {
+                    return new SortProperty { Direction = this.SortDirection, Property = this.SortBy };
+                }
+                else
+                {
+                    return new SortProperty { Direction = this.SortDirection, Property = "Id" };
+                }
+            }
+        }
     }
 }
