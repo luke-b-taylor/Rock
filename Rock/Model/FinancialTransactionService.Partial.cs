@@ -271,7 +271,7 @@ namespace Rock.Model
         /// <param name="pageSize">The number of records to provide per page. NOTE: This is limited to the 'API Max Items Per Page' global attribute.</param>
         /// <param name="exportOptions">The export options.</param>
         /// <returns></returns>
-        public FinancialTransactionsExport GetFinancialTransactionExport( int page, int pageSize, ExportOptions exportOptions )
+        public FinancialTransactionsExport GetFinancialTransactionExport( int page, int pageSize, FinancialTransactionExportOptions exportOptions )
         {
             Stopwatch stopwatch = Stopwatch.StartNew();
             IQueryable<FinancialTransaction> financialTransactionQry;
@@ -296,6 +296,16 @@ namespace Rock.Model
             if ( exportOptions.ModifiedSince.HasValue )
             {
                 financialTransactionQry = financialTransactionQry.Where( a => a.ModifiedDateTime.HasValue && a.ModifiedDateTime >= exportOptions.ModifiedSince.Value );
+            }
+
+            if ( exportOptions.StartDateTime.HasValue )
+            {
+                financialTransactionQry = financialTransactionQry.Where( a => a.TransactionDateTime.HasValue && a.TransactionDateTime >= exportOptions.StartDateTime.Value );
+            }
+
+            if ( exportOptions.EndDateTime.HasValue )
+            {
+                financialTransactionQry = financialTransactionQry.Where( a => a.TransactionDateTime.HasValue && a.TransactionDateTime < exportOptions.EndDateTime.Value );
             }
 
             var skip = ( page - 1 ) * pageSize;

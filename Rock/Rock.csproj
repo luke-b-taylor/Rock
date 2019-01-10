@@ -490,6 +490,7 @@
     <Compile Include="Attribute\WorkflowTypeFieldAttribute.cs" />
     <Compile Include="BulkExport\AttributesExport.cs" />
     <Compile Include="BulkExport\FinancialTransactionExport.cs" />
+    <Compile Include="BulkExport\FinancialTransactionExportOptions.cs" />
     <Compile Include="BulkExport\FinancialTransactionsExport.cs" />
     <Compile Include="BulkExport\ModelExport.cs" />
     <Compile Include="BulkExport\ExportOptions.cs" />
