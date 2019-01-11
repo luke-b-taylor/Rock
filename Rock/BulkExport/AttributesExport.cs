@@ -14,6 +14,7 @@
 // limitations under the License.
 // </copyright>
 //
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -39,6 +40,38 @@ namespace Rock.BulkExport
         /// </value>
         [DataMember]
         public Dictionary<string, object> AttributeValues { get; set; }
+
+        /// <summary>
+        /// Gets the attributes from attribute keys.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="attributeKeys">The attribute keys.</param>
+        /// <returns></returns>
+        public static List<AttributeCache> GetAttributesFromAttributeKeys<T>( string attributeKeys ) where T : Rock.Data.IModel
+        {
+            List<AttributeCache> attributeList = null;
+
+            if ( attributeKeys.IsNotNullOrWhiteSpace() )
+            {
+                var rockContext = new RockContext();
+                var entityTypeId = EntityTypeCache.Get<T>().Id;
+                var attributesQry = new AttributeService( rockContext ).Queryable().Where( a => a.EntityTypeId == entityTypeId );
+                if ( attributeKeys.Equals( "all", StringComparison.OrdinalIgnoreCase ) )
+                {
+                    // include all attributes
+                }
+                else
+                {
+                    // limit
+                    string[] attributeKeyList = attributeKeys?.Split( new char[] { ',' } );
+                    attributesQry = attributesQry.Where( a => attributeKeyList.Contains( a.Key ) );
+                }
+
+                attributeList = attributesQry.ToCacheAttributeList();
+            }
+
+            return attributeList;
+        }
 
         /// <summary>
         /// Loads the attribute values

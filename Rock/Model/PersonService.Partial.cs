@@ -772,15 +772,7 @@ namespace Rock.Model
         {
             Stopwatch stopwatch = Stopwatch.StartNew();
             IQueryable<Person> personQry;
-            SortProperty sortProperty;
-            if ( exportOptions.SortBy.IsNotNullOrWhiteSpace() )
-            {
-                sortProperty = new SortProperty { Direction = exportOptions.SortDirection, Property = exportOptions.SortBy };
-            }
-            else
-            {
-                sortProperty = new SortProperty { Direction = exportOptions.SortDirection, Property = "Id" };
-            }
+            SortProperty sortProperty = exportOptions.SortProperty;
 
             RockContext rockContext = this.Context as RockContext;
 
@@ -791,10 +783,11 @@ namespace Rock.Model
             else
             {
                 personQry = this.Queryable( true, true );
-                if ( sortProperty != null )
-                {
-                    personQry = personQry.Sort( sortProperty );
-                }
+            }
+
+            if ( sortProperty != null )
+            {
+                personQry = personQry.Sort( sortProperty );
             }
 
             if ( exportOptions.ModifiedSince.HasValue )

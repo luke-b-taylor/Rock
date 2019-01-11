@@ -838,7 +838,7 @@ namespace Rock.Rest.Controllers
         /// <param name="sortDirection">The sort direction (1 = Ascending, 0 = Descending). Default is 1 (Ascending).</param>
         /// <param name="dataViewId">The optional data view to use for filtering.</param>
         /// <param name="modifiedSince">The optional date/time to filter to only get newly updated items.</param>
-        /// <param name="attributeKeys">Optional comma-delimited list of attribute keys for the attribute values that should be included with each Person Export record.</param>
+        /// <param name="attributeKeys">Optional comma-delimited list of attribute keys for the attribute values that should be included with each exported record, or specify 'all' to include all attributes.</param>
         /// <param name="attributeReturnType">Raw/Formatted (default is Raw)</param>
         /// <returns></returns>
         [Authenticate, Secured]
@@ -855,20 +855,9 @@ namespace Rock.Rest.Controllers
             AttributeReturnType attributeReturnType = AttributeReturnType.Raw
             )
         {
-            var rockContext = new RockContext();
-            var personService = new PersonService( rockContext );
-
-            List<AttributeCache> attributeList = null;
-
-            if ( attributeKeys.IsNotNullOrWhiteSpace() )
-            {
-                string[] attributeKeyList = attributeKeys?.Split( new char[] { ',' } );
-                var entityTypeIdPerson = EntityTypeCache.Get<Rock.Model.Person>().Id;
-                attributeList = new AttributeService( rockContext ).Queryable().Where( a => attributeKeyList.Contains( a.Key ) && a.EntityTypeId == entityTypeIdPerson ).ToCacheAttributeList();
-            }
-
-            // todo: limit to 'API Max Items Per Page' global attribute
-            var actualPageSize = pageSize;
+            // limit to 'API Max Items Per Page' global attribute
+            int maxPageSize = GlobalAttributesCache.Get().GetValue( "core_APIMaxItemsPerPage" ).AsIntegerOrNull() ?? 1000;
+            var actualPageSize = Math.Min( pageSize, maxPageSize );
 
             ExportOptions exportOptions = new ExportOptions
             {
@@ -876,9 +865,12 @@ namespace Rock.Rest.Controllers
                 SortDirection = sortDirection,
                 DataViewId = dataViewId,
                 ModifiedSince = modifiedSince,
-                AttributeList = attributeList,
+                AttributeList = AttributesExport.GetAttributesFromAttributeKeys<Person>( attributeKeys ),
                 AttributeReturnType = attributeReturnType
             };
+
+            var rockContext = new RockContext();
+            var personService = new PersonService( rockContext );
 
             return personService.GetPeopleExport( page, actualPageSize, exportOptions );
         }

@@ -347,7 +347,5 @@ namespace Rock.Model
 
             return financialTransactionsExport;
         }
-
-
     }
 }

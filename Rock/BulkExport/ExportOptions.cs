@@ -60,7 +60,7 @@ namespace Rock.BulkExport
         public DateTime? ModifiedSince { get; set; }
 
         /// <summary>
-        /// Optional list of attributes for the attribute values that should be included with each Person Export record.
+        /// Optional list of attributes for the attribute values that should be included with each Export record.
         /// </summary>
         /// <value>
         /// The attribute keys.

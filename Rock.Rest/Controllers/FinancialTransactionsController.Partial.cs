@@ -376,7 +376,7 @@ namespace Rock.Rest.Controllers
         }
 
         /// <summary>
-        /// Exports FinancialTransaction Records
+        /// Exports Financial Transaction Records
         /// </summary>
         /// <param name="page">The page being requested (where first page is 1).</param>
         /// <param name="pageSize">The number of records to provide per page. NOTE: This is limited to the 'API Max Items Per Page' global attribute.</param>
@@ -384,9 +384,9 @@ namespace Rock.Rest.Controllers
         /// <param name="sortDirection">The sort direction (1 = Ascending, 0 = Descending). Default is 1 (Ascending).</param>
         /// <param name="dataViewId">The optional data view to use for filtering.</param>
         /// <param name="modifiedSince">The optional date/time to filter to only get newly updated items.</param>
-        /// <param name="startDate">Optional filter to limit to transactions with a transaction date/time greater than or equal to startDate</param>
-        /// <param name="endDate">Optional filter to limit to transactions with a transaction date/time less than endDate</param>
-        /// <param name="attributeKeys">Optional comma-delimited list of attribute keys for the attribute values that should be included with each Person Export record.</param>
+        /// <param name="startDateTime">Optional filter to limit to transactions with a transaction date/time greater than or equal to startDateTime</param>
+        /// <param name="endDateTime">Optional filter to limit to transactions with a transaction date/time less than endDateTime</param>
+        /// <param name="attributeKeys">Optional comma-delimited list of attribute keys for the attribute values that should be included with each exported record, or specify 'all' to include all attributes.</param>
         /// <param name="attributeReturnType">Raw/Formatted (default is Raw)</param>
         /// <returns></returns>
         [Authenticate, Secured]
@@ -399,26 +399,15 @@ namespace Rock.Rest.Controllers
             System.Web.UI.WebControls.SortDirection sortDirection = System.Web.UI.WebControls.SortDirection.Ascending,
             int? dataViewId = null,
             DateTime? modifiedSince = null,
-            DateTime? startDate = null,
-            DateTime? endDate = null,
+            DateTime? startDateTime = null,
+            DateTime? endDateTime = null,
             string attributeKeys = null,
             AttributeReturnType attributeReturnType = AttributeReturnType.Raw
-        )
+            )
         {
-            var rockContext = new RockContext();
-            var financialTransactionService = new FinancialTransactionService( rockContext );
-
-            List<AttributeCache> attributeList = null;
-
-            if ( attributeKeys.IsNotNullOrWhiteSpace() )
-            {
-                string[] attributeKeyList = attributeKeys?.Split( new char[] { ',' } );
-                var entityTypeIdFinancialTransaction = EntityTypeCache.Get<Rock.Model.FinancialTransaction>().Id;
-                attributeList = new AttributeService( rockContext ).Queryable().Where( a => attributeKeyList.Contains( a.Key ) && a.EntityTypeId == entityTypeIdFinancialTransaction ).ToCacheAttributeList();
-            }
-
-            // todo: limit to 'API Max Items Per Page' global attribute
-            var actualPageSize = pageSize;
+            // limit to 'API Max Items Per Page' global attribute
+            int maxPageSize = GlobalAttributesCache.Get().GetValue( "core_APIMaxItemsPerPage" ).AsIntegerOrNull() ?? 1000;
+            var actualPageSize = Math.Min( pageSize, maxPageSize );
 
             FinancialTransactionExportOptions exportOptions = new FinancialTransactionExportOptions
             {
@@ -426,12 +415,14 @@ namespace Rock.Rest.Controllers
                 SortDirection = sortDirection,
                 DataViewId = dataViewId,
                 ModifiedSince = modifiedSince,
-                AttributeList = attributeList,
+                AttributeList = AttributesExport.GetAttributesFromAttributeKeys<FinancialTransaction>( attributeKeys ),
                 AttributeReturnType = attributeReturnType,
-                StartDateTime = startDate,
-                EndDateTime = endDate
+                StartDateTime = startDateTime,
+                EndDateTime = endDateTime
             };
 
+            var rockContext = new RockContext();
+            var financialTransactionService = new FinancialTransactionService( rockContext );
             return financialTransactionService.GetFinancialTransactionExport( page, actualPageSize, exportOptions );
         }
 
