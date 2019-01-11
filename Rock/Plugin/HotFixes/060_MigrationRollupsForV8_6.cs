@@ -39,8 +39,8 @@ namespace Rock.Plugin.HotFixes
             UpdateIsSystemForCategories();
             FixTypeInTemplate();
             FixPageRouteForContentPage();
+            AddAPIMaxItemsPerPageGlobalAttribute();
         }
-
 
         /// <summary>
         /// The commands to undo a migration from a specific version
@@ -48,6 +48,14 @@ namespace Rock.Plugin.HotFixes
         public override void Down()
         {
             FixPledgeAnalyticsGiftDateFilteringDown();
+        }
+
+        /// <summary>
+        /// MP: Adds the API maximum items per page global attribute.
+        /// </summary>
+        private void AddAPIMaxItemsPerPageGlobalAttribute()
+        {
+            RockMigrationHelper.AddGlobalAttribute( Rock.SystemGuid.FieldType.INTEGER, null, null, "API Max Items Per Page", "The maximum number of items that can be returned when a page of data is requested thru the REST API.", 0, "1000", "F80A2DDC-88D0-40BB-8376-1A6323B44886", "core_APIMaxItemsPerPage" );
         }
 
         /// <summary>
