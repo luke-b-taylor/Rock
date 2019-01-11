@@ -48,7 +48,7 @@
            BasedOn="{StaticResource labelStyle}"
            TargetType="{x:Type Label}">
         <Setter Property="FontFamily"
-                Value="./resources/#Open Sans SemiBold"></Setter>
+                Value="./resources/#Roboto-Medium"></Setter>
         <Setter Property="FontWeight"
                 Value="SemiBold"></Setter>
     </Style>
@@ -69,7 +69,7 @@
     <Style x:Key="labelStylePanelTitle"
            TargetType="{x:Type Label}">
         <Setter Property="FontFamily"
-                Value="./resources/#Open Sans Light"></Setter>
+                Value="./resources/#Roboto-Bold"></Setter>
         <Setter Property="Label.Margin"
                 Value="0,2,0,0"></Setter>
         <Setter Property="Label.HorizontalAlignment"
@@ -904,5 +904,16 @@
         <Setter Property="Height"
                 Value="70" />
     </Style>
+
+    <Style TargetType="{x:Type Button}" x:Key="WindowButton">
+        <Setter Property="Height" Value="25"/>
+        <Setter Property="Width" Value="25"/>
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="Foreground" Value="White" />
+        <Setter Property="BorderThickness" Value="0" />
+    </Style>
+    <SolidColorBrush x:Key="WindowBackColor" Color="#ee7725"/>
+    <SolidColorBrush x:Key="WindowForeColor" Color="White"/>
+
 
 </ResourceDictionary>
