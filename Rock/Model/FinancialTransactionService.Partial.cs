@@ -16,7 +16,6 @@
 //
 using System;
 using System.Data.Entity;
-using System.Diagnostics;
 using System.Linq;
 using Rock.BulkExport;
 using Rock.Data;
@@ -273,7 +272,6 @@ namespace Rock.Model
         /// <returns></returns>
         public FinancialTransactionsExport GetFinancialTransactionExport( int page, int pageSize, FinancialTransactionExportOptions exportOptions )
         {
-            Stopwatch stopwatch = Stopwatch.StartNew();
             IQueryable<FinancialTransaction> financialTransactionQry;
             SortProperty sortProperty = exportOptions.SortProperty;
 
@@ -315,9 +313,6 @@ namespace Rock.Model
             financialTransactionsExport.PageSize = pageSize;
             financialTransactionsExport.TotalCount = financialTransactionQry.Count();
 
-            var financialTransactionsExportInitMS = stopwatch.Elapsed.TotalMilliseconds;
-            stopwatch.Restart();
-
             var pagedFinancialTransactionQry = financialTransactionQry
                 .Include( a => a.AuthorizedPersonAlias )
                 .Include( a => a.TransactionDetails )
@@ -328,23 +323,9 @@ namespace Rock.Model
                 .Take( pageSize );
 
             var financialTransactionList = pagedFinancialTransactionQry.ToList();
-
-            var toListMS = stopwatch.Elapsed.TotalMilliseconds;
-            stopwatch.Restart();
-
             financialTransactionsExport.FinancialTransactions = financialTransactionList.Select( f => new FinancialTransactionExport( f ) ).ToList();
-            var financialTransactionExportsMS = stopwatch.Elapsed.TotalMilliseconds;
-            stopwatch.Restart();
 
             AttributesExport.LoadAttributeValues( exportOptions, rockContext, financialTransactionsExport.FinancialTransactions, pagedFinancialTransactionQry );
-
-            stopwatch.Restart();
-
-            var json = financialTransactionsExport.ToJson();
-            var toJSONMS = stopwatch.Elapsed.TotalMilliseconds;
-
-            Debug.WriteLine( $"financialTransactionsExportInitMS:{financialTransactionsExportInitMS}ms, toListMS:{toListMS}ms, financialTransactionExportsMS:{financialTransactionExportsMS}ms, toJSONMS:{toJSONMS}ms" );
-
             return financialTransactionsExport;
         }
     }

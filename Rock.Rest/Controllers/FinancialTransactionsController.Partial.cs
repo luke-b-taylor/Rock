@@ -406,7 +406,7 @@ namespace Rock.Rest.Controllers
             )
         {
             // limit to 'API Max Items Per Page' global attribute
-            int maxPageSize = GlobalAttributesCache.Get().GetValue( "core_APIMaxItemsPerPage" ).AsIntegerOrNull() ?? 1000;
+            int maxPageSize = GlobalAttributesCache.Get().GetValue( "core_ExportAPIsMaxItemsPerPage" ).AsIntegerOrNull() ?? 1000;
             var actualPageSize = Math.Min( pageSize, maxPageSize );
 
             FinancialTransactionExportOptions exportOptions = new FinancialTransactionExportOptions

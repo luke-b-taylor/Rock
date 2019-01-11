@@ -16,7 +16,6 @@
 //
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Runtime.Serialization;
 using Rock;
@@ -87,7 +86,6 @@ namespace Rock.BulkExport
                 return;
             }
 
-            var stopwatch = Stopwatch.StartNew();
             var attributeIdsList = exportOptions.AttributeList.Select( a => a.Id ).ToList();
             var attributeValuesQuery = new AttributeValueService( rockContext ).Queryable()
                 .Where( a => attributeIdsList.Contains( a.AttributeId ) )
@@ -137,10 +135,6 @@ namespace Rock.BulkExport
                     }
                 }
             }
-
-            var attributeValuesLookupMS = stopwatch.Elapsed.TotalMilliseconds;
-
-            Debug.WriteLine( $"attributeValuesLookupMS:{attributeValuesLookupMS}ms" );
         }
     }
 

@@ -770,7 +770,6 @@ namespace Rock.Model
         /// <returns></returns>
         public PeopleExport GetPeopleExport( int page, int pageSize, ExportOptions exportOptions )
         {
-            Stopwatch stopwatch = Stopwatch.StartNew();
             IQueryable<Person> personQry;
             SortProperty sortProperty = exportOptions.SortProperty;
 
@@ -802,9 +801,6 @@ namespace Rock.Model
             peopleExport.PageSize = pageSize;
             peopleExport.TotalCount = personQry.Count();
 
-            var peopleExportInitMS = stopwatch.Elapsed.TotalMilliseconds;
-            stopwatch.Restart();
-
             var pagedPersonQry = personQry
                 .Include( a => a.Aliases )
                 .Include( a => a.PhoneNumbers )
@@ -813,9 +809,6 @@ namespace Rock.Model
                 .Take( pageSize );
 
             var personList = pagedPersonQry.ToList();
-
-            var toListMS = stopwatch.Elapsed.TotalMilliseconds;
-            stopwatch.Restart();
 
             var familyGroupTypeId = GroupTypeCache.Get( Rock.SystemGuid.GroupType.GROUPTYPE_FAMILY ).Id;
 
@@ -842,24 +835,12 @@ namespace Rock.Model
                 } )
                 .ToDictionary( k => k.PersonId, v => v.Location );
 
-            var personHomeLocationsLookupMS = stopwatch.Elapsed.TotalMilliseconds;
-            stopwatch.Restart();
-
             var globalAttributes = GlobalAttributesCache.Get();
             string publicAppRoot = globalAttributes.GetValue( "PublicApplicationRoot" ).EnsureTrailingForwardslash();
 
             peopleExport.Persons = personList.Select( p => new PersonExport( p, personIdHomeLocationsLookup, publicAppRoot ) ).ToList();
-            var personExportsMS = stopwatch.Elapsed.TotalMilliseconds;
-            stopwatch.Restart();
 
             AttributesExport.LoadAttributeValues( exportOptions, rockContext, peopleExport.Persons, pagedPersonQry );
-
-            stopwatch.Restart();
-
-            var json = peopleExport.ToJson();
-            var toJSONMS = stopwatch.Elapsed.TotalMilliseconds;
-
-            Debug.WriteLine( $"peopleExportInitMS:{peopleExportInitMS}ms, toListMS:{toListMS}ms, personHomeLocationsLookupMS:{personHomeLocationsLookupMS}ms, personExportsMS:{personExportsMS}ms, toJSONMS:{toJSONMS}ms" );
 
             return peopleExport;
         }
