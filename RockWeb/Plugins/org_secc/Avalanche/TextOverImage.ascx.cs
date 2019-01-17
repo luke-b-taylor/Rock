@@ -26,22 +26,22 @@ using System.Collections.Generic;
 using Rock;
 using Avalanche;
 using Avalanche.Models;
-using Avalanche.Attribute;
 using Rock.Attribute;
-using System.Web.UI.WebControls;
-using System.Web.UI.HtmlControls;
+using Avalanche.Attribute;
 
 namespace RockWeb.Plugins.Avalanche
 {
-    [DisplayName( "Icon Button" )]
+    [DisplayName( "Text Over Image Block" )]
     [Category( "Avalanche" )]
-    [Description( "An icon button" )]
+    [Description( "Creates an image with text centered over it." )]
 
-    [TextField( "Text", "The text of the label to be displayed. Lava enabled with the {{parameter}} available.", false )]
-    [TextField( "Icon", "Icon to use on the button. Lava enabled with the {{parameter}} available." )]
-    [ActionItemField( "Action Item", "", false )]
+    [TextField( "Image", "Image to be displayed. Data is parsed through Lava with the request {{parameter}}.", false )]
+    [TextField( "Text", "Text to display over the image." )]
+    [DecimalField( "Aspect Ratio", "The ratio of height to width. For example 0.5 would mean the image is half the height of the width.", true, 0.45 )]
     [LavaCommandsField( "Enabled Lava Commands", "The Lava commands that should be enabled for this block.", false )]
-    public partial class IconButton : AvalancheBlock
+    [ActionItemField( "Action Item", "Action to take on touch.", false )]
+
+    public partial class TextOverImage : AvalancheBlock
     {
 
         /// <summary>
@@ -50,9 +50,11 @@ namespace RockWeb.Plugins.Avalanche
         /// <param name="e">The <see cref="T:System.EventArgs" /> object that contains the event data.</param>
         protected override void OnLoad( EventArgs e )
         {
-            var text = string.Format( "<i class='{0}'></i> {1}", GetAttributeValue( "Icon" ), GetAttributeValue( "Text" ) );
-            btnButton.Text = text;
-
+            imgImage.ImageUrl = AvalancheUtilities.ProcessLava( GetAttributeValue( "Image" ),
+                                                                CurrentPerson,
+                                                                "",
+                                                                GetAttributeValue( "EnabledLavaCommands" ) );
+            lLava.Text = GetAttributeValue( "Text" );
         }
 
         public override MobileBlock GetMobile( string parameter )
@@ -63,13 +65,25 @@ namespace RockWeb.Plugins.Avalanche
                                    GetAttributeValue( "EnabledLavaCommands" ),
                                    parameter );
 
+            if ( !string.IsNullOrWhiteSpace( GetAttributeValue( "Text" ) ) )
+            {
+                CustomAttributes["Text"] = GetAttributeValue( "Text" );
+            }
 
-            CustomAttributes.Add( "Text", AvalancheUtilities.ProcessLava( GetAttributeValue( "Text" ), CurrentPerson, parameter ) );
-            CustomAttributes.Add( "Icon", AvalancheUtilities.ProcessLava( GetAttributeValue( "Icon" ), CurrentPerson, parameter ) );
+            if ( GetAttributeValue( "AspectRatio" ).AsDouble() != 0 )
+            {
+                CustomAttributes["AspectRatio"] = GetAttributeValue( "AspectRatio" );
+            }
 
+
+            CustomAttributes.Add( "Source", AvalancheUtilities.ProcessLava( GetAttributeValue( "Image" ),
+                                                                            CurrentPerson,
+                                                                            parameter,
+                                                                            GetAttributeValue( "EnabledLavaCommands" )
+                                                                            ) );
             return new MobileBlock()
             {
-                BlockType = "Avalanche.Blocks.IconButton",
+                BlockType = "Avalanche.Blocks.TextOverImage",
                 Attributes = CustomAttributes
             };
         }
