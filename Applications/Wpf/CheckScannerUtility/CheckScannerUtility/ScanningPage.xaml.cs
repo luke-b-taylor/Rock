@@ -776,7 +776,7 @@ namespace Rock.Apps.CheckScannerUtility
         /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
         public void rangerScanner_TransportIsDead( object sender, EventArgs e )
         {
-            ScanningPageUtility.rangerScanner_TransportIsDead( sender, e, this.lblScannerNotReady );
+            ScanningPageUtility.rangerScanner_TransportIsDead( sender, e, () => { DisplayMessage( "Warning", "labelStyleBannerTitle", "Click Next to begin", "labelStyleAlert", "Scanner is not ready. Verify that the scanner is powered on and connected." ); } );
         }
 
         /// <summary>
@@ -832,5 +832,63 @@ namespace Rock.Apps.CheckScannerUtility
         }
 
         #endregion
+
+        private void DisplayMessage( string messageType, string captionstyleKey = "", string captionMessage = "", string mainMessageStyleKey = "", string mainMessage = "" )
+        {
+           //TODO: Uncomment after style change
+            Style captionStyle = null;
+            switch ( messageType )
+            {
+                case "Warning":
+                    //spAlert.Style = Application.Current.Resources["stackPanelWarningtStyle"] as Style;
+                    //lblAlertCaption.Style = Application.Current.Resources["WarningCaptionSytle"] as Style;
+                    //lblAlertCaption.Content = "Warning!";
+                    //borderAlertBorder.Style = Application.Current.Resources["borderWarningStyle"] as Style;
+                    //lblAlertSubMessage.Style = Application.Current.Resources["WarningTextStyle"] as Style;
+                    break;
+                case "Alert":
+                    //spAlert.Style = Application.Current.Resources["stackPanelAlertStyle"] as Style;
+                    //lblAlertCaption.Style = Application.Current.Resources["alertCaptionSytle"] as Style;
+                    //lblAlertCaption.Content = "Alert!";
+                    //borderAlertBorder.Style = Application.Current.Resources["borderAlertgStyle"] as Style;
+                    //lblAlertSubMessage.Style = Application.Current.Resources["AlertTextStyle"] as Style;
+                    break;
+                default:
+                    break;
+            }
+
+            //Handle Caption
+            if ( !string.IsNullOrEmpty( captionstyleKey ) )
+            {
+                //TODO: Uncomment After Style 
+                captionStyle = Application.Current.Resources[captionstyleKey] as Style;
+                if ( captionStyle != null )
+                {
+                    //this.lblAlertCaptionMessage.Style = captionStyle;
+                }
+            }
+
+            if ( !string.IsNullOrEmpty( captionMessage ) )
+            {
+                //this.spAlertMessage.Visibility = Visibility.Visible;
+                //this.lblAlertCaptionMessage.Content = captionMessage;
+            }
+
+            if ( !string.IsNullOrEmpty( mainMessageStyleKey ) )
+            {
+                var subStyle = Application.Current.Resources[mainMessageStyleKey] as Style;
+                if ( subStyle != null )
+                {
+                    //this.lblAlertSubMessage.Style = subStyle;
+                }
+            }
+
+            if ( !string.IsNullOrEmpty( mainMessage ) )
+            {
+                //this.spAlertMessage.Visibility = Visibility.Visible;
+                //this.lblAlertSubMessage.Content = mainMessage;
+
+            }
+        }
     }
 }

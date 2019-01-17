@@ -335,11 +335,12 @@ namespace Rock.Apps.CheckScannerUtility
         /// </summary>
         /// <param name="sender">The source of the event.</param>
         /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
-        public static void rangerScanner_TransportIsDead( object sender, EventArgs e, Label lblScannerNotReady )
+        public static void rangerScanner_TransportIsDead( object sender, EventArgs e, Action callback )
         {
             KeepScanning = false;
             System.Diagnostics.Debug.WriteLine( string.Format( "{0} : rangerScanner_TransportIsDead", DateTime.Now.ToString( "o" ) ) );
-            lblScannerNotReady.Visibility = Visibility.Visible;
+            callback.DynamicInvoke();
+         
         }
 
         #region Image Upload related

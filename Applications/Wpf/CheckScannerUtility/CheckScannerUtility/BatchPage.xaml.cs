@@ -647,7 +647,7 @@ namespace Rock.Apps.CheckScannerUtility
         /// <summary>
         /// Navigates to options page.
         /// </summary>
-        private void NavigateToOptionsPage()
+        public void NavigateToOptionsPage()
         {
             var optionsPage = new OptionsPage( this );
             this.NavigationService.Navigate( optionsPage );
@@ -1178,5 +1178,31 @@ namespace Rock.Apps.CheckScannerUtility
         }
 
         #endregion
+
+        private void BatchPage_SizeChanged( object sender, SizeChangedEventArgs e )
+        {
+            this.grdBatchItems.Height = this.RenderSize.Height * .515;
+        }
+
+        private void TextBlock_Loaded( object sender, RoutedEventArgs e )
+        {
+            decimal sum = 0;
+            var textblock = sender as TextBlock;
+            var context = textblock.DataContext as FinancialTransaction;
+            if ( context != null )
+            {
+                var transactionDetails = context.TransactionDetails;
+                if ( transactionDetails != null )
+                {
+                    foreach ( var transaction in transactionDetails )
+                    {
+                        sum += transaction.Amount;
+                    }
+                }
+
+            }
+
+            textblock.Text = sum.ToString( "C" );
+        }
     }
 }

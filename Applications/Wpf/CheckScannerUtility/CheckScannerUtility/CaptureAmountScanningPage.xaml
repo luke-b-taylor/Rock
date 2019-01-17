@@ -5,83 +5,89 @@
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
       xmlns:behaviors="clr-namespace:Rock.Apps.CheckScannerUtility.Behaviors"
       xmlns:local="clr-namespace:Rock.Apps.CheckScannerUtility"
+      xmlns:fa="http://schemas.fontawesome.io/icons/"
       Title="CaptureAmountScanningPage"
+      SizeChanged="Page_SizeChanged"
       Loaded="Page_Loaded">
     <Page.Resources>
-        <Style x:Key="GridSplitterPreviewStyle" >
-            <Setter Property="Control.Template">
-                <Setter.Value>
-                    <ControlTemplate>
-                        <Rectangle Fill="#80000000"/>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-        <Style x:Key="GridSplitterStyle1" TargetType="{x:Type GridSplitter}">
-            <Setter Property="Background"
-                Value="{DynamicResource {x:Static SystemColors.ControlBrushKey}}"/>
-            <Setter Property="PreviewStyle" Value="{StaticResource GridSplitterPreviewStyle}"/>
+        <SolidColorBrush x:Key="SelectedBackgroundBrush" Color="Transparent" />
+        <SolidColorBrush x:Key="DisabledForegroundBrush" Color="#888" />
+
+        <Style x:Key="{x:Type ListViewItem}" TargetType="ListViewItem">
+            <Setter Property="SnapsToDevicePixels" Value="true"/>
+            <Setter Property="OverridesDefaultStyle" Value="true"/>
             <Setter Property="Template">
                 <Setter.Value>
-                    <ControlTemplate TargetType="{x:Type GridSplitter}">
-                        <Border BorderBrush="{TemplateBinding BorderBrush}"
-                            BorderThickness="{TemplateBinding BorderThickness}"
-                            Background="{TemplateBinding Background}"
-                            CornerRadius="5">
-                            <Canvas RenderOptions.EdgeMode="Aliased" UseLayoutRounding="True"
-                                Height="6" VerticalAlignment="Center"
-                                Width="50" HorizontalAlignment="Center">
-                                <Line X1="0" X2="50" Y1="0" Y2="0"
-                                  Stroke="White" StrokeThickness="1"/>
-                                <Line X1="0" X2="50" Y1="1" Y2="1"
-                                  Stroke="#A0A0A0" StrokeThickness="1"/>
-                                <Line X1="0" X2="50" Y1="4" Y2="4"
-                                  Stroke="White" StrokeThickness="1"/>
-                                <Line X1="0" X2="50" Y1="5" Y2="5"
-                                  Stroke="#A0A0A0" StrokeThickness="1"/>
-                            </Canvas>
+                    <ControlTemplate TargetType="ListBoxItem">
+                        <Border Name="Border" Padding="2" SnapsToDevicePixels="true" Background="Transparent">
+                            <ContentPresenter VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
                         </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsSelected" Value="true">
+                                <Setter TargetName="Border" Property="Background" Value="{StaticResource SelectedBackgroundBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="false">
+                                <Setter Property="Foreground" Value="{StaticResource DisabledForegroundBrush}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
         </Style>
+
     </Page.Resources>
-    <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Name="Header" Height=".2*" />
-            <RowDefinition Name="rowBody"  Height="5*" />
-            <RowDefinition Name="rowFooter"  Height=".5*" />
-        </Grid.RowDefinitions>
-        <StackPanel Name="spHeader" Grid.Row="0" Grid.ColumnSpan="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
-            <StackPanel  Grid.ColumnSpan="2">
-                <StackPanel Orientation="Horizontal"
-                        HorizontalAlignment="Right">
-                    <Ellipse Name="shapeStatus"
-                         Grid.Column="2"
-                         Grid.Row="0"
-                         Height="14"
-                         Margin="8"
-                         VerticalAlignment="Top"
-                         HorizontalAlignment="Right"
-                         Width="14"
-                         Fill="Red">
-                    </Ellipse>
-                </StackPanel>
+    <Grid Background="#efefef" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+        <Grid Background="{StaticResource PanelBackgroundBrush}" Margin="20,20,20,50" >
+            <Grid.RowDefinitions>
+                <RowDefinition Name="rowHeader" Height=".079*" />
+                <RowDefinition Name="rowBody" Height="*" />
+                <RowDefinition Name="rowFooter" Height=".1*"  />
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Name="colCheckInfo"  Width="2*" />
+                <ColumnDefinition Name="colAccountInfo" />
+            </Grid.ColumnDefinitions>
+            <!-- Panel Header-->
+            <StackPanel Grid.Row="0" Grid.ColumnSpan="2" Name="sp_Header" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+                <Border Grid.ColumnSpan="2" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1">
+                    <StackPanel  Name="spBatchDetailCaption"  Background="{StaticResource PanelHeaderBrush}" HorizontalAlignment="Stretch">
+                        <Label Name="lblBatcheDetailCaption"  Content="Check Scanning" HorizontalAlignment="Left" Margin="10" Style="{StaticResource labelStyleCaption}" />
+                    </StackPanel>
+                </Border>
             </StackPanel>
-        </StackPanel>
-        <!-- Body Stack Panel -->
-        <StackPanel Name="spBody" Grid.Row="1" Orientation="Horizontal" Grid.ColumnSpan="2" Background="AliceBlue" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"  >
-            <Grid Name="gridCheckInfo" Grid.Column="0">
-                <Grid.RowDefinitions>
-                    <RowDefinition Name="rowTop" Height="Auto" />
-                    <RowDefinition Name="rowMiddle" Height="5" />
-                    <RowDefinition Name="rowBottom" Height="*" />
-                </Grid.RowDefinitions>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition   />
-                    <ColumnDefinition />
-                </Grid.ColumnDefinitions>
-                <StackPanel  Name="spCaptureAmount"   Grid.Row="0" VerticalAlignment="Bottom" MinWidth="630" MaxWidth="650"  Grid.Column="0" Margin="0,0,0,10"  HorizontalAlignment="Stretch" >
+            <!-- Progress Bars and Check images -->
+            <ScrollViewer Grid.Row="1" Name="scrollViewerCheckImage" VerticalScrollBarVisibility="Hidden" HorizontalScrollBarVisibility="Disabled">
+            <StackPanel  Name="spCheckView" Height="{Binding ElementName=lvAccounts,Path=Height}" Grid.Column="0" Margin="0,20,0,0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" >
+                    <StackPanel Name="spAlertMessage" Visibility="Visible" HorizontalAlignment="Stretch"  VerticalAlignment="Top"  Panel.ZIndex="5" >
+                        <Label Name="lblAlertCaptionMessage" Visibility="Visible" />
+                        <Border Name="borderAlertBorder" Visibility="Visible" Margin="10,0,10,0">
+                            <StackPanel>
+                                <StackPanel Name="spAlert" Visibility="Visible" >
+                                    <Label Name="lblAlertCaption" HorizontalAlignment="Left" Visibility="Visible"/>
+                                    <Label Name="lblAlertSubMessage" Visibility="Visible" BorderThickness="0" Background="Transparent"/>
+                                </StackPanel>
+                                <StackPanel Name="pnlPromptForUpload" Margin="5" Visibility="Collapsed">
+                                    <StackPanel Orientation="Horizontal"
+                                HorizontalAlignment="Center">
+                                        <Button Margin="8"
+                                x:Name="btnSkipAndContinue"
+                                Style="{StaticResource buttonStylePrimary}"
+                                Content="Skip"
+                                HorizontalAlignment="Left"
+                                Click="BtnSkipAndContinue_Click" />
+                                        <Button Margin="8"
+                                x:Name="btnIgnoreAndUpload"
+                                Style="{StaticResource buttonStyle}"
+                                ToolTip="Upload and continue scanning"
+                                Content="Upload"
+                                HorizontalAlignment="Left"
+                                Click="BtnIgnoreAndUpload_Click" />
+                                    </StackPanel>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                    <StackPanel Name="spException" Visibility="Collapsed">
                     <Label  Name="lblExceptions"
                        Style="{StaticResource labelStyleAlertError}"
                        Content="ERROR: --"
@@ -94,213 +100,128 @@
                        Style="{StaticResource labelStyleAlertSuccess}"
                        Content="Uploaded Successfully">
                     </Label>
-                    <!-- Check Info-->
-                    <StackPanel Grid.Row="0" Name="spAccountInfo" Grid.ColumnSpan="2"  HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
-                        <Grid HorizontalAlignment="Stretch" VerticalAlignment="Stretch" >
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="1*" />
-                                <ColumnDefinition Width="1*" />
-                            </Grid.ColumnDefinitions>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                            </Grid.RowDefinitions>
-                            <StackPanel Grid.Row="0"
-                                Grid.Column="0"
-                                Orientation="Horizontal"
-                                Margin="8,4">
-                                <Label Name="lblRoutingNumberCaption"
-                               Style="{StaticResource labelStyleBold}">
-                                    Routing Number:
-                                </Label>
-                                <Label Name="lblRoutingNumber"
-                               Style="{StaticResource labelStyle}">
-                                    123456789
-                                </Label>
-                            </StackPanel>
-                            <StackPanel Name="spOtherData"
-                                Grid.Row="1"
-                                Grid.Column="1"
-                                Orientation="Horizontal"
-                                Margin="8,4">
-                                <Label Name="lblOtherDataCaption"
-                               Style="{StaticResource labelStyleBold}">
-                                    Other Data:
-                                </Label>
-                                <Label Name="lblOtherData"
-                               Style="{StaticResource labelStyle}">
-                                    123456789
-                                </Label>
-                            </StackPanel>
-                            <StackPanel Grid.Row="1"
-                                Grid.Column="0"
-                                Orientation="Horizontal"
-                                Margin="8,4">
-                                <Label Name="lblAccountNumberBold"
-                               Style="{StaticResource labelStyleBold}">
-                                    Account:
-                                </Label>
-                                <Label Name="lblAccountNumber"
-                               Style="{StaticResource labelStyle}">
-                                    123456789012
-                                </Label>
-                            </StackPanel>
-                            <StackPanel Orientation="Horizontal"
-                                Grid.Row="0"
-                                Grid.Column="1"
-                                Margin="8,4">
-                                <Label Name="lblCheckNumberCaption"
-                               Style="{StaticResource labelStyleBold}">
-                                    Check Number:
-                                </Label>
-                                <Label Name="lblCheckNumber"
-                               Style="{StaticResource labelStyle}">0123</Label>
-                            </StackPanel>
-                        </Grid>
-                        <!-- Feedback for Checks -->
-                        <StackPanel  Name="pnlChecks" HorizontalAlignment="Stretch">
-                            <Label Name="lblScanCheckWarningBadMicr"
-                            Style="{StaticResource labelStyleAlert}"
-                            Content="WARNING: Check account Information not found. Try scanning again with the check facing the other direction.">
-                            </Label>
-                            <Label Name="lblScanCheckWarningDuplicate"
-                            Style="{StaticResource labelStyleAlert}"
-                            Content="WARNING: A check with the same account information and check number has already been scanned.">
-                            </Label>
-                            <Label Name="lblScanBackInstructions"
-                            Style="{StaticResource labelStyleAlertInfo}"
-                            Content="Insert the {0} again facing the other direction to get an image of the back.">
-                            </Label>
-                            <StackPanel Name="pnlPromptForUpload">
-                                <StackPanel Orientation="Horizontal"
-                                HorizontalAlignment="Center">
-                                    <Button Margin="8"
-                                x:Name="btnSkipAndContinue"
-                                Style="{StaticResource buttonStylePrimary}"
-                                Content="Skip"
-                                HorizontalAlignment="Left"
-                                Click="BtnSkipAndContinue_Click" />
-                                    <Button Margin="8"
-                                x:Name="btnIgnoreAndUpload"
-                                Style="{StaticResource buttonStyle}"
-                                ToolTip="Upload and continue scanning"
-                                Content="Upload"
-                                HorizontalAlignment="Left"
-                                Click="BtnIgnoreAndUpload_Click" />
-                                </StackPanel>
-                            </StackPanel>
-                        </StackPanel>
-                    </StackPanel>
                 </StackPanel>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Name="rowProgressBars" Height="100" />
+                        <RowDefinition Name="rowCheckImages" Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <Grid Grid.Row="0" Margin="5,10,10,0" Name="grdProgressBars"  HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+                        <Grid.ColumnDefinitions >
+                            <ColumnDefinition Name="colControlItems" />
+                            <ColumnDefinition Name="colControlAmount" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel  Grid.Column="0" Name="spControlItemProgressbar" Visibility="Collapsed">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Name="colItemsCaption" />
+                                    <ColumnDefinition Name="colItemslegend" />
+                                </Grid.ColumnDefinitions>
+                                <Label Grid.Column="0" Margin="10,0,0,0" HorizontalAlignment="Left" Name="lblcontrolItemCaption" Style="{StaticResource labelStyleCaption}">Control Items</Label>
+                                <Label Grid.Column="1" Name="lblItemScannedValue" HorizontalAlignment="Right"  Margin="0,0,30,0" Style="{StaticResource labelStyleSmall}" />
+                            </Grid>
+                            <ProgressBar Name="pbControlItems"
+                             Foreground="#ee7725"
+                             Width="275"
+                             Margin="10,0,30,0"
+                             HorizontalAlignment="Left"
+                             Height="5" />
+                        </StackPanel>
+                            <StackPanel Grid.Column="1" Name="spControlAmountProgressBar" HorizontalAlignment="Right" VerticalAlignment="Stretch" Visibility="Collapsed">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Name="colAccountCaption" />
+                                    <ColumnDefinition  Name="colAccountLegend" />
+                                </Grid.ColumnDefinitions>
+                                <Label Grid.Column="0" HorizontalAlignment="Left" Name="lblControlAmounts"  Style="{StaticResource labelStyleCaption}">Control Amounts</Label>
+                                <Label Grid.Column="1" HorizontalAlignment="Right"  Name="lblAmountRemaininValue" Style="{StaticResource labelStyleSmall}"  />
+                            </Grid>
+                            <ProgressBar Name="pbControlAmounts"
+                             Foreground="#ee7725"
+                             Width="275"
+                             HorizontalAlignment="Right"
+                             Height="5" />
+                        </StackPanel>
 
-                <!-- Check Images-->
-                <GridSplitter Grid.Row="1" Name="gridSplitter"  Height="5" HorizontalAlignment="Stretch" Style="{DynamicResource GridSplitterStyle1}">
-                    <GridSplitter.Background>
-                        <LinearGradientBrush EndPoint="0.5,0" StartPoint="0.5,1">
-                            <GradientStop Color="#A0A0A0" Offset="0"/>
-                            <GradientStop Color="#E5E5E5" Offset="0.15"/>
-                            <GradientStop Color="#ECECEC" Offset="0.8"/>
-                            <GradientStop Color="#E5E5E5" Offset="1"/>
-                        </LinearGradientBrush>
-                    </GridSplitter.Background>
-                </GridSplitter>
-                <StackPanel Grid.Row="2" Grid.ColumnSpan="2">
-                    <StackPanel Name="spImages">
-                        <Label Name="lblFront"
-                        VerticalAlignment="Bottom"
-                        Margin="8"
-                        Style="{StaticResource labelStyleCaption}">Front</Label>
-                        <Image
-                            Name="imgFront"
+                    </Grid>
+                    <StackPanel  Grid.Row="1" Name="spCheckDisplay" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+                        <Grid Name="CheckImages" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" >
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition />
+                                    <RowDefinition />
+                                    <RowDefinition />
+                                </Grid.RowDefinitions>
+                                <StackPanel Grid.Row="0" Name="spImages">
+                                    <Image
+                            Name="imgCheckFront"
+                            Visibility="Visible"
                             Stretch="Uniform"
                             Margin="8,0"
                             HorizontalAlignment="Left"
                            Source="images/check-image.png" />
-                        <Label Name="lblBack"
-                            VerticalAlignment="Bottom"
-                            Style="{StaticResource labelStyleCaption}">Back</Label>
-                        <Image Name="imgBack"
-                           Stretch="Uniform"
-                           HorizontalAlignment="Left"
-                           Margin="8,0"
-                           VerticalAlignment="Top"
+                                    <Image
+                            Name="imgCheckBack"
+                            Visibility="Collapsed"
+                            Stretch="Uniform"
+                            Margin="8,0"
+                            HorizontalAlignment="Left"
                            Source="images/check-image.png" />
+                                </StackPanel>
+                                <Grid Grid.Column="0" Margin="20,0,0,0"  Grid.Row="1">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="3*" />
+                                        <ColumnDefinition />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel  Orientation="Horizontal" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+                                        <Label x:Name="lblRoutingAccountCaption" Content="Routing / Account #" Style="{StaticResource labelStyleCaption}" />
+                                        <Label x:Name="lblRoutingAccountValue" Content="063453535 / 46565656565"  />
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1" HorizontalAlignment="Right" Margin="0,0,20,0"  Orientation="Horizontal" VerticalAlignment="Center">
+                                        <Label x:Name="lblCheckNumberCaption" VerticalAlignment="Center"  HorizontalAlignment="Right" Content="Check #" Style="{StaticResource labelStyleCaption}" />
+                                        <Label Name="lblCheckNumber" VerticalAlignment="Center" Content="1234"/>
+                                    </StackPanel>
+                                </Grid>
+                                <Grid Name="grdImageThumbnailsButtons" Grid.Row="2" HorizontalAlignment="Stretch" Margin="0,20,0,0" VerticalAlignment="Stretch"  Visibility="Collapsed" >
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition />
+                                        <ColumnDefinition />
+                                    </Grid.ColumnDefinitions>
+                                    <Button Grid.Column="0" ToolTip="Front" Background="Transparent" BorderThickness="0"  Name="btnImageFront" Style="{StaticResource ImageButton}" CommandParameter="Front" Click="BtnImageToggle_FrontBack_Click">
+                                        <Image 
+                                        Name="imgFrontThumb"
+                                        Stretch="Uniform"
+                                        Margin="8,0"
+                                        Width="200"  
+                                        HorizontalAlignment="Right"
+                                       Source="images/check-image.png"    
+                                       />
+                                    </Button>
+                                    <Button Grid.Column="1" ToolTip="Back" Background="Transparent" BorderThickness="0"  Name="btnImageBack" Style="{StaticResource ImageButton}" CommandParameter="Back" Click="BtnImageToggle_FrontBack_Click">
+                                        <Image  Name="imgBackThumb"
+                                       Stretch="Uniform"
+                                       HorizontalAlignment="Left"
+                                       Width="200"
+                                       VerticalAlignment="Top"
+                                       Source="images/check-image-back.png" />
+                                    </Button>
+                                </Grid>
+                            </Grid>
+                        </Grid>
                     </StackPanel>
-                    <Label Name="lblStartupInfo"
-                    HorizontalAlignment="Center"
-                    VerticalAlignment="Bottom"
-                    Margin="8"
-                    Style="{StaticResource labelStyleBannerTitle}">Click Next To Begin</Label>
-                    <StackPanel>
-                        <Label Name="lblNoItemsFound"
-                            Style="{StaticResource labelStyleAlert}"
-                            Content="No {0} detected in scanner. Make sure {0} are properly in the feed tray.">
-                        </Label>
-                        <Label Name="lblScannerNotReady"
-                            Style="{StaticResource labelStyleAlert}"
-                            Content="Scanner is not ready. Verify that the scanner is powered on and connected.">
-                        </Label>
-                    </StackPanel>
-                </StackPanel>
-            </Grid>
-            <!-- Right Side Progress Bar and Account List-->
-            <StackPanel  HorizontalAlignment="Stretch" Grid.Column="1" >
-                <StackPanel Name="spControlItemProgressbar"  Visibility="Hidden">
-                    <Label Name="lblControlItems"
-                                Margin="5,0,0,5"
-                                 Style="{StaticResource labelStyleBold}">Control Items</Label>
-                    <ProgressBar Name="pbControlItems"
-                                 Margin="5,0,5,0"
-                                 Width="300"
-                                 Height="25" />
-                    <Grid Margin="10,0,0,0" Name="grdControlItems">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition/>
-                            <ColumnDefinition/>
-                        </Grid.ColumnDefinitions>
-                        <StackPanel Grid.Column="0" Orientation="Horizontal">
-                            <Label Name="lblItemsScannedCaption" Margin="0,0,5,0" Style="{StaticResource labelStyleSmall}">Items Scanned:</Label>
-                            <Label Name="lblItemScannedValue"  Style="{StaticResource labelStyleSmall}"/>
-                        </StackPanel>
-                        <StackPanel Grid.Column="1" Orientation="Horizontal">
-                            <Label Name="lblItemsRemainingCaption" Margin="0,0,0,3" Style="{StaticResource labelStyleSmall}">Remaining:</Label>
-                            <Label Name="lblItemCountRemainingValue" Margin="0,0,0,3" Style="{StaticResource labelStyleSmall}" />
-                        </StackPanel>
-                    </Grid>
-                </StackPanel>
-                <StackPanel Name="spControlAmountProgressBar" Visibility="Hidden">
-                    <Label Name="lblControlAmounts"
-                           Margin="5,0,0,5" Style="{StaticResource labelStyleBold}">Control Amounts</Label>
-                    <ProgressBar Name="pbControlAmounts"
-                         Margin="5,0,5,0"
-                         Width="300"
-                         Height="25" />
-                    <Grid Margin="10,0,0,0">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition />
-                            <ColumnDefinition />
-                        </Grid.ColumnDefinitions>
-                        <StackPanel Grid.Column="0" HorizontalAlignment="Stretch" Orientation="Horizontal">
-                            <Label Name="lblAmountScannedCaption" Margin="0,0,0,2" Style="{StaticResource labelStyleSmall}">Scanned:</Label>
-                            <Label Name="lblAmountScannedValue" Margin="0,0,0,3" Style="{StaticResource labelStyleSmall}" />
-                        </StackPanel>
-                        <StackPanel Grid.Column="1" Orientation="Horizontal">
-                            <Label Name="lblAmountRemainingCaption" Margin="5,0,0,0" Style="{StaticResource labelStyleSmall}">Remaining:</Label>
-                            <Label Name="lblAmountRemaininValue" Style="{StaticResource labelStyleSmall}" />
-                        </StackPanel>
-                    </Grid>
-                </StackPanel>
-                <Label Name="lblAccounts" Margin="10,10,5,0" Style="{StaticResource labelStyleBold}">Accounts</Label>
+                </Grid>
+            </StackPanel>
+            </ScrollViewer>
+            <!-- Account List View -->
+            <StackPanel Grid.Row="1" Grid.Column="1" Grid.RowSpan="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"  Background="#f3f3f3">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
-                    <ListView 
-                                      Height="460"
-                                      Margin="5,5,5,10"
-                                      IsTabStop="False"
-                                      BorderThickness="0"
-                                      HorizontalAlignment="Stretch"
-                                      HorizontalContentAlignment="Stretch"
-                                      Name="lvAccounts"
-                                      KeyboardNavigation.TabNavigation="Continue">
+                    <ListView Margin="0,0,0,0"
+                        IsTabStop="False" 
+                        BorderThickness="0"
+                        HorizontalAlignment="Stretch"
+                        HorizontalContentAlignment="Stretch"
+                        Name="lvAccounts"
+                        KeyboardNavigation.TabNavigation="Continue">
                         <ListView.ItemTemplate>
                             <DataTemplate>
                                 <StackPanel>
@@ -308,12 +229,36 @@
                                     <TextBox behaviors:NumberOnlyBehaviour.IsEnabled="True" behaviors:NumberOnlyBehaviour.AllowDecimals="True" KeyDown="TextBox_KeyDown" TextChanged="TextBox_TextChanged"  HorizontalAlignment="Stretch" Margin="5" Focusable="True" Text="{Binding Amount,Mode=TwoWay}">
                                         <TextBox.Style>
                                             <Style TargetType="TextBox">
+                                                <Setter Property="Template">
+                                                    <Setter.Value>
+                                                        <ControlTemplate TargetType="{x:Type TextBox}">
+                                                            <Border x:Name="border" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" Background="{TemplateBinding Background}" SnapsToDevicePixels="True">
+                                                                <ScrollViewer x:Name="PART_ContentHost" Focusable="false" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Hidden"/>
+                                                            </Border>
+                                                            <ControlTemplate.Triggers>
+                                                                <Trigger Property="IsEnabled" Value="false">
+                                                                    <Setter Property="Opacity" TargetName="border" Value="0.56"/>
+                                                                </Trigger>
+                                                                <Trigger Property="IsMouseOver" Value="true">
+                                                                    <Setter Property="BorderBrush" TargetName="border" Value="{StaticResource WindowBackColor}"/>
+                                                                    <Setter Property="BorderThickness" Value="1" />
+                                                                </Trigger>
+                                                                <Trigger Property="IsFocused" Value="true">
+                                                                    <Setter Property="BorderBrush" TargetName="border" Value="{StaticResource WindowBackColor}"/>
+                                                                    <Setter Property="BorderThickness" Value="2" />
+                                                                </Trigger>
+                                                            </ControlTemplate.Triggers>
+                                                        </ControlTemplate>
+                                                    </Setter.Value>
+                                                </Setter>
                                                 <Style.Triggers>
+
                                                     <DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=ListViewItem}}" Value="True">
                                                         <Setter Property="local:FocusExtension.IsFocused" Value="True" />
                                                         <Setter Property="Text" Value="{x:Null}" />
                                                     </DataTrigger>
                                                 </Style.Triggers>
+
                                             </Style>
                                         </TextBox.Style>
                                     </TextBox>
@@ -323,17 +268,17 @@
                     </ListView>
                 </ScrollViewer>
             </StackPanel>
-        </StackPanel>
-        <StackPanel Grid.Row="2" Grid.ColumnSpan="2" Name="spNavigationButtons">
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition />
-                </Grid.RowDefinitions>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition />
-                    <ColumnDefinition />
-                </Grid.ColumnDefinitions>
-                <Button Grid.Row="0"  Grid.Column="0"
+            <!-- Buttons  -->
+            <StackPanel Grid.Row="2"  HorizontalAlignment="Stretch" VerticalAlignment="Bottom"  >
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition />
+                        <ColumnDefinition />
+                    </Grid.ColumnDefinitions>
+                    <Button Grid.Row="0"  Grid.Column="0"
                     x:Name="btnClose"
                     Margin="8"
                     Style="{StaticResource buttonStylePrimary}"
@@ -341,7 +286,7 @@
                     TabIndex="200"
                     HorizontalAlignment="Left"
                     Click="BtnClose_Click" />
-                <Button Grid.Row="0" Grid.Column="1" 
+                    <Button Grid.Row="0" Grid.Column="1" 
                     x:Name="btnNext"
                     TabIndex="100"
                     Margin="8"
@@ -349,13 +294,47 @@
                     Content="Next"
                     HorizontalAlignment="Right"
                     Click="BtnNext_Click"/>
-                <Button Grid.Row="0" Grid.Column="1" 
+                    <Button Grid.Row="0" Grid.Column="1" 
                     Margin="8"
                     x:Name="btnComplete"
                     Style="{StaticResource buttonStylePrimary}"
                     Content="Complete"
                     HorizontalAlignment="Right"
                     Click="BtnComplete_Click" />
+                </Grid>
+            </StackPanel>
+        </Grid>
+        <!-- Option Button and Status-->
+        <StackPanel Background="#dfdfdf" HorizontalAlignment="Stretch" VerticalAlignment="Bottom" >
+            <Grid  HorizontalAlignment="Right"  >
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition />
+                    <ColumnDefinition />
+                </Grid.ColumnDefinitions>
+                <Border Grid.Column="0"  BorderBrush="{StaticResource BorderBrush}"  BorderThickness="1,0,0,0" Width="40">
+                    <Button  x:Name="btnTools"
+                            ToolTip="Options"
+                            Style="{StaticResource WindowButton}"
+                            HorizontalAlignment="Stretch"
+                            VerticalAlignment="Center"
+                            Click="btnOptions_Click" >
+                        <fa:ImageAwesome Icon="Gear"
+                            Foreground="{StaticResource FontAwesomIconColor}"
+                            Height="16" Width="16"
+                            VerticalAlignment="Center"
+                            HorizontalAlignment="Center" />
+                    </Button>
+                </Border>
+                <Border Grid.Column="1"  BorderBrush="LightGray"   BorderThickness="1,0,1,0" Width="40">
+                    <Ellipse x:Name="shapeStatus"
+                     Height="14"
+                     Margin="8"
+                     VerticalAlignment="Top"
+                     HorizontalAlignment="Right"
+                     Width="14"
+                     Fill="Red"
+                     Grid.Column="1" />
+                </Border>
             </Grid>
         </StackPanel>
     </Grid>
