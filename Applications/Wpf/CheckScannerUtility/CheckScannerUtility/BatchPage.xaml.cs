@@ -911,8 +911,6 @@ namespace Rock.Apps.CheckScannerUtility
         private void grdBatches_SelectionChanged( object sender, SelectionChangedEventArgs e )
         {
             FinancialBatch selectedBatch = grdBatches.SelectedValue as FinancialBatch;
-            ScanningPageUtility.ItemsToProcess = selectedBatch.ControlItemCount;
-
             UpdateBatchUI( selectedBatch );
         }
 
