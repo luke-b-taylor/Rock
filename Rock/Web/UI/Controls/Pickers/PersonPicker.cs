@@ -496,7 +496,7 @@ namespace Rock.Web.UI.Controls
 
             _btnSelect = new HtmlAnchor();
             Controls.Add( _btnSelect );
-            _btnSelect.Attributes["class"] = "btn btn-xs btn-primary";
+            _btnSelect.Attributes["class"] = "btn btn-xs btn-primary js-personpicker-select";
             _btnSelect.ID = "btnSelect";
             _btnSelect.InnerText = "Select";
             _btnSelect.CausesValidation = false;
@@ -504,7 +504,7 @@ namespace Rock.Web.UI.Controls
 
             _btnSelectNone = new HtmlAnchor();
             Controls.Add( _btnSelectNone );
-            _btnSelectNone.Attributes["class"] = "picker-select-none";
+            _btnSelectNone.Attributes["class"] = "picker-select-none js-picker-select-none";
             _btnSelectNone.ID = "btnSelectNone";
             _btnSelectNone.InnerHtml = "<i class='fa fa-times'></i>";
             _btnSelectNone.CausesValidation = false;
@@ -548,9 +548,9 @@ namespace Rock.Web.UI.Controls
                 _hfIncludeBusinesses.RenderControl( writer );
 
                 string pickerLabelHtmlFormat = @"
-            <a class='picker-label' href='#'>
+            <a class='picker-label js-personpicker-toggle' href='#'>
                 <i class='fa fa-user'></i>
-                <span id='{0}_selectedPersonLabel' class='picker-selectedperson'>{1}</span>
+                <span class='js-personpicker-selectedperson-label picker-selectedperson'>{1}</span>
                 <b class='fa fa-caret-down pull-right'></b>
             </a>
 ";
@@ -559,7 +559,7 @@ namespace Rock.Web.UI.Controls
                 _btnSelectNone.RenderControl( writer );
 
                 // render picker-menu dropdown-menu
-                writer.AddAttribute( HtmlTextWriterAttribute.Class, "picker-menu dropdown-menu" );
+                writer.AddAttribute( HtmlTextWriterAttribute.Class, "picker-menu dropdown-menu js-personpicker-menu" );
                 writer.RenderBeginTag( HtmlTextWriterTag.Div );
 
                 writer.AddAttribute( HtmlTextWriterAttribute.Class, "row" );
@@ -587,13 +587,13 @@ namespace Rock.Web.UI.Controls
                 writer.RenderEndTag();
 
                 string pickMenuHtmlFormatStart = @"
-             <input id='{0}_personPicker' type='text' class='picker-search form-control input-sm' autocorrect='off' autocapitalize='off' autocomplete='off' spellcheck='false' />
+             <input type='text' class='js-personpicker-searchinput picker-search form-control input-sm' autocorrect='off' autocapitalize='off' autocomplete='off' spellcheck='false' />
 
              <hr />
 
              <h4>Results</h4>
 
-             <div id='personpicker-scroll-container_{0}' class='scroll-container scroll-container-vertical scroll-container-picker'>
+             <div class='js-personpicker-scroll-container scroll-container scroll-container-vertical scroll-container-picker'>
                 <div class='scrollbar'>
                     <div class='track'>
                         <div class='thumb'>
@@ -603,7 +603,7 @@ namespace Rock.Web.UI.Controls
                 </div>
                 <div class='viewport'>
                     <div class='overview'>
-                        <ul class='picker-select' id='{0}_personPickerItems'>
+                        <ul class='picker-select js-personpicker-searchresults' id='{0}_personPickerItems'>
                         </ul>
                     </div>
                 </div>
@@ -617,7 +617,7 @@ namespace Rock.Web.UI.Controls
                 _btnSelect.RenderControl( writer );
 
                 string pickMenuHtmlFormatEnd = @"
-            <a class='btn btn-link btn-xs' id='{0}_btnCancel'>Cancel</a>
+            <a class='btn btn-link btn-xs js-personpicker-cancel'>Cancel</a>
             </div>
 ";
 
