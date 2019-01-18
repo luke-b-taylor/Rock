@@ -20,7 +20,7 @@ namespace Rock.Apps.CheckScannerUtility
         public static void Initalize()
         {
             ItemsUploaded = 0;
-            KeepScanning = false;
+            KeepScanning = true;
             ItemsToProcess = 0;
             ItemsSkipped = 0;
             ItemsScanned = 0;

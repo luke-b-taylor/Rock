@@ -101,17 +101,20 @@ namespace Rock.Apps.CheckScannerUtility
 
         private void InitalizeControls()
         {
+       
             this.btnComplete.Visibility = Visibility.Hidden;
             spCheckDisplay.Visibility = Visibility.Collapsed;
             this.btnNext.Visibility = Visibility.Visible;
             this.btnNext.IsEnabled = false;
             SetAmountlegendInvalid( false );
             this.grdImageThumbnailsButtons.Visibility = Visibility.Collapsed;
+            this.HideDisplayMessage();
         }
 
         private void SyncAnyExistingTransaction()
         {
             decimal sum = 0;
+            ScanningPageUtility.ItemsToProcess = ScanningPageUtility.batchPage.SelectedFinancialBatch.ControlItemCount;
             ScanningPageUtility.KeepScanning = ( ScanningPageUtility.CurrentFinacialTransactions.Count < ScanningPageUtility.ItemsToProcess);
             foreach ( var financialTransacation in ScanningPageUtility.CurrentFinacialTransactions )
             {
@@ -184,6 +187,8 @@ namespace Rock.Apps.CheckScannerUtility
                 lblOtherData.Content = scannedDocInfo.OtherData;
                 spOtherData.Visibility = !string.IsNullOrWhiteSpace( scannedDocInfo.OtherData ) ? Visibility.Visible : Visibility.Collapsed;
             }
+            lvAccounts.SelectedIndex = 1;
+            lvAccounts.SelectedIndex = 0;
         }
 
         private double GetImageWidth()
@@ -546,6 +551,7 @@ namespace Rock.Apps.CheckScannerUtility
             {
                 item.Amount = null;
             }
+            lvAccounts.SelectedIndex = 1;
             lvAccounts.SelectedIndex = 0;
             this.lblRoutingAccountValue.Content = string.Empty;
             this.lblCheckNumber.Content = string.Empty;

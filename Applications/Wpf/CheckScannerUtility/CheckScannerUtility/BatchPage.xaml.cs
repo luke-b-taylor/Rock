@@ -447,6 +447,9 @@ namespace Rock.Apps.CheckScannerUtility
                 {
                     // try to set the selected batch in the grid to our current batch (if it still exists in the database)
                     grdBatches.SelectedValue = pendingBatches.FirstOrDefault( a => a.Id.Equals( SelectedFinancialBatch.Id ) );
+                    FinancialBatch selectedBatch = grdBatches.SelectedValue as FinancialBatch;
+                    ScanningPageUtility.ItemsToProcess = selectedBatch.ControlItemCount;
+
                 }
 
                 // if there still isn't a selected batch, set it to the first one
@@ -745,6 +748,8 @@ namespace Rock.Apps.CheckScannerUtility
                 if ( !string.IsNullOrWhiteSpace( txtControlItemCount.Text ) )
                 {
                     financialBatch.ControlItemCount = int.Parse( txtControlItemCount.Text);
+                   
+                   
                 }
                 else
                 {
@@ -906,6 +911,7 @@ namespace Rock.Apps.CheckScannerUtility
         private void grdBatches_SelectionChanged( object sender, SelectionChangedEventArgs e )
         {
             FinancialBatch selectedBatch = grdBatches.SelectedValue as FinancialBatch;
+            ScanningPageUtility.ItemsToProcess = selectedBatch.ControlItemCount;
 
             UpdateBatchUI( selectedBatch );
         }
@@ -964,6 +970,9 @@ namespace Rock.Apps.CheckScannerUtility
             lblCreatedBy.Content = lblBatchCreatedByReadOnly.Content as string;
             txtControlAmount.Text = selectedBatch.ControlAmount.ToString( "F" );
             txtControlItemCount.Text = selectedBatch.ControlItemCount.ToString();
+            ScanningPageUtility.ItemsToProcess = selectedBatch.ControlItemCount;
+
+
             txtNote.Text = selectedBatch.Note;
 
             // start a background thread to download transactions since this could take a little while and we want a Wait cursor
