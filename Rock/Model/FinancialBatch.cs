@@ -126,8 +126,6 @@ namespace Rock.Model
         [BoundFieldTypeAttribute( typeof( Rock.Web.UI.Controls.CurrencyField ) )]
         public decimal ControlAmount { get; set; }
 
-        [DataMember]
-        public int? ControlItemCount { get; set; }
         /// <summary>
         /// Gets or sets the control item count.
         /// </summary>
