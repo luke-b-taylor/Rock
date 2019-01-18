@@ -26,7 +26,6 @@ using Rock.Client;
 using Rock.Client.Enums;
 using Rock.Net;
 
-
 namespace Rock.Apps.CheckScannerUtility
 {
     /// <summary>
