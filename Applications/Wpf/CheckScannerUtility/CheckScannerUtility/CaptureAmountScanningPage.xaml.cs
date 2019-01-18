@@ -114,7 +114,13 @@ namespace Rock.Apps.CheckScannerUtility
         private void SyncAnyExistingTransaction()
         {
             decimal sum = 0;
-            ScanningPageUtility.ItemsToProcess = ScanningPageUtility.batchPage.SelectedFinancialBatch.ControlItemCount;
+           
+            if ( ScanningPageUtility.batchPage.SelectedFinancialBatch == null )
+            {
+                ScanningPageUtility.KeepScanning = false;
+                return;
+            }
+            ScanningPageUtility.ItemsToProcess =  ScanningPageUtility.batchPage.SelectedFinancialBatch.ControlItemCount;
             ScanningPageUtility.KeepScanning = ( ScanningPageUtility.CurrentFinacialTransactions.Count < ScanningPageUtility.ItemsToProcess);
             foreach ( var financialTransacation in ScanningPageUtility.CurrentFinacialTransactions )
             {

@@ -625,8 +625,10 @@ namespace Rock.Apps.CheckScannerUtility
         {
             var rockConfig = RockConfig.Load();
 
-            ScanningPageUtility.CurrentFinacialTransactions = (grdBatchItems.DataContext as BindingList<FinancialTransaction>).ToList();
-
+            if ( grdBatchItems.DataContext != null )
+            {
+                ScanningPageUtility.CurrentFinacialTransactions = ( grdBatchItems.DataContext as BindingList<FinancialTransaction> ).ToList();
+            }
             // make sure we can connect (
             // NOTE: If ranger is powered down after the app starts, it might report that is is connected.  We'll catch that later when they actually start scanning
             if ( ConnectToScanner() )
@@ -941,7 +943,11 @@ namespace Rock.Apps.CheckScannerUtility
             lblBatchIdReadOnly.Content = string.Format( "Batch Id: {0}", selectedBatch.Id );
 
             lblBatchCampusReadOnly.Content = selectedBatch.CampusId.HasValue ? client.GetData<Campus>( string.Format( "api/Campuses/{0}", selectedBatch.CampusId ?? 0 ) ).Name : string.Empty;
-            lblBatchDateReadOnly.Content = selectedBatch.BatchStartDateTime.Value.ToString( "d" );
+            if ( selectedBatch.BatchStartDateTime != null )
+            {
+                lblBatchDateReadOnly.Content = selectedBatch.BatchStartDateTime.Value.ToString( "d" );
+            }
+        
             var createdByPerson = client.GetData<Person>( string.Format( "api/People/GetByPersonAliasId/{0}", selectedBatch.CreatedByPersonAliasId ?? 0 ) );
             if ( createdByPerson != null )
             {
