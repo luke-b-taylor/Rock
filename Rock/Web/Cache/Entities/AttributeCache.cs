@@ -289,12 +289,20 @@ namespace Rock.Web.Cache
         public Dictionary<string, ConfigurationValue> QualifierValues { get; private set; }
 
         /// <summary>
-        /// Gets the default type of the value as.
+        /// The default value using the most appropriate datatype
         /// </summary>
         /// <value>
         /// The default type of the value as.
         /// </value>
         public object DefaultValueAsType => FieldType.Field.ValueAsFieldType( null, DefaultValue, QualifierValues );
+
+        /// <summary>
+        /// The default value formatted based on the field type and qualifiers
+        /// </summary>
+        /// <value>
+        /// The default value as formatted.
+        /// </value>
+        public string DefaultValueAsFormatted => FieldType.Field.FormatValue( null, DefaultValue, QualifierValues, false );
 
         /// <summary>
         /// Gets the default sort value.
@@ -453,7 +461,10 @@ namespace Rock.Web.Cache
                 SetValue = setValue,
                 SetId = setId,
                 Required = required,
-                WarningText = warningText
+                LabelText = labelText,
+                HelpText = helpText,
+                WarningText = warningText,
+                AttributeControlId = attributeControlId
             };
 
             return AddControl( controls, attributeControlOptions );
