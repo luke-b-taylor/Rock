@@ -4,7 +4,7 @@
                   Name="mainWindow"
                   Title="Rock RMS - Check Scanner"
                   Source="LoginPage.xaml"
-                  MinHeight="350"
+                  MinHeight="550"
                   MinWidth="550"
                   Height="800"
                   Width="960"

@@ -386,7 +386,9 @@ namespace Rock.Apps.CheckScannerUtility
 
         private void CheckBatchCompleted()
         {
-            if ( ScanningPageUtility.ItemsToProcess != null && ScanningPageUtility.ItemsUploaded == ScanningPageUtility.ItemsToProcess)
+            RockConfig rockConfig = RockConfig.Load();
+
+            if (rockConfig.CaptureAmountOnScan && ScanningPageUtility.ItemsToProcess != null && ScanningPageUtility.ItemsUploaded == ScanningPageUtility.ItemsToProcess)
             {
                 btnScan.IsEnabled = false;
             }

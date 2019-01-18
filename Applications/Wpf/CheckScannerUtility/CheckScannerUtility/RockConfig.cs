@@ -424,7 +424,6 @@ namespace Rock.Apps.CheckScannerUtility
             }
         }
 
-       
         [UserScopedSetting]
         public int [] SelectedAccountForAmountsIds
         {
@@ -439,7 +438,35 @@ namespace Rock.Apps.CheckScannerUtility
             }
 
         }
-        
+
+        [UserScopedSetting]
+        public double WindowCurrentHeight
+        {
+            get
+            {
+                return this["WindowCurrentHeight"] == null? 800:( double) this["WindowCurrentHeight"];
+            }
+
+            set
+            {
+                this["WindowCurrentHeight"] = value;
+            }
+        }
+
+        [UserScopedSetting]
+        public double WindowCurrentWidth
+        {
+            get
+            {
+                return this["WindowCurrentWidth"] == null? 960 : ( double ) this["WindowCurrentWidth"];
+            }
+
+            set
+            {
+                this["WindowCurrentWidth"] = value;
+            }
+        }
+
         /// <summary>
         /// Loads this instance.
         /// </summary>

@@ -31,6 +31,10 @@ namespace Rock.Apps.CheckScannerUtility
         public MainWindow()
         {
             InitializeComponent();
+            var rockConfig = RockConfig.Load();
+            Width = rockConfig.WindowCurrentWidth;
+            Height = rockConfig.WindowCurrentHeight;
+
         }
 
         /// <summary>
@@ -40,6 +44,12 @@ namespace Rock.Apps.CheckScannerUtility
         /// <param name="e">The <see cref="System.ComponentModel.CancelEventArgs"/> instance containing the event data.</param>
         private void mainWindow_Closing( object sender, System.ComponentModel.CancelEventArgs e )
         {
+            var rockConfig = RockConfig.Load();
+            var window = sender as NavigationWindow;
+            rockConfig.WindowCurrentHeight = window.ActualHeight;
+            rockConfig.WindowCurrentWidth = window.ActualWidth;
+            rockConfig.Save();
+            
             BatchPage batchPage = null;
             if ( mainWindow.Content is BatchPage )
             {

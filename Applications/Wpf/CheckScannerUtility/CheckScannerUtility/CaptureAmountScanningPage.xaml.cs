@@ -151,6 +151,7 @@ namespace Rock.Apps.CheckScannerUtility
                 bitmapImageFront.StreamSource = new MemoryStream( scannedDocInfo.FrontImageData );
                 bitmapImageFront.EndInit();
                 imgCheckFront.Source = bitmapImageFront;
+                imgFrontThumb.Source = bitmapImageFront;
                 Rock.Wpf.WpfHelper.FadeIn( imgCheckFront, 100 );
             }
             else
@@ -180,8 +181,8 @@ namespace Rock.Apps.CheckScannerUtility
             {
                 CheckImages.Visibility = Visibility.Visible;
                 this.lblRoutingAccountValue.Content = string.Format( "{0} / {1}", scannedDocInfo.RoutingNumber, scannedDocInfo.AccountNumber );
-                //lblOtherData.Content = scannedDocInfo.OtherData;
-                // spOtherData.Visibility = !string.IsNullOrWhiteSpace( scannedDocInfo.OtherData ) ? Visibility.Visible : Visibility.Collapsed;
+                lblOtherData.Content = scannedDocInfo.OtherData;
+                spOtherData.Visibility = !string.IsNullOrWhiteSpace( scannedDocInfo.OtherData ) ? Visibility.Visible : Visibility.Collapsed;
             }
         }
 
@@ -257,7 +258,6 @@ namespace Rock.Apps.CheckScannerUtility
         public void ShowScannedDocStatusAndUpload( ScannedDocInfo scannedDocInfo )
         {
             this.HideDisplayMessage();
-            bool messsageHandled = false;
 
             DisplayScannedDocInfo( scannedDocInfo );
 
@@ -288,7 +288,6 @@ namespace Rock.Apps.CheckScannerUtility
                                     Click 'Upload' to upload the check as-is.";
                         
                     }
-                    messsageHandled = true;
 
                     this.DisplayMessage( "Warning", mainMessageStyleKey: "WarningTextStyle", mainMessage: message );
                 }
@@ -628,7 +627,7 @@ namespace Rock.Apps.CheckScannerUtility
         /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
         public void rangerScanner_TransportFeedingState( object sender, EventArgs e )
         {
-            //this.spAlert.Visibility = Visibility.Collapsed;
+            
             System.Diagnostics.Debug.WriteLine( string.Format( "{0} : rangerScanner_TransportFeedingState", DateTime.Now.ToString( "o" ) ) );
             btnClose.IsEnabled = false;
         }

@@ -58,7 +58,7 @@
             <!-- Progress Bars and Check images -->
             <ScrollViewer Grid.Row="1" Name="scrollViewerCheckImage" VerticalScrollBarVisibility="Hidden" HorizontalScrollBarVisibility="Disabled">
             <StackPanel  Name="spCheckView" Height="{Binding ElementName=lvAccounts,Path=Height}" Grid.Column="0" Margin="0,20,0,0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" >
-                    <StackPanel Name="spAlertMessage" Visibility="Visible" HorizontalAlignment="Stretch"  VerticalAlignment="Top"  Panel.ZIndex="5" >
+                    <StackPanel Name="spAlertMessage" Visibility="Visible" HorizontalAlignment="Stretch"  VerticalAlignment="Top">
                         <Label Name="lblAlertCaptionMessage" Visibility="Visible" />
                         <Border Name="borderAlertBorder" Visibility="Visible" Margin="10,0,10,0">
                             <StackPanel>
@@ -177,7 +177,11 @@
                                         <Label x:Name="lblRoutingAccountCaption" Content="Routing / Account #" Style="{StaticResource labelStyleCaption}" />
                                         <Label x:Name="lblRoutingAccountValue" Content="063453535 / 46565656565"  />
                                     </StackPanel>
-                                    <StackPanel Grid.Column="1" HorizontalAlignment="Right" Margin="0,0,20,0"  Orientation="Horizontal" VerticalAlignment="Center">
+                                     <StackPanel Margin="0,15,0,0" Grid.Column="0" Orientation="Horizontal"  Name="spOtherData" HorizontalAlignment="Stretch" Visibility="Collapsed" >
+                                            <Label x:Name="lblOtherDataCaption" VerticalAlignment="Center" Content="OtherData" Style="{StaticResource labelStyleCaption}" />
+                                            <Label x:Name="lblOtherData" VerticalAlignment="Center" />
+                                     </StackPanel>
+                                     <StackPanel Grid.Column="1" HorizontalAlignment="Right" Margin="0,0,20,0"  Orientation="Horizontal" VerticalAlignment="Center">
                                         <Label x:Name="lblCheckNumberCaption" VerticalAlignment="Center"  HorizontalAlignment="Right" Content="Check #" Style="{StaticResource labelStyleCaption}" />
                                         <Label Name="lblCheckNumber" VerticalAlignment="Center" Content="1234"/>
                                     </StackPanel>
