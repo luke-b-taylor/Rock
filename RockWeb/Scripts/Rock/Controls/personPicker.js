@@ -21,7 +21,11 @@
                 defaultText = this.defaultText;
 
             var $pickerControl = this.$pickerControl;
-            var $searchInput = $pickerControl.find('.js-personpicker-searchinput');
+            var $searchFields = $pickerControl.find('.js-personpicker-search-field input');
+            var $searchFieldName = $pickerControl.find('.js-personpicker-search-name input');
+            var $searchFieldAddress = $pickerControl.find('.js-personpicker-search-address input');
+            var $searchFieldPhone = $pickerControl.find('.js-personpicker-search-phone input');
+            var $searchFieldEmail = $pickerControl.find('.js-personpicker-search-email input');
             var $searchResults = $pickerControl.find('.js-personpicker-searchresults');
             var $pickerToggle = $pickerControl.find('.js-personpicker-toggle');
             var $pickerMenu = $pickerControl.find('.js-personpicker-menu');
@@ -32,20 +36,57 @@
             var $pickerCancel = $pickerControl.find('.js-personpicker-cancel');
 
             var includeBusinesses = $pickerControl.find('.js-include-businesses').val() == '1' ? 'true' : 'false';
+            var includeDeceased = $pickerControl.find('.js-include-deceased').val() == '1' ? 'true' : 'false';
+            var includeDetails = 'false';
+            var expandSearchDetails = $pickerControl.find('.js-expand-search-options').val() == '1' ? 'true' : 'false';
 
             var promise = null;
             var lastSelectedPersonId = null;
 
-            $searchInput.autocomplete({
+            var autoCompletes = $searchFields.autocomplete({
                 source: function (request, response) {
+
+                    var search = {
+                        name: $searchFieldName.val(),
+                        address: $searchFieldAddress.val(),
+                        phone: $searchFieldPhone.val(),
+                        email: $searchFieldEmail.val()
+                    };
+
+
+                    // make sure that at least one of the search fields has 3 chars in it
+                    if ( (search.name.length < 3) && (search.address.length < 3) && (search.phone.length < 3) && (search.email.length < 3)) {
+                        console.log('min length 3')
+                        return;
+                    }       
 
                     // abort any searches that haven't returned yet, so that we don't get a pile of results in random order
                     if (promise && promise.state() === 'pending') {
                         promise.abort();
                     }
 
+                    var searchParams = [];
+                    if (search.name) {
+                        searchParams.push("name=" + encodeURIComponent(search.name));
+                    }
+                    if (search.address) {
+                        searchParams.push("address=" + encodeURIComponent(search.address));
+                    }
+                    if (search.phone) {
+                        searchParams.push("phone=" + encodeURIComponent(search.phone));
+                    }
+                    if (search.email) {
+                        searchParams.push("email=" + encodeURIComponent(search.email));
+                    }
+
+                    var searchQuery = "?" + searchParams.join("&");
+
                     promise = $.ajax({
-                        url: restUrl + "?name=" + encodeURIComponent(request.term) + "&includeHtml=false&includeDetails=false&includeBusinesses=" + includeBusinesses + "&includeDeceased=true",
+                        url: restUrl
+                            + searchQuery
+                            + "&includeDetails=" + includeDetails
+                            + "&includeBusinesses=" + includeBusinesses
+                            + "&includeDeceased=" + includeDeceased,
                         dataType: 'json'
                     });
 
@@ -66,7 +107,8 @@
                         }
                     });
                 },
-                minLength: 3,
+                // set minLength to 0, but check that at least one field as 3 chars before fetching from REST
+                minLength: 0,
                 html: true,
                 appendTo: $searchResults,
                 pickerControlId: controlId,
@@ -74,9 +116,11 @@
                     noResults: function () { },
                     results: function () { }
                 }
-            }).data('ui-autocomplete')._renderItem = function ($ul, item) {
+            });
+
+            var autoCompleteCustomRenderItem = function ($ul, item) {
                 if (this.options.html) {
-                    // override jQueryUI autocomplete's _renderItem so that we can do Html for the listitems
+                    // override jQueryUI autocomplete's _renderItem so that we can do HTML for the ListItems
                     // derived from http://github.com/scottgonzalez/jquery-ui-extensions
 
                     var inactiveWarning = "";
@@ -146,7 +190,12 @@
                         .append($('<a></a>').text(item.label))
                         .appendTo($ul);
                 }
-            };
+            }
+
+            $.each(autoCompletes, function (a, b, c) {
+                var autoComplete = $(autoCompletes[a]);
+                autoComplete.data('ui-autocomplete')._renderItem = autoCompleteCustomRenderItem;
+            });
 
             $pickerToggle.click(function (e) {
                 e.preventDefault();
@@ -203,7 +252,7 @@
                     $.get(restDetailUrl + '?Id=' + selectedPersonId, function (responseText, textStatus, jqXHR) {
                         $itemDetails.attr('data-has-details', true);
 
-                        // hide then set the html so that we can get the slideDown effect
+                        // hide then set the HTML so that we can get the slideDown effect
                         $itemDetails.stop().hide().html(responseText);
                         showItemDetails($itemDetails);
 
@@ -244,7 +293,7 @@
 
                 var selectedValue = '0',
                     selectedText = defaultText;
-                
+
                 $pickerPersonId.val(selectedValue);
                 $pickerPersonName.val(selectedText);
             });

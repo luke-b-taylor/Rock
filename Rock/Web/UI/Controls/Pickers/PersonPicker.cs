@@ -237,11 +237,21 @@ namespace Rock.Web.UI.Controls
 
         #region Controls
 
+        private Panel _hiddenFieldsPanel;
         private HiddenFieldWithClass _hfPersonId;
         private HiddenFieldWithClass _hfPersonName;
         private HiddenFieldWithClass _hfSelfPersonId;
         private HiddenFieldWithClass _hfSelfPersonName;
         private HiddenFieldWithClass _hfIncludeBusinesses;
+        private HiddenFieldWithClass _hfIncludeDeceased;
+        private HiddenFieldWithClass _hfExpandSearchOptions;
+
+        private Panel _searchPanel;
+        private RockTextBox _tbSearchName;
+        private RockTextBox _tbSearchAddress;
+        private RockTextBox _tbSearchPhone;
+        private RockTextBox _tbSearchEmail;
+
         private HtmlAnchor _btnSelect;
         private HtmlAnchor _btnSelectNone;
 
@@ -250,7 +260,7 @@ namespace Rock.Web.UI.Controls
         #region Properties
 
         /// <summary>
-        /// Gets or sets a value indicating whether [include businesses].
+        /// Gets or sets a value indicating whether to include businesses (default false).
         /// </summary>
         /// <value>
         ///   <c>true</c> if [include businesses]; otherwise, <c>false</c>.
@@ -267,7 +277,48 @@ namespace Rock.Web.UI.Controls
             {
                 EnsureChildControls();
                 _hfIncludeBusinesses.Value = value.Bit().ToString();
+            }
+        }
 
+        /// <summary>
+        /// Gets or sets a value indicating whether deceased people should be included in search results (default true).
+        /// </summary>
+        /// <value>
+        ///   <c>true</c> if [include deceased]; otherwise, <c>false</c>.
+        /// </value>
+        public bool IncludeDeceased
+        {
+            get
+            {
+                EnsureChildControls();
+                return _hfIncludeDeceased.Value.AsBooleanOrNull() ?? true;
+            }
+
+            set
+            {
+                EnsureChildControls();
+                _hfIncludeDeceased.Value = value.Bit().ToString();
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether the additional search options should be expanded by default
+        /// </summary>
+        /// <value>
+        ///   <c>true</c> if [expand search options]; otherwise, <c>false</c>.
+        /// </value>
+        public bool ExpandSearchOptions
+        {
+            get
+            {
+                EnsureChildControls();
+                return _hfExpandSearchOptions.Value.AsBooleanOrNull() ?? false;
+            }
+
+            set
+            {
+                EnsureChildControls();
+                _hfExpandSearchOptions.Value = value.Bit().ToString();
             }
         }
 
@@ -279,8 +330,8 @@ namespace Rock.Web.UI.Controls
         /// </value>
         public bool EnableSelfSelection
         {
-            get { return ViewState["EnableSelfSelection"] as bool? ?? false; }
-            set { ViewState["EnableSelfSelection"] = value; }
+            get => ViewState["EnableSelfSelection"] as bool? ?? false;
+            set => ViewState["EnableSelfSelection"] = value;
         }
 
         /// <summary>
@@ -326,7 +377,7 @@ namespace Rock.Web.UI.Controls
         {
             get
             {
-                if (PersonId.HasValue)
+                if ( PersonId.HasValue )
                 {
                     using ( var rockContext = new RockContext() )
                     {
@@ -441,7 +492,7 @@ namespace Rock.Web.UI.Controls
         }
 
         /// <summary>
-        /// Registers the java script.
+        /// Registers the JavaScript.
         /// </summary>
         protected virtual void RegisterJavaScript()
         {
@@ -460,39 +511,87 @@ namespace Rock.Web.UI.Controls
 
             Controls.Clear();
 
+            #region hidden fields
+
+            _hiddenFieldsPanel = new Panel();
+            _hiddenFieldsPanel.ID = "hiddenFieldsPanel";
+            Controls.Add( _hiddenFieldsPanel );
+
             _hfPersonId = new HiddenFieldWithClass();
             _hfPersonId.CssClass = "js-person-id";
-            Controls.Add( _hfPersonId );
+            _hiddenFieldsPanel.Controls.Add( _hfPersonId );
             _hfPersonId.ID = "hfPersonId";
             _hfPersonId.Value = "0";
 
             _hfPersonName = new HiddenFieldWithClass();
             _hfPersonName.CssClass = "js-person-name";
-            Controls.Add( _hfPersonName );
+            _hiddenFieldsPanel.Controls.Add( _hfPersonName );
             _hfPersonName.ID = "hfPersonName";
 
             _hfSelfPersonId = new HiddenFieldWithClass();
             _hfSelfPersonId.CssClass = "js-self-person-id";
-            Controls.Add( _hfSelfPersonId );
+            _hiddenFieldsPanel.Controls.Add( _hfSelfPersonId );
             _hfSelfPersonId.ID = "hfSelfPersonId";
             _hfSelfPersonId.Value = "0";
 
             _hfSelfPersonName = new HiddenFieldWithClass();
             _hfSelfPersonName.CssClass = "js-self-person-name";
-            Controls.Add( _hfSelfPersonName );
+            _hiddenFieldsPanel.Controls.Add( _hfSelfPersonName );
             _hfSelfPersonName.ID = "hfSelfPersonName";
-
-            var rockBlock = this.RockBlock();
-            if ( rockBlock != null && rockBlock.CurrentPerson != null)
-            {
-                _hfSelfPersonId.Value = rockBlock.CurrentPersonId.ToString();
-                _hfSelfPersonName.Value = rockBlock.CurrentPerson.ToString();
-            }
 
             _hfIncludeBusinesses = new HiddenFieldWithClass();
             _hfIncludeBusinesses.CssClass = "js-include-businesses";
-            Controls.Add( _hfIncludeBusinesses );
+            _hiddenFieldsPanel.Controls.Add( _hfIncludeBusinesses );
             _hfIncludeBusinesses.ID = "hfIncludeBusinesses";
+
+            _hfIncludeDeceased = new HiddenFieldWithClass();
+            _hfIncludeDeceased.CssClass = "js-include-deceased";
+            _hiddenFieldsPanel.Controls.Add( _hfIncludeBusinesses );
+            _hfIncludeDeceased.ID = "hfIncludeDeceased";
+
+            _hfExpandSearchOptions = new HiddenFieldWithClass();
+            _hfExpandSearchOptions.CssClass = "js-expand-search-options";
+            _hiddenFieldsPanel.Controls.Add( _hfExpandSearchOptions );
+            _hfExpandSearchOptions.ID = "hfExpandSearchOptions";
+
+            #endregion hidden fields
+
+            #region search  fields
+
+            _searchPanel = new Panel();
+            _searchPanel.ID = "searchPanel";
+            _searchPanel.CssClass = "js-personpicker-search-panel personpicker-search-panel";
+            this.Controls.Add( _searchPanel );
+
+            _tbSearchName = new RockTextBox();
+            _tbSearchName.ID = "tbSearchName";
+            _tbSearchName.PrependText = "Name";
+            _tbSearchName.CssClass = "js-personpicker-search-name js-personpicker-search-field personpicker-search-field";
+            _searchPanel.Controls.Add( _tbSearchName );
+
+            var additionalSearchFieldsPanel = new Panel();
+            additionalSearchFieldsPanel.CssClass = "js-personpicker-additional-search-fields personpicker-additional-search-fields";
+            _searchPanel.Controls.Add( additionalSearchFieldsPanel );
+
+            _tbSearchAddress = new RockTextBox();
+            _tbSearchAddress.ID = "tbSearchAddress";
+            _tbSearchAddress.PrependText = "Address";
+            _tbSearchAddress.CssClass = "js-personpicker-search-address js-personpicker-search-field personpicker-search-field";
+            additionalSearchFieldsPanel.Controls.Add( _tbSearchAddress );
+
+            _tbSearchPhone = new RockTextBox();
+            _tbSearchPhone.ID = "tbSearchPhone";
+            _tbSearchPhone.PrependText = "Phone";
+            _tbSearchPhone.CssClass = "js-personpicker-search-phone js-personpicker-search-field personpicker-search-field";
+            additionalSearchFieldsPanel.Controls.Add( _tbSearchPhone );
+
+            _tbSearchEmail = new RockTextBox();
+            _tbSearchEmail.ID = "tbSearchEmail";
+            _tbSearchEmail.PrependText = "Email";
+            _tbSearchEmail.CssClass = "js-personpicker-search-email js-personpicker-search-field personpicker-search-field";
+            additionalSearchFieldsPanel.Controls.Add( _tbSearchEmail );
+
+            #endregion search fields
 
             _btnSelect = new HtmlAnchor();
             Controls.Add( _btnSelect );
@@ -538,23 +637,29 @@ namespace Rock.Web.UI.Controls
         {
             if ( this.Enabled )
             {
+                var rockBlock = this.RockBlock();
+                _hfSelfPersonId.Value = rockBlock?.CurrentPersonId.ToString();
+                _hfSelfPersonName.Value = rockBlock?.CurrentPerson?.ToString();
+
+                // make sure the hidden fields get configured values (and make sure it they set to the default if it wasn't set)
+                _hfIncludeDeceased.Value = this.IncludeDeceased.Bit().ToString();
+                _hfIncludeBusinesses.Value = this.IncludeBusinesses.Bit().ToString();
+                _hfExpandSearchOptions.Value = this.ExpandSearchOptions.Bit().ToString();
+
                 writer.AddAttribute( "id", this.ClientID );
                 writer.AddAttribute( "class", string.Format( "picker picker-select picker-person {0}", this.CssClass ) );
                 writer.RenderBeginTag( HtmlTextWriterTag.Div );
-                _hfPersonId.RenderControl( writer );
-                _hfPersonName.RenderControl( writer );
-                _hfSelfPersonId.RenderControl( writer );
-                _hfSelfPersonName.RenderControl( writer );
-                _hfIncludeBusinesses.RenderControl( writer );
 
-                string pickerLabelHtmlFormat = @"
+                _hiddenFieldsPanel.RenderControl( writer );
+
+                writer.Write(
+                    $@"
             <a class='picker-label js-personpicker-toggle' href='#'>
                 <i class='fa fa-user'></i>
-                <span class='js-personpicker-selectedperson-label picker-selectedperson'>{1}</span>
+                <span class='js-personpicker-selectedperson-label picker-selectedperson'>{this.PersonName}</span>
                 <b class='fa fa-caret-down pull-right'></b>
             </a>
-";
-                writer.Write( string.Format( pickerLabelHtmlFormat, this.ClientID, this.PersonName ) );
+" );
 
                 _btnSelectNone.RenderControl( writer );
 
@@ -586,9 +691,9 @@ namespace Rock.Web.UI.Controls
                 // row
                 writer.RenderEndTag();
 
-                string pickMenuHtmlFormatStart = @"
-             <input type='text' class='js-personpicker-searchinput picker-search form-control input-sm' autocorrect='off' autocapitalize='off' autocomplete='off' spellcheck='false' />
+                _searchPanel.RenderControl( writer );
 
+                writer.Write( @"
              <hr />
 
              <h4>Results</h4>
@@ -603,25 +708,21 @@ namespace Rock.Web.UI.Controls
                 </div>
                 <div class='viewport'>
                     <div class='overview'>
-                        <ul class='picker-select js-personpicker-searchresults' id='{0}_personPickerItems'>
+                        <ul class='picker-select js-personpicker-searchresults'>
                         </ul>
                     </div>
                 </div>
             </div>
 
              <div class='picker-actions'>
-";
-
-                writer.Write( pickMenuHtmlFormatStart, this.ClientID );
+" );
 
                 _btnSelect.RenderControl( writer );
 
-                string pickMenuHtmlFormatEnd = @"
+                writer.Write( @"
             <a class='btn btn-link btn-xs js-personpicker-cancel'>Cancel</a>
             </div>
-";
-
-                writer.Write( string.Format( pickMenuHtmlFormatEnd, this.ClientID ) );
+" );
 
                 // picker-menu dropdown-menu
                 writer.RenderEndTag();
@@ -638,7 +739,7 @@ namespace Rock.Web.UI.Controls
                 writer.RenderBeginTag( HtmlTextWriterTag.Div );
                 LinkButton linkButton = new LinkButton();
                 linkButton.CssClass = "picker-label";
-                linkButton.Text = string.Format( "<i class='{1}'></i><span>{0}</span>", this.PersonName, "fa fa-user" );
+                linkButton.Text = $"<i class='fa fa-user'></i><span>{this.PersonName}</span>";
                 linkButton.Enabled = false;
                 linkButton.RenderControl( writer );
                 writer.WriteLine();
@@ -651,7 +752,6 @@ namespace Rock.Web.UI.Controls
         /// </summary>
         /// <param name="sender">The source of the event.</param>
         /// <param name="e">The <see cref="EventArgs" /> instance containing the event data.</param>
-        /// <exception cref="System.NotImplementedException"></exception>
         protected void btnSelect_Click( object sender, EventArgs e )
         {
             SelectPerson?.Invoke( sender, e );
