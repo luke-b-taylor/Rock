@@ -15,28 +15,33 @@
             <CheckBox Name="Account" Margin="5" Content="{Binding AccountDisplayName}" IsChecked="{Binding IsAccountChecked}"/>
         </HierarchicalDataTemplate>
     </Page.Resources>
-    <StackPanel>
-        <Label Style="{StaticResource labelStyleLegend}"
-               Margin="8,0">Options</Label>
+    <StackPanel Background="{StaticResource PageBackgroundBrush}">
         <Border Name="brdScannerInfo"
-                Style="{StaticResource borderStyleWell}"
                 Visibility="Visible"
                 Margin="12,12,12,0">
-            <StackPanel>
-                <Label Name="lblMakeModel"
+            <StackPanel  Background="{StaticResource PanelBackgroundBrush}">
+                <Border BorderBrush="{StaticResource BorderBrush}" BorderThickness="1">
+                    <StackPanel  Name="spOptionInfo"  Background="{StaticResource PanelHeaderBrush}" HorizontalAlignment="Stretch">
+                        <Label Name="lblOptionInfoCaption"  Content="Scanner Information" HorizontalAlignment="Left" Margin="10" Style="{StaticResource labelStyleCaption}" />
+                    </StackPanel>
+                </Border>
+                <StackPanel Margin="5">
+                    <Label Name="lblMakeModel"
                        Style="{StaticResource labelStyle}">Scanner Type:</Label>
-                <Label Name="lblInterfaceVersion"
+                    <Label Name="lblInterfaceVersion"
                        Style="{StaticResource labelStyle}">Interface Version:</Label>
-                <Label Name="lblFeederType"
+                    <Label Name="lblFeederType"
                        Style="{StaticResource labelStyle}">FeederType:</Label>
+                </StackPanel>
             </StackPanel>
         </Border>
         <Border Name="brdOptions"
-                Style="{StaticResource borderStyleWell}"
+                Background="White"
                 Visibility="Visible"
                 Margin="12">
             <Grid>
                 <Grid.RowDefinitions>
+                    <RowDefinition Name="rowPanelHeader" />
                     <RowDefinition />
                     <RowDefinition />
                 </Grid.RowDefinitions>
@@ -44,7 +49,14 @@
                     <ColumnDefinition />
                     <ColumnDefinition />
                 </Grid.ColumnDefinitions>
-                <StackPanel Grid.Row="0" Grid.Column="0">
+                <StackPanel Grid.Row="0" Grid.ColumnSpan="2">
+                    <Border BorderBrush="{StaticResource BorderBrush}" BorderThickness="1">
+                        <StackPanel  Name="spOptionSettings"  Background="{StaticResource PanelHeaderBrush}" HorizontalAlignment="Stretch">
+                            <Label Name="lblOptionSettingsCaption"  Content="Scanner Settings" HorizontalAlignment="Left" Margin="10" Style="{StaticResource labelStyleCaption}" />
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+                <StackPanel Margin="5" Grid.Row="1" Grid.Column="0">
                     <Label Style="{StaticResource labelStyle}">Rock URL</Label>
                     <TextBox Name="txtRockUrl"
                          Style="{StaticResource textboxStyleUrl}" />
@@ -91,7 +103,7 @@
                                     <Style.Triggers>
                                         <DataTrigger Binding="{Binding ElementName=chkCaptureAmountOnScan,Path=IsChecked}"  Value="False">
                                             <Setter Property="IsEnabled" Value="False" />
-                                        </DataTrigger>    
+                                        </DataTrigger>
                                     </Style.Triggers>
                                 </Style>
                             </CheckBox.Style>
@@ -113,7 +125,7 @@
                         </CheckBox>
                     </StackPanel>
                 </StackPanel>
-                <StackPanel Grid.Row="0" Grid.Column="1"  VerticalAlignment="Stretch">
+                <StackPanel Grid.Row="1" Grid.Column="1"  VerticalAlignment="Stretch">
                     <ScrollViewer HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Auto">
                         <StackPanel VerticalAlignment="Stretch"  HorizontalAlignment="Stretch" Height="365">
                             <Label Name="lblCapturingAccountAmounts"
@@ -134,7 +146,7 @@
                         </StackPanel>
                     </ScrollViewer>
                 </StackPanel>
-                <StackPanel Grid.Row="1" Margin="0,10,0,0" Grid.ColumnSpan="2">
+                <StackPanel Grid.Row="2"  Grid.ColumnSpan="2">
                     <Label Name="lblAdvancedInfo"
                        Style="{StaticResource labelStyleAlertInfo}">
                         Advanced: Sensitivity and Plurality can be tuned from 1-255. Increase sensitivity and/or lower plurality if you are getting too many bad reads.  Normally these can be left blank which will use the default of 128.
@@ -175,7 +187,7 @@
                             Content="Save"
                             HorizontalAlignment="Left"
                             Click="btnSave_Click" />
-                        <Button Style="{StaticResource buttonStyle}"
+                        <Button Style="{StaticResource buttonStyleSecondary}"
                             Name="btnCancel"
                             Margin="4,4,0,0"
                             Content="Cancel"
@@ -185,7 +197,7 @@
                     </StackPanel>
                 </StackPanel>
             </Grid>
-          
+
         </Border>
     </StackPanel>
 </Page>

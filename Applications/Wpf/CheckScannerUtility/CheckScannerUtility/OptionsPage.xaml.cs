@@ -120,8 +120,11 @@ namespace Rock.Apps.CheckScannerUtility
                 var parentDisplayAccount = new DisplayAccountModel();
                     var children = _allAccounts.Where( a => a.ParentAccountId != null && a.ParentAccountId == account.Id ).ToList();
                     parentDisplayAccount.AccountDisplayName = account.Name;
+                if ( _rockConfig.SelectedAccountForAmountsIds != null)
+                {
                     parentDisplayAccount.IsAccountChecked = _rockConfig.SelectedAccountForAmountsIds.Contains( account.Id );
                     parentDisplayAccount.Id = account.Id;
+                }
 
                 this.AddParentChild( parentDisplayAccount, account.Id, account.ParentAccountId );
             }

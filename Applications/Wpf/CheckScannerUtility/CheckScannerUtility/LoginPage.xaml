@@ -26,8 +26,8 @@
         </Grid.ColumnDefinitions>
         <StackPanel Grid.Row="0" Margin="50" Grid.Column="1" HorizontalAlignment="Stretch" VerticalAlignment="Center"   >
             <!-- Logo  -->
-            <Frame Grid.Row="0" 
-                   Source="images/rock-logo-sm-orange-white.xaml"
+            <Frame Grid.Row="0"
+                   Source="images/rock-logo.xaml"
                    HorizontalAlignment="Center"
                    >
             </Frame>
@@ -36,23 +36,25 @@
             <Label Margin="30" Grid.Row="1"
                     HorizontalAlignment="Center"
                     Style="{StaticResource labelStylePanelTitle}"
-                   FontSize="21"
+                   FontSize="32"
                    FontWeight="Medium"
                    Content="Check Scanning"
                    MouseDoubleClick="LoginLabel_MouseDoubleClick" />
         </StackPanel>
         <StackPanel Grid.Row="2"  Grid.Column="1" Name="spLoginUrl">
             <Label Name="lblRockUrl"
+                   FontSize="16"
                    Style="{StaticResource labelStyleBold}"
                    Visibility="Visible"
                    Content="Rock URL" />
             <TextBox Visibility="Visible"
                      Name="txtRockUrl"
+                     Width="Auto"
                      Style="{StaticResource textboxStyleUrl}"
                      HorizontalAlignment="Stretch" />
         </StackPanel>
-        <StackPanel Grid.Row="3" Grid.Column="1" Name="spUserName" >
-            <Label Visibility="Visible" Style="{StaticResource labelStyleBold}"
+        <StackPanel Grid.Row="3" Grid.Column="1" Margin="0,20,0,0" Name="spUserName" >
+            <Label Visibility="Visible" FontSize="16" Style="{StaticResource labelStyleBold}"
                    Content="Username"  />
             <TextBox x:Name="txtUsername"
                         Style="{StaticResource textboxStyle}"
@@ -62,7 +64,8 @@
         </StackPanel>
         <StackPanel Grid.Row="4" Grid.Column="1" Name="spPassword">
             <Label Style="{StaticResource labelStyleBold}"
-                Margin="0,10,0,0"
+                   FontSize="16"
+                Margin="0,15,0,0"
                 Content="Password" />
             <PasswordBox Name="txtPassword"
                         Style="{StaticResource textboxStyle}"
