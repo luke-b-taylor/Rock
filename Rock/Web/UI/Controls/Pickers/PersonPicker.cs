@@ -244,7 +244,7 @@ namespace Rock.Web.UI.Controls
         private HiddenFieldWithClass _hfSelfPersonName;
         private HiddenFieldWithClass _hfIncludeBusinesses;
         private HiddenFieldWithClass _hfIncludeDeceased;
-        private HiddenFieldWithClass _hfExpandSearchOptions;
+        private HiddenFieldWithClass _hfExpandSearchFields;
 
         private Panel _searchPanel;
         private RockTextBox _tbSearchName;
@@ -312,13 +312,13 @@ namespace Rock.Web.UI.Controls
             get
             {
                 EnsureChildControls();
-                return _hfExpandSearchOptions.Value.AsBooleanOrNull() ?? false;
+                return _hfExpandSearchFields.Value.AsBooleanOrNull() ?? false;
             }
 
             set
             {
                 EnsureChildControls();
-                _hfExpandSearchOptions.Value = value.Bit().ToString();
+                _hfExpandSearchFields.Value = value.Bit().ToString();
             }
         }
 
@@ -549,10 +549,10 @@ namespace Rock.Web.UI.Controls
             _hiddenFieldsPanel.Controls.Add( _hfIncludeBusinesses );
             _hfIncludeDeceased.ID = "hfIncludeDeceased";
 
-            _hfExpandSearchOptions = new HiddenFieldWithClass();
-            _hfExpandSearchOptions.CssClass = "js-expand-search-options";
-            _hiddenFieldsPanel.Controls.Add( _hfExpandSearchOptions );
-            _hfExpandSearchOptions.ID = "hfExpandSearchOptions";
+            _hfExpandSearchFields = new HiddenFieldWithClass();
+            _hfExpandSearchFields.CssClass = "js-expand-search-fields";
+            _hiddenFieldsPanel.Controls.Add( _hfExpandSearchFields );
+            _hfExpandSearchFields.ID = "hfExpandSearchFields";
 
             #endregion hidden fields
 
@@ -644,7 +644,7 @@ namespace Rock.Web.UI.Controls
                 // make sure the hidden fields get configured values (and make sure it they set to the default if it wasn't set)
                 _hfIncludeDeceased.Value = this.IncludeDeceased.Bit().ToString();
                 _hfIncludeBusinesses.Value = this.IncludeBusinesses.Bit().ToString();
-                _hfExpandSearchOptions.Value = this.ExpandSearchOptions.Bit().ToString();
+                _hfExpandSearchFields.Value = this.ExpandSearchOptions.Bit().ToString();
 
                 writer.AddAttribute( "id", this.ClientID );
                 writer.AddAttribute( "class", string.Format( "picker picker-select picker-person {0}", this.CssClass ) );
@@ -679,16 +679,34 @@ namespace Rock.Web.UI.Controls
                 // column2
                 writer.AddAttribute( HtmlTextWriterAttribute.Class, "col-md-6" );
                 writer.RenderBeginTag( HtmlTextWriterTag.Div );
+
+                // actions div
+                writer.AddAttribute( HtmlTextWriterAttribute.Class, "pull-right" );
+                writer.RenderBeginTag( HtmlTextWriterTag.Div );
+
+                // Render Additional Search Fields toggler
+                writer.Write( @"
+                    <span class='js-toggle-additional-search-fields toggle-additional-search-fields' title='Advanced Search'>
+                        <i class='fa fa-search-plus clickable' ></i>
+                    </span>" );
+
+                // Render Self Picker
                 if ( this.EnableSelfSelection )
                 {
                     writer.Write( @"
                     <span class='js-select-self' title='Select self'>
-                        <i class='fa fa-user pull-right clickable' ></i>
+                        <i class='fa fa-user clickable' ></i>
                     </span>" );
                 }
+
+                // end actions div
                 writer.RenderEndTag();
 
-                // row
+                // end column2
+                writer.RenderEndTag();
+
+
+                // end row
                 writer.RenderEndTag();
 
                 _searchPanel.RenderControl( writer );

@@ -34,11 +34,13 @@
             var $pickerPersonId = $pickerControl.find('.js-person-id');
             var $pickerPersonName = $pickerControl.find('.js-person-name');
             var $pickerCancel = $pickerControl.find('.js-personpicker-cancel');
+            var $pickerToggleAdditionalSearchFields = $pickerControl.find('.js-toggle-additional-search-fields');
+            var $pickerAdditionalSearchFields = $pickerControl.find('.js-personpicker-additional-search-fields');
+            var $pickerExpandSearchFields = $pickerControl.find('.js-expand-search-fields');
 
             var includeBusinesses = $pickerControl.find('.js-include-businesses').val() == '1' ? 'true' : 'false';
             var includeDeceased = $pickerControl.find('.js-include-deceased').val() == '1' ? 'true' : 'false';
             var includeDetails = 'false';
-            var expandSearchDetails = $pickerControl.find('.js-expand-search-options').val() == '1' ? 'true' : 'false';
 
             var promise = null;
             var lastSelectedPersonId = null;
@@ -53,12 +55,11 @@
                         email: $searchFieldEmail.val()
                     };
 
-
                     // make sure that at least one of the search fields has 3 chars in it
-                    if ( (search.name.length < 3) && (search.address.length < 3) && (search.phone.length < 3) && (search.email.length < 3)) {
+                    if ((search.name.length < 3) && (search.address.length < 3) && (search.phone.length < 3) && (search.email.length < 3)) {
                         console.log('min length 3')
                         return;
-                    }       
+                    }
 
                     // abort any searches that haven't returned yet, so that we don't get a pile of results in random order
                     if (promise && promise.state() === 'pending') {
@@ -69,13 +70,17 @@
                     if (search.name) {
                         searchParams.push("name=" + encodeURIComponent(search.name));
                     }
-                    if (search.address) {
+
+                    // also search additional search fields if they are visible
+                    if (search.address && $searchFieldAddress.is(':visible')) {
                         searchParams.push("address=" + encodeURIComponent(search.address));
                     }
-                    if (search.phone) {
+
+                    if (search.phone && $searchFieldPhone.is(':visible')) {
                         searchParams.push("phone=" + encodeURIComponent(search.phone));
                     }
-                    if (search.email) {
+
+                    if (search.email && $searchFieldEmail.is(':visible')) {
                         searchParams.push("email=" + encodeURIComponent(search.email));
                     }
 
@@ -192,9 +197,14 @@
                 }
             }
 
+            // each search field has its own autocomplete object, so we'll need override with our custom _renderItem to each
             $.each(autoCompletes, function (a, b, c) {
-                var autoComplete = $(autoCompletes[a]);
-                autoComplete.data('ui-autocomplete')._renderItem = autoCompleteCustomRenderItem;
+                var autoComplete = $(autoCompletes[a]).data('ui-autocomplete');
+
+                // set this to prevent it canceling when loosing focus when debugging
+                autoComplete.close = function () { };
+
+                autoComplete._renderItem = autoCompleteCustomRenderItem;
             });
 
             $pickerToggle.click(function (e) {
@@ -316,6 +326,34 @@
                     selectedText = $radInput.closest('.js-picker-select-item').attr('data-person-name');
 
                 setSelectedPerson(selectedValue, selectedText);
+            });
+
+            var toggleSearchFields = function () {
+                var expanded = $pickerExpandSearchFields.val();
+                if (expanded == 1) {
+                    $pickerAdditionalSearchFields.slideDown();
+                }
+                else {
+                    $pickerAdditionalSearchFields.slideUp();
+                }
+
+                $pickerToggleAdditionalSearchFields.toggleClass('active', expanded == 1);
+            };
+
+            toggleSearchFields();
+
+            $pickerToggleAdditionalSearchFields.on('click', function () {
+                var expanded = $pickerExpandSearchFields.val();
+                if (expanded == 1) {
+                    expanded = 0;
+                }
+                else {
+                    expanded = 1;
+                }
+
+                $pickerExpandSearchFields.val(expanded);
+
+                toggleSearchFields();
             });
 
             $('.js-select-self', $pickerControl).on('click', function () {

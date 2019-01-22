@@ -397,13 +397,11 @@ namespace Rock.Rest.Controllers
         /// <param name="address">The search parameter for the person's address.</param>
         /// <param name="phone">The search parameter for the person's phone.</param>
         /// <param name="email">The search parameter for the person's name email.</param>
-        /// <param name="queryOptions">The query options.</param>
         /// <returns></returns>
         [Authenticate, Secured]
         [HttpGet]
         [System.Web.Http.Route( "api/People/Search" )]
         public IQueryable<PersonSearchResult> Search(
-            System.Web.Http.OData.Query.ODataQueryOptions<Rock.Model.Person> queryOptions,
             string name = null,
             bool includeDetails = false,
             bool includeBusinesses = false,
@@ -454,8 +452,6 @@ namespace Rock.Rest.Controllers
 
             // make sure we don't use EF ChangeTracking
             personSearchQry = personSearchQry.AsNoTracking();
-
-            queryOptions.ApplyTo( personSearchQry );
 
             if ( includeDetails == false )
             {
