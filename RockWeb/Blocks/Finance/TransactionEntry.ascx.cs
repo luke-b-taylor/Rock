@@ -38,9 +38,9 @@ namespace RockWeb.Blocks.Finance
     #region Block Attributes
 
     /// <summary>
-    /// Add a new one-time or scheduled transaction
+    /// Version 1 of the Transaction Entry block
     /// </summary>
-    [DisplayName( "Transaction Entry" )]
+    [DisplayName( "Transaction Entry (V1)" )]
     [Category( "Finance" )]
     [Description( "Creates a new financial transaction or scheduled transaction." )]
     [FinancialGatewayField( "Credit Card Gateway", "The payment gateway to use for Credit Card transactions", false, "", "", 0, "CCGateway" )]
