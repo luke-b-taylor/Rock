@@ -66,7 +66,7 @@ namespace Rock.Attribute
         /// <value>
         /// The default value.
         /// </value>
-        public new bool DefaultValue
+        public bool DefaultBooleanValue
         {
             get
             {
