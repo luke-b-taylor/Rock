@@ -14,6 +14,7 @@
 // limitations under the License.
 // </copyright>
 //
+using System;
 using System.Collections.Generic;
 
 namespace Rock
@@ -23,18 +24,197 @@ namespace Rock
     /// </summary>
     public static partial class ExtensionMethods
     {
+        #region Dictionary<TKey, TValue> extension methods
+
         /// <summary>
-        /// Gets the value associated with the key or the default of the value's type (typically null)
+        /// Adds or replaces an item in a Dictionary.
         /// </summary>
-        /// <typeparam name="TK">The key type</typeparam>
-        /// <typeparam name="TV">The value type</typeparam>
-        /// <param name="dictionary">The dictionary in use</param>
-        /// <param name="key">The key to use to retrieve a value from the dictionary</param>
-        /// <param name="defaultValue">The value to return if the key does not exist</param>
-        /// <returns></returns>
-        public static TV GetValueOrDefault<TK, TV>( this IDictionary<TK, TV> dictionary, TK key, TV defaultValue = default( TV ) )
+        /// <typeparam name="TKey">The type of the key.</typeparam>
+        /// <typeparam name="TValue">The type of the value.</typeparam>
+        /// <param name="dictionary">The dictionary.</param>
+        /// <param name="key">The key.</param>
+        /// <param name="value">The value.</param>
+        public static void AddOrReplace<TKey, TValue>( this Dictionary<TKey, TValue> dictionary, TKey key, TValue value )
         {
-            return dictionary.TryGetValue( key, out TV value ) ? value : defaultValue;
+            AddOrReplace( ( IDictionary<TKey, TValue> ) dictionary, key, value );
         }
+
+        /// <summary>
+        /// Adds the or replace.
+        /// </summary>
+        /// <typeparam name="TKey">The type of the key.</typeparam>
+        /// <typeparam name="TValue">The type of the value.</typeparam>
+        /// <param name="dictionary">The dictionary.</param>
+        /// <param name="key">The key.</param>
+        /// <param name="value">The value.</param>
+        public static void AddOrReplace<TKey, TValue>( this IDictionary<TKey, TValue> dictionary, TKey key, TValue value )
+        {
+            if ( !dictionary.ContainsKey( key ) )
+            {
+                dictionary.Add( key, value );
+            }
+            else
+            {
+                dictionary[key] = value;
+            }
+        }
+
+        /// <summary>
+        /// Adds an item to a Dictionary if it doesn't already exist in Dictionary.
+        /// </summary>
+        /// <typeparam name="TKey">The type of the key.</typeparam>
+        /// <typeparam name="TValue">The type of the value.</typeparam>
+        /// <param name="dictionary">The dictionary.</param>
+        /// <param name="key">The key.</param>
+        /// <param name="value">The value.</param>
+        public static void AddOrIgnore<TKey, TValue>( this IDictionary<TKey, TValue> dictionary, TKey key, TValue value )
+        {
+            if ( !dictionary.ContainsKey( key ) )
+            {
+                dictionary.Add( key, value );
+            }
+        }
+
+        /// <summary>
+        /// Adds if not empty.
+        /// </summary>
+        /// <param name="dictionary">The dictionary.</param>
+        /// <param name="key">The key.</param>
+        /// <param name="value">The value.</param>
+        /// <param name="replace">if set to <c>true</c> [replace].</param>
+        public static void AddIfNotBlank( this IDictionary<string, string> dictionary, string key, string value, bool replace = true )
+        {
+            if ( value.IsNotNullOrWhiteSpace() )
+            {
+                if ( !dictionary.ContainsKey( key ) )
+                {
+                    dictionary.Add( key, value );
+                }
+                else
+                {
+                    if ( replace )
+                    {
+                        dictionary[key] = value;
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Gets value for the specified key, or null if the dictionary doesn't contain the key
+        /// </summary>
+        /// <typeparam name="TKey">The type of the key.</typeparam>
+        /// <typeparam name="TValue">The type of the value.</typeparam>
+        /// <param name="dictionary">The dictionary.</param>
+        /// <param name="key">The key.</param>
+        /// <returns></returns>
+        public static TValue GetValueOrNull<TKey, TValue>( this IDictionary<TKey, TValue> dictionary, TKey key )
+        {
+            if ( dictionary.ContainsKey( key ) )
+            {
+                return dictionary[key];
+            }
+            else
+            {
+                return default( TValue );
+            }
+        }
+
+        /// <summary>
+        /// Gets the value or null.
+        /// </summary>
+        /// <typeparam name="TKey">The type of the key.</typeparam>
+        /// <param name="dictionary">The dictionary.</param>
+        /// <param name="key">The key.</param>
+        /// <returns></returns>
+        public static int? GetValueOrNull<TKey>( this IDictionary<TKey, int> dictionary, TKey key )
+        {
+            if ( dictionary.ContainsKey( key ) )
+            {
+                return dictionary[key];
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Gets the value or null.
+        /// </summary>
+        /// <typeparam name="TKey">The type of the key.</typeparam>
+        /// <param name="dictionary">The dictionary.</param>
+        /// <param name="key">The key.</param>
+        /// <returns></returns>
+        public static decimal? GetValueOrNull<TKey>( this IDictionary<TKey, decimal> dictionary, TKey key )
+        {
+            if ( dictionary.ContainsKey( key ) )
+            {
+                return dictionary[key];
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Gets the value or null.
+        /// </summary>
+        /// <typeparam name="TKey">The type of the key.</typeparam>
+        /// <param name="dictionary">The dictionary.</param>
+        /// <param name="key">The key.</param>
+        /// <returns></returns>
+        public static double? GetValueOrNull<TKey>( this IDictionary<TKey, double> dictionary, TKey key )
+        {
+            if ( dictionary.ContainsKey( key ) )
+            {
+                return dictionary[key];
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Gets the value or null.
+        /// </summary>
+        /// <typeparam name="TKey">The type of the key.</typeparam>
+        /// <param name="dictionary">The dictionary.</param>
+        /// <param name="key">The key.</param>
+        /// <returns></returns>
+        public static Guid? GetValueOrNull<TKey>( this IDictionary<TKey, Guid> dictionary, TKey key )
+        {
+            if ( dictionary.ContainsKey( key ) )
+            {
+                return dictionary[key];
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Gets ConfigurationValue's Value for the specified key, or null if the dictionary doesn't contain the key or the ConfigurationValue is null
+        /// </summary>
+        /// <typeparam name="TKey">The type of the key.</typeparam>
+        /// <param name="dictionary">The dictionary.</param>
+        /// <param name="key">The key.</param>
+        /// <returns></returns>
+        public static string GetValueOrNull<TKey>( this IDictionary<TKey, Rock.Field.ConfigurationValue> dictionary, TKey key )
+        {
+            if ( dictionary.ContainsKey( key ) && dictionary[key] != null )
+            {
+                return dictionary[key].Value;
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+        #endregion Dictionary<TKey, TValue> extension methods
     }
 }
