@@ -5,78 +5,42 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
 
-/// <summary>
-/// Used to interact with MagTek Image Scanner USB
-/// DllImport is used for consuming a UnManged Code 
-/// </summary>
+
 namespace ImageScanInteropBuilder
 {
+    /// <summary>
+    /// Used to interact with MagTek Image Scanner USB
+    /// DllImport is used for consuming a UnManged Code 
+    /// </summary>
     public class MagTekImageScanInterop
     {
         #region Private Members
         private int m_nTotalDevice;
-        private DocType m_nDocType;
-        private string g_strAppPath = null;
         private int g_hLogFile;
         private string g_strLogFileName = null;
 
         private bool m_bDeviceSelected;
         private bool m_bRNDIS;
         private int m_nCurrentDevice;
-        private bool m_bDeviceOpened;
-        private string m_strCurrentDeviceName;
         private string m_strQueryItem;
 
         private string[] m_arrQueryOptions = { "DeviceCapabilities", "DeviceStatus", "DeviceUsage" };
         private string[] m_arrFeederOptions = { "CHECK", "MSR" };
-
-        private string m_strOptions;
-        private string m_strDocInfo;
         private List<string> _deviceListNames;
 
         #endregion
 
         #region Public Members
-        public string AppPath
-        {
-            get { return g_strAppPath; }
-            set { g_strAppPath = value; }
-        }
-        public string CurrentDeviceName
-        {
-            get
-            {
-                return m_strCurrentDeviceName;
-            }
-            set
-            {
-                m_strCurrentDeviceName = value;
-            }
-        }
-        public DocType DocType
-        {
-            get { return m_nDocType; }
-        }
-        public string DocInfo
-        {
-            get
-            {
-                return m_strDocInfo;
-            }
-            set
-            {
-                m_strDocInfo = value;
-            }
-        }
+        public StringBuilder Errors = new StringBuilder();
+        public string AppPath { get; set; } = null;
+        public string CurrentDeviceName { get; set; }
+        public DocType DocType { get; private set; }
+        public string DocInfo { get; set; }
         public string MicrData { get; private set; }
         public string Routing { get; private set; }
         public string AcctNumber { get; private set; }
         public string CheckNumber { get; private set; }
-        public string Options
-        {
-            get { return m_strOptions; }
-            set { m_strOptions = value; }
-        }
+        public string Options { get; set; }
         public bool OpenDeviceEnabled { get; private set; }
         public bool QueryDeviceEnabled { get; private set; }
         public bool ProcessDocumentEnabled { get; private set; }
@@ -102,20 +66,38 @@ namespace ImageScanInteropBuilder
         #endregion
         #region Public Methods
         public bool OpenDevice( string strDeviceName )
-        {
-            m_bDeviceOpened = ( MTMICROpenDevice( strDeviceName ) == MagTekConstants.MICR_ST_OK );
-            return m_bDeviceOpened;
+        {  
+           var status = MTMICROpenDevice( strDeviceName );
+            this.SetErrorOnStatus( status );
+            return this.DeviceOpened;
+
         }
 
         public bool CloseDevice( string strDevicename )
         {
-            return ( MTMICRCloseDevice( strDevicename ) == MagTekConstants.MICR_ST_OK );
+             var status = MTMICRCloseDevice( strDevicename );
+            return DeviceClosed;
         }
 
-
+        private void SetErrorOnStatus( int status )
+        {
+            if ( status == ( int ) ImageScanStatus.MICR_ST_OK )
+            {
+                this.BDeviceOpened = true;
+            }
+            else
+            {
+                Errors.AppendLine( string.Format( "Device Return Status of {0}", ( ImageScanStatus ) status ).ToString() );
+                this.BDeviceOpened = false;
+            }
+        }
         public bool DeviceOpened
         {
-            get { return m_bDeviceOpened; }
+            get { return BDeviceOpened; }
+        }
+        public bool DeviceClosed
+        {
+            get { return !BDeviceOpened; }
         }
 
         public int MICRSetValue( StringBuilder strOptions, string strSection, string strKey, string strValue, ref int nActualLength )
@@ -202,23 +184,23 @@ namespace ImageScanInteropBuilder
 
         public void Init( string executablePath )
         {
-            m_nDocType = DocType.CHECK;
+            DocType = DocType.CHECK;
             m_bRNDIS = false;
             m_bDeviceSelected = false;
-            m_bDeviceOpened = false;
+            BDeviceOpened = false;
             m_nTotalDevice = 0;
 
-            g_strAppPath = Path.GetDirectoryName( executablePath );
-            PrintStatus( g_strAppPath );
+            AppPath = Path.GetDirectoryName( executablePath );
+            PrintStatus( AppPath );
             PrintStatus( g_strLogFileName );
 
             OpenDeviceEnabled = false;
             QueryDeviceEnabled = false;
             ProcessDocumentEnabled = false;
 
-            m_strCurrentDeviceName = "";
+            CurrentDeviceName = "";
             m_strQueryItem = "DeviceCapabilities";
-            m_strOptions = new string( '\0', 4096 );
+            Options = new string( '\0', 4096 );
             Setup();
 
         }
@@ -251,11 +233,11 @@ namespace ImageScanInteropBuilder
                 string strDeviceName;
                 StringBuilder str1 = new StringBuilder();
                 str1.Capacity = 256;
-                int nRetCode = MagTekConstants.MICR_ST_DEVICE_NOT_FOUND;
+                int nRetCode =(int)ImageScanStatus.MICR_ST_DEVICE_NOT_FOUND;
                 nRetCode = MTMICRGetDevice( nTotalDev++, str1 );
-                if ( nRetCode != MagTekConstants.MICR_ST_DEVICE_NOT_FOUND )
+                if ( nRetCode != ( int ) ImageScanStatus.MICR_ST_DEVICE_NOT_FOUND )
                     PrintStatus( "Found Device(s) :" );
-                while ( nRetCode != MagTekConstants.MICR_ST_DEVICE_NOT_FOUND )
+                while ( nRetCode != (int) ImageScanStatus.MICR_ST_DEVICE_NOT_FOUND )
                 {
                     strDeviceName = str1.ToString();
                     if ( strDeviceName.Length > 1 )
@@ -265,7 +247,7 @@ namespace ImageScanInteropBuilder
                         //comboDeviceName.Items.Add( strDeviceName );
                         m_nTotalDevice++;
                     }
-                    nRetCode = MagTekConstants.MICR_ST_DEVICE_NOT_FOUND;
+                    nRetCode = (int) ImageScanStatus.MICR_ST_DEVICE_NOT_FOUND;
                     nRetCode = MTMICRGetDevice( nTotalDev++, str1 );
                 }
             }
@@ -278,7 +260,7 @@ namespace ImageScanInteropBuilder
         private void SetupLogging()
         {
 
-            g_strLogFileName = g_strAppPath + "\\ExcellaLog.txt";
+            g_strLogFileName = AppPath + "\\ExcellaLog.txt";
 
             Trace.WriteLine( g_strLogFileName );
 
@@ -302,8 +284,7 @@ namespace ImageScanInteropBuilder
                 {
                     sbLogText = new StringBuilder();
                 }
-                sbLogText.Append( strText );
-                sbLogText.Append( "\r\n" );
+                sbLogText.AppendLine( strText );
             }
         }
         #endregion
@@ -350,6 +331,6 @@ namespace ImageScanInteropBuilder
             }
         }
 
-
+        public bool BDeviceOpened { get; set; }
     }
 }

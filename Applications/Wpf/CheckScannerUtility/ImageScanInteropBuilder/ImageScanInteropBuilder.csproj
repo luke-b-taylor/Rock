@@ -43,6 +43,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="DocType.cs" />
+    <Compile Include="ImageScanStatus.cs" />
     <Compile Include="MagTekConstants.cs" />
     <Compile Include="MagTekImageScanInterop.cs" />
     <Compile Include="MagTekScanner.cs" />
