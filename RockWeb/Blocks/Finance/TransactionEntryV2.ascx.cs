@@ -16,10 +16,16 @@
 //
 using System;
 using System.ComponentModel;
+using System.Data.Entity;
+using System.Linq;
 using System.Web.UI;
+using System.Web.UI.WebControls;
+using Rock;
 using Rock.Attribute;
+using Rock.Data;
 using Rock.Model;
 using Rock.Web.UI;
+using Rock.Web.UI.Controls;
 
 namespace RockWeb.Blocks.Finance
 {
@@ -33,28 +39,22 @@ namespace RockWeb.Blocks.Finance
     #region Block Attributes
 
     [FinancialGatewayField(
-        "Credit Card Gateway",
-        Key = AttributeKey.FinancialGatewayCreditCard,
-        Description = "The payment gateway to use for Credit Card transactions",
+        "Financial Gateway",
+        Key = AttributeKey.FinancialGateway,
+        Description = "The payment gateway to use for Credit Card and ACH transactions.",
         Order = 0 )]
-
-    [FinancialGatewayField(
-        "ACH Gateway",
-        Key = AttributeKey.FinancialGatewayACH,
-        Description = "The payment gateway to use for ACH (bank account) transactions",
-        Order = 1 )]
 
     [TextField(
         "Batch Name Prefix",
         Key = AttributeKey.BatchNamePrefix,
-        Description = "The batch prefix name to use when creating a new batch",
+        Description = "The batch prefix name to use when creating a new batch.",
         DefaultValue = "Online Giving",
         Order = 2 )]
 
     [DefinedValueField(
         "Source",
         Key = AttributeKey.FinancialSourceType,
-        Description = "The Financial Source Type to use when creating transactions",
+        Description = "The Financial Source Type to use when creating transactions.",
         DefinedTypeGuid = Rock.SystemGuid.DefinedType.FINANCIAL_SOURCE_TYPE,
         DefaultValue = Rock.SystemGuid.DefinedValue.FINANCIAL_SOURCE_TYPE_WEBSITE,
         Order = 3 )]
@@ -62,33 +62,48 @@ namespace RockWeb.Blocks.Finance
     [BooleanField(
         "Impersonation",
         Key = AttributeKey.AllowImpersonation,
-        Description = "Should the current user be able to view and edit other people's transactions? IMPORTANT: This should only be enabled on an internal page that is secured to trusted users",
+        Description = "Should the current user be able to view and edit other people's transactions? IMPORTANT: This should only be enabled on an internal page that is secured to trusted users.",
         TrueText = "Allow (only use on an internal page used by staff)",
         FalseText = "Don't Allow",
-        DefaultValue = false,
+        DefaultBooleanValue = false,
         Order = 4 )]
 
     [AccountsField(
         "Accounts",
         Key = AttributeKey.AccountsToDisplay,
-        Description = "The accounts to display. By default all active accounts with a Public Name will be displayed",
+        Description = "The accounts to display. By default all active accounts with a Public Name will be displayed.",
         Order = 5 )]
 
-    [BooleanField( "Additional Accounts",
+    [BooleanField(
+        "Additional Accounts",
         Key = AttributeKey.PromptForAdditionalAccounts,
-        Description = "Should users be allowed to select additional accounts? If so, any active account with a Public Name value will be available",
+        Description = "Should users be allowed to select additional accounts? If so, any active account with a Public Name value will be available.",
         TrueText = "Display option for selecting additional accounts",
         FalseText = "Don't display option",
-        DefaultValue = true,
+        DefaultBooleanValue = true,
         Order = 6 )]
 
-    [BooleanField( "Scheduled Transactions",
+    [BooleanField(
+        "Scheduled Transactions",
         Key = AttributeKey.AllowScheduledTransactions,
-        Description = "If the selected gateway(s) allow scheduled transactions, should that option be provided to user",
+        Description = "If the selected gateway(s) allow scheduled transactions, should that option be provided to user.",
         TrueText = "Allow",
         FalseText = "Don't Allow",
-        DefaultValue = true,
+        DefaultBooleanValue = true,
         Order = 7 )]
+
+    [BooleanField(
+        "Show Scheduled Gifts",
+        Key = AttributeKey.ShowScheduledTransactions,
+        Description = "If the person has any scheduled gifts, show a summary of their scheduled gifts.",
+        DefaultBooleanValue = true,
+        Order = 8 )]
+
+    [TextField(
+        "Gift Term",
+        Key = AttributeKey.GiftTerm,
+        DefaultValue = "Gift",
+        Order = 9 )]
 
     #endregion Block Attributes
     public partial class TransactionEntryV2 : RockBlock
@@ -110,11 +125,13 @@ namespace RockWeb.Blocks.Finance
 
             public const string BatchNamePrefix = "BatchNamePrefix";
 
-            public const string FinancialGatewayCreditCard = "FinancialGatewayCreditCard";
-
-            public const string FinancialGatewayACH = "FinancialGatewayACH";
+            public const string FinancialGateway = "FinancialGateway";
 
             public const string FinancialSourceType = "FinancialSourceType";
+
+            public const string ShowScheduledTransactions = "ShowScheduledTransactions";
+
+            public const string GiftTerm = "GiftTerm";
         }
 
         #endregion
@@ -152,6 +169,27 @@ namespace RockWeb.Blocks.Finance
 
             if ( !Page.IsPostBack )
             {
+                ShowDetails();
+            }
+        }
+
+        /// <summary>
+        /// Shows the details.
+        /// </summary>
+        private void ShowDetails()
+        {
+            if ( !LoadGateways() )
+            {
+                return;
+            }
+
+            pnlTransactionEntry.Visible = true;
+
+            if ( this.GetAttributeValue( AttributeKey.ShowScheduledTransactions ).AsBoolean() )
+            {
+                lScheduledTransactionsTitle.Text = string.Format( "Scheduled {0}", ( this.GetAttributeValue( AttributeKey.GiftTerm ) ?? "Gift" ).Pluralize() );
+                pnlScheduledTransactions.Visible = true;
+                BindScheduledTransactions();
             }
         }
 
@@ -166,7 +204,7 @@ namespace RockWeb.Blocks.Finance
         /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
         protected void Block_BlockUpdated( object sender, EventArgs e )
         {
-            //
+            ShowDetails();
         }
 
         #endregion
@@ -174,5 +212,207 @@ namespace RockWeb.Blocks.Finance
         #region Methods
 
         #endregion
+
+        #region Gateway Help Related
+
+        /// <summary>
+        /// Handles the Click event of the btnGatewayConfigure control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
+        protected void btnGatewayConfigure_Click( object sender, EventArgs e )
+        {
+            // TODO
+        }
+
+        /// <summary>
+        /// Handles the Click event of the btnGatewayLearnMore control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
+        protected void btnGatewayLearnMore_Click( object sender, EventArgs e )
+        {
+            // TODO
+        }
+
+        /// <summary>
+        /// Handles the ItemDataBound event of the rptInstalledGateways control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="System.Web.UI.WebControls.RepeaterItemEventArgs"/> instance containing the event data.</param>
+        protected void rptInstalledGateways_ItemDataBound( object sender, System.Web.UI.WebControls.RepeaterItemEventArgs e )
+        {
+            FinancialGateway financialGateway = e.Item.DataItem as FinancialGateway;
+            if ( financialGateway == null )
+            {
+                return;
+            }
+
+            HiddenField hfGatewayId = e.Item.FindControl( "hfGatewayId" ) as HiddenField;
+            hfGatewayId.Value = financialGateway.Id.ToString();
+
+            Literal lGatewayName = e.Item.FindControl( "lGatewayName" ) as Literal;
+            Literal lGatewayDescription = e.Item.FindControl( "lGatewayDescription" ) as Literal;
+
+            lGatewayName.Text = financialGateway.Name;
+            lGatewayDescription.Text = financialGateway.Description;
+
+            //LinkButton btnGatewayConfigure = e.Item.FindControl( "btnGatewayConfigure" ) as LinkButton;
+            //LinkButton btnGatewayLearnMore = e.Item.FindControl( "btnGatewayLearnMore" ) as LinkButton;
+        }
+
+        /// <summary>
+        /// Loads and Validates the gateways, showing a message if the gateways aren't configured correctly
+        /// </summary>
+        private bool LoadGateways()
+        {
+            var financialGatewayGuid = this.GetAttributeValue( AttributeKey.FinancialGateway ).AsGuidOrNull();
+            var rockContext = new RockContext();
+            var financialGatewayService = new FinancialGatewayService( rockContext );
+            FinancialGateway _financialGateway = null;
+            if ( financialGatewayGuid.HasValue )
+            {
+                _financialGateway = financialGatewayService.GetNoTracking( financialGatewayGuid.Value );
+            }
+            if ( _financialGateway == null )
+            {
+                ShowGatewayHelp();
+                return false;
+            }
+
+            var testGatewayGuid = Rock.SystemGuid.EntityType.FINANCIAL_GATEWAY_TEST_GATEWAY.AsGuid();
+
+            if ( _financialGateway.GetGatewayComponent().TypeGuid == testGatewayGuid )
+            {
+                ShowConfigurationMessage( NotificationBoxType.Warning, "Testing", "You are using the Test Financial Gateway. No actual amounts will be charged to your card or bank account." );
+                return true;
+            }
+
+            pnlGatewayHelp.Visible = false;
+            HideConfigurationMessage();
+
+            return true;
+        }
+
+        /// <summary>
+        /// Shows the gateway help
+        /// </summary>
+        private void ShowGatewayHelp()
+        {
+            pnlGatewayHelp.Visible = true;
+            pnlTransactionEntry.Visible = false;
+
+            var rockContext = new RockContext();
+            var installedGatewayList = new FinancialGatewayService( rockContext ).Queryable().OrderBy( a => a.Name ).AsNoTracking().ToList();
+
+            rptInstalledGateways.DataSource = installedGatewayList;
+            rptInstalledGateways.DataBind();
+        }
+
+        /// <summary>
+        /// Shows the configuration message.
+        /// </summary>
+        /// <param name="notificationBoxType">Type of the notification box.</param>
+        /// <param name="title">The title.</param>
+        /// <param name="message">The message.</param>
+        private void ShowConfigurationMessage( NotificationBoxType notificationBoxType, string title, string message )
+        {
+            nbConfigurationNotification.NotificationBoxType = notificationBoxType;
+            nbConfigurationNotification.Title = title;
+            nbConfigurationNotification.Text = message;
+
+            nbConfigurationNotification.Visible = true;
+        }
+
+        /// <summary>
+        /// Hides the configuration message.
+        /// </summary>
+        private void HideConfigurationMessage()
+        {
+            nbConfigurationNotification.Visible = false;
+        }
+
+        #endregion Gateway Guide Related
+
+        #region Scheduled Gifts Related
+
+        /// <summary>
+        /// Binds the scheduled transactions.
+        /// </summary>
+        private void BindScheduledTransactions()
+        {
+            var rockContext = new RockContext();
+            FinancialScheduledTransactionService financialScheduledTransactionService = new FinancialScheduledTransactionService( rockContext );
+
+            // get business giving id
+            var givingIdList = CurrentPerson.GetBusinesses( rockContext ).Select( g => g.GivingId ).ToList();
+
+            var currentPersonGivingId = CurrentPerson.GivingId;
+            givingIdList.Add( currentPersonGivingId );
+            var scheduledTransactionList = financialScheduledTransactionService.Queryable()
+                .Where( a => givingIdList.Contains( a.AuthorizedPersonAlias.Person.GivingId ) && a.IsActive == true )
+                .ToList();
+
+            foreach ( var scheduledTransaction in scheduledTransactionList )
+            {
+                string errorMessage;
+                financialScheduledTransactionService.GetStatus( scheduledTransaction, out errorMessage );
+            }
+
+            rockContext.SaveChanges();
+
+            scheduledTransactionList = scheduledTransactionList.OrderByDescending( a => a.NextPaymentDate ).ToList();
+            rptScheduledTransactions.DataSource = scheduledTransactionList;
+            rptScheduledTransactions.DataBind();
+        }
+
+        /// <summary>
+        /// Handles the ItemDataBound event of the rptScheduledTransactions control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="RepeaterItemEventArgs"/> instance containing the event data.</param>
+        protected void rptScheduledTransactions_ItemDataBound( object sender, RepeaterItemEventArgs e )
+        {
+            FinancialScheduledTransaction financialScheduledTransaction = e.Item.DataItem as FinancialScheduledTransaction;
+            if ( financialScheduledTransaction == null )
+            {
+                return;
+            }
+
+            HiddenField hfScheduledTransactionId = e.Item.FindControl( "hfScheduledTransactionId" ) as HiddenField;
+            Literal lScheduledTransactionTitle = e.Item.FindControl( "lScheduledTransactionTitle" ) as Literal;
+            lScheduledTransactionTitle.Text = financialScheduledTransaction.TransactionFrequencyValue.Value;
+
+            Repeater rptScheduledTransactionAccounts = e.Item.FindControl( "rptScheduledTransactionAccounts" ) as Repeater;
+            rptScheduledTransactionAccounts.DataSource = financialScheduledTransaction.ScheduledTransactionDetails.ToList();
+            rptScheduledTransactionAccounts.DataBind();
+        }
+
+        /// <summary>
+        /// Handles the ItemDataBound event of the rptScheduledTransactionAccounts control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="RepeaterItemEventArgs"/> instance containing the event data.</param>
+        protected void rptScheduledTransactionAccounts_ItemDataBound( object sender, RepeaterItemEventArgs e )
+        {
+            FinancialScheduledTransactionDetail financialScheduledTransactionDetail = e.Item.DataItem as FinancialScheduledTransactionDetail;
+            Literal lScheduledTransactionAccountName = e.Item.FindControl( "lScheduledTransactionAccountName" ) as Literal;
+            lScheduledTransactionAccountName.Text = financialScheduledTransactionDetail.Account.ToString();
+
+            Literal lScheduledTransactionAmount = e.Item.FindControl( "lScheduledTransactionAmount" ) as Literal;
+            lScheduledTransactionAmount.Text = financialScheduledTransactionDetail.Amount.FormatAsCurrency();
+        }
+
+        protected void btnScheduledTransactionEdit_Click( object sender, EventArgs e )
+        {
+
+        }
+
+        protected void btnScheduledTransactionDelete_Click( object sender, EventArgs e )
+        {
+
+        }
+
+        #endregion Scheduled Gifts
     }
 }
