@@ -117,9 +117,11 @@ namespace Rock.Model
                 scheduledTransaction.FinancialGateway != null &&
                 scheduledTransaction.FinancialGateway.IsActive )
             {
+
+                var rockContext = this.Context as RockContext;
                 if ( scheduledTransaction.FinancialGateway.Attributes == null )
                 {
-                    scheduledTransaction.FinancialGateway.LoadAttributes( (RockContext)this.Context );
+                    scheduledTransaction.FinancialGateway.LoadAttributes( rockContext );
                 }
 
                 var gateway = scheduledTransaction.FinancialGateway.GetGatewayComponent();
@@ -127,7 +129,7 @@ namespace Rock.Model
                 {
                     var result = gateway.GetScheduledPaymentStatus( scheduledTransaction, out errorMessages );
 
-                    var lastTransactionDate = scheduledTransaction.Transactions.Max( t => t.TransactionDateTime );
+                    var lastTransactionDate = new FinancialTransactionService( rockContext).Queryable().Where( a=> a.ScheduledTransactionId.HasValue && a.ScheduledTransactionId == scheduledTransaction.Id ).Max( t => t.TransactionDateTime );
                     scheduledTransaction.NextPaymentDate = gateway.GetNextPaymentDate( scheduledTransaction, lastTransactionDate );
 
                     return result;
