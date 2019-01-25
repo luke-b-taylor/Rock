@@ -59,21 +59,28 @@
             <!-- Panel Header-->
             <StackPanel Grid.Row="0" Name="sp_Header" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
                 <Border Grid.ColumnSpan="2" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1">
-                    <StackPanel  Name="spBatchDetailCaption"  Background="{StaticResource PanelHeaderBrush}" HorizontalAlignment="Stretch">
+                    <StackPanel  Name="spBatchDetailCaption"  Orientation="Horizontal" Background="{StaticResource PanelHeaderBrush}" HorizontalAlignment="Stretch">
                         <Label Name="lblBatcheDetailCaption"  Content="Check Scanning" HorizontalAlignment="Left" Margin="10" Style="{StaticResource labelStyleCaption}" />
                     </StackPanel>
                 </Border>
             </StackPanel>
             <!-- Check Display Section  -->
             <ScrollViewer Grid.Row="1" Name="scrollViewerCheckImage" VerticalScrollBarVisibility="Hidden" HorizontalScrollBarVisibility="Disabled">
-                <StackPanel  Name="spCheckView" Height="{Binding ElementName=lvAccounts,Path=Height}" Grid.Column="0" Margin="0,20,0,0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" >
-                    <StackPanel Name="spAlertMessage" Visibility="Visible" HorizontalAlignment="Stretch"  VerticalAlignment="Top">
-                        <Label Name="lblAlertCaptionMessage" Visibility="Visible" />
-                        <Border Name="borderAlertBorder" Visibility="Visible" Margin="10,0,10,0">
+                <StackPanel  Name="spCheckView"  Grid.Column="0" Margin="0,20,0,0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" >
+                    <Label Content="Uploaded 12, Skipped 4"
+                                       Visibility="Hidden"
+                                       Margin="0,-20,5,0"
+                               VerticalAlignment="Center"
+                                        Name="lblScanItemCountInfo"
+                                        Style="{StaticResource labelStyleHighlightInfo}"
+                                        HorizontalAlignment="Right" />
+                    <StackPanel Name="spAlertMessage" HorizontalAlignment="Stretch" Visibility="Collapsed"  VerticalAlignment="Top" >
+                        <Label Name="lblAlertCaptionMessage" />
+                        <Border Name="borderAlertBorder"  Visibility="Collapsed" Margin="10,0,0,10">
                             <StackPanel>
-                                <StackPanel Name="spAlert" Visibility="Visible" >
-                                    <Label Name="lblAlertCaption" HorizontalAlignment="Left" Visibility="Visible"/>
-                                    <Label Name="lblAlertSubMessage" Visibility="Visible" BorderThickness="0" Background="Transparent"/>
+                                <StackPanel Name="spAlert" >
+                                    <Label Name="lblAlertCaption" HorizontalAlignment="Left" />
+                                    <Label Name="lblAlertSubMessage" Visibility="Visible" BorderThickness="0" MinHeight="30"  Background="Transparent"/>
                                 </StackPanel>
                                 <StackPanel Name="pnlPromptForUpload" Margin="5" Visibility="Collapsed">
                                     <StackPanel Orientation="Horizontal"
@@ -93,11 +100,7 @@
                                     Click="btnIgnoreAndUpload_Click" />
                                     </StackPanel>
                                 </StackPanel>
-                                <Label Content="Uploaded 12, Skipped 4"
-                                        Name="lblScanItemCountInfo"
-                                        Style="{StaticResource labelStyleHighlightInfo}"
-                                        Margin="0,0,12,0"
-                                        HorizontalAlignment="Right" />
+                               
                             </StackPanel>
                         </Border>
                     </StackPanel>
@@ -167,7 +170,7 @@
                                             <Label x:Name="lblOtherData" VerticalAlignment="Center"  />
                                         </StackPanel>
                                         <StackPanel Grid.Column="1" HorizontalAlignment="Right" Margin="0,0,20,0"  Orientation="Horizontal" VerticalAlignment="Center">
-                                            <Label x:Name="lblCheckNumberCaption" VerticalAlignment="Center"  HorizontalAlignment="Right" Content="Check #" Style="{StaticResource labelStyleCaption}" />
+                                            <Label x:Name="lblCheckNumberCaption" VerticalAlignment="Center"   HorizontalAlignment="Right" Content="Check #" Style="{StaticResource labelStyleCaption}" />
                                             <Label Name="lblCheckNumber" VerticalAlignment="Center" Content="1234"/>
                                         </StackPanel>
                                     </Grid>

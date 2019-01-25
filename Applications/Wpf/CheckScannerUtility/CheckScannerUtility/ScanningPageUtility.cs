@@ -166,114 +166,117 @@ namespace Rock.Apps.CheckScannerUtility
         /// Uploads the scanned item.
         /// </summary>
         /// <param name="scannedDocInfo">The scanned document information.</param>
-        public static void UploadScannedItem( ScannedDocInfo scannedDocInfo, Action<int> UpdateProgressBarCallback = null, List<DisplayAccountValueModel> accounts = null )
+        public static bool UploadScannedItem( ScannedDocInfo scannedDocInfo, Action<int> UpdateProgressBarCallback = null, List<DisplayAccountValueModel> accounts = null )
         {
-            RockRestClient client = EnsureUploadScanRestClient();
-
-            // upload image of front of doc (if was successfully scanned)
-            int? frontImageBinaryFileId = null;
-            if ( scannedDocInfo.FrontImageData != null )
+            try
             {
-                string frontImageFileName = string.Format( "image1_{0}.png", DateTime.Now.ToString( "o" ).RemoveSpecialCharacters() );
-                frontImageBinaryFileId = client.UploadBinaryFile( frontImageFileName, Rock.Client.SystemGuid.BinaryFiletype.CONTRIBUTION_IMAGE.AsGuid(), scannedDocInfo.FrontImagePngBytes, false );
-            }
+                RockRestClient client = EnsureUploadScanRestClient();
 
-            // upload image of back of doc (if it exists)
-            int? backImageBinaryFileId = null;
-            if ( scannedDocInfo.BackImageData != null )
-            {
-                // upload image of back of doc
-                string backImageFileName = string.Format( "image2_{0}.png", DateTime.Now.ToString( "o" ).RemoveSpecialCharacters() );
-                backImageBinaryFileId = client.UploadBinaryFile( backImageFileName, Rock.Client.SystemGuid.BinaryFiletype.CONTRIBUTION_IMAGE.AsGuid(), scannedDocInfo.BackImagePngBytes, false );
-            }
-
-            FinancialPaymentDetail financialPaymentDetail = new FinancialPaymentDetail();
-            financialPaymentDetail.CurrencyTypeValueId = scannedDocInfo.CurrencyTypeValue.Id;
-            financialPaymentDetail.Guid = Guid.NewGuid();
-            var financialPaymentDetailId = client.PostData<FinancialPaymentDetail>( "api/FinancialPaymentDetails", financialPaymentDetail ).AsIntegerOrNull();
-
-
-
-            FinancialTransaction financialTransaction = new FinancialTransaction();
-
-            financialTransaction.BatchId = batchPage.SelectedFinancialBatch.Id;
-            financialTransaction.TransactionCode = string.Empty;
-            financialTransaction.Summary = string.Empty;
-
-            financialTransaction.Guid = Guid.NewGuid();
-            financialTransaction.TransactionDateTime = batchPage.SelectedFinancialBatch.BatchStartDateTime;
-
-            financialTransaction.FinancialPaymentDetailId = financialPaymentDetailId;
-            financialTransaction.SourceTypeValueId = scannedDocInfo.SourceTypeValue.Id;
-
-            financialTransaction.TransactionTypeValueId = transactionTypeValueContribution.Id;
-            if ( accounts != null )
-            {
-
-
-                var accountsWithValues = accounts.Where( a => a.Amount > 0 ).ToList();
-                if ( accountsWithValues != null && accountsWithValues.Count() > 0 )
+                // upload image of front of doc (if was successfully scanned)
+                int? frontImageBinaryFileId = null;
+                if ( scannedDocInfo.FrontImageData != null )
                 {
-
-                    AddFinancialTransactionDetailForEachAccount( accountsWithValues, financialTransaction );
+                    string frontImageFileName = string.Format( "image1_{0}.png", DateTime.Now.ToString( "o" ).RemoveSpecialCharacters() );
+                    frontImageBinaryFileId = client.UploadBinaryFile( frontImageFileName, Rock.Client.SystemGuid.BinaryFiletype.CONTRIBUTION_IMAGE.AsGuid(), scannedDocInfo.FrontImagePngBytes, false );
                 }
+
+                // upload image of back of doc (if it exists)
+                int? backImageBinaryFileId = null;
+                if ( scannedDocInfo.BackImageData != null )
+                {
+                    // upload image of back of doc
+                    string backImageFileName = string.Format( "image2_{0}.png", DateTime.Now.ToString( "o" ).RemoveSpecialCharacters() );
+                    backImageBinaryFileId = client.UploadBinaryFile( backImageFileName, Rock.Client.SystemGuid.BinaryFiletype.CONTRIBUTION_IMAGE.AsGuid(), scannedDocInfo.BackImagePngBytes, false );
+                }
+
+                FinancialPaymentDetail financialPaymentDetail = new FinancialPaymentDetail();
+                financialPaymentDetail.CurrencyTypeValueId = scannedDocInfo.CurrencyTypeValue.Id;
+                financialPaymentDetail.Guid = Guid.NewGuid();
+                var financialPaymentDetailId = client.PostData<FinancialPaymentDetail>( "api/FinancialPaymentDetails", financialPaymentDetail ).AsIntegerOrNull();
+
+                FinancialTransaction financialTransaction = new FinancialTransaction();
+
+                financialTransaction.BatchId = batchPage.SelectedFinancialBatch.Id;
+                financialTransaction.TransactionCode = string.Empty;
+                financialTransaction.Summary = string.Empty;
+
+                financialTransaction.Guid = Guid.NewGuid();
+                financialTransaction.TransactionDateTime = batchPage.SelectedFinancialBatch.BatchStartDateTime;
+
+                financialTransaction.FinancialPaymentDetailId = financialPaymentDetailId;
+                financialTransaction.SourceTypeValueId = scannedDocInfo.SourceTypeValue.Id;
+
+                financialTransaction.TransactionTypeValueId = transactionTypeValueContribution.Id;
+                if ( accounts != null )
+                {
+                    var accountsWithValues = accounts.Where( a => a.Amount > 0 ).ToList();
+                    if ( accountsWithValues != null && accountsWithValues.Count() > 0 )
+                    {
+
+                        AddFinancialTransactionDetailForEachAccount( accountsWithValues, financialTransaction );
+                    }
+                }
+                int? uploadedTransactionId;
+
+                if ( scannedDocInfo.IsCheck )
+                {
+                    financialTransaction.TransactionCode = scannedDocInfo.CheckNumber;
+                    financialTransaction.MICRStatus = scannedDocInfo.BadMicr ? MICRStatus.Fail : MICRStatus.Success;
+
+                    FinancialTransactionScannedCheck financialTransactionScannedCheck = new FinancialTransactionScannedCheck();
+
+                    // Rock server will encrypt CheckMicrPlainText to this since we can't have the DataEncryptionKey in a RestClient
+                    financialTransactionScannedCheck.FinancialTransaction = financialTransaction;
+                    financialTransactionScannedCheck.ScannedCheckMicrData = scannedDocInfo.ScannedCheckMicrData;
+                    financialTransactionScannedCheck.ScannedCheckMicrParts = scannedDocInfo.ScannedCheckMicrParts;
+                    uploadedTransactionId = client.PostData<FinancialTransactionScannedCheck>( "api/FinancialTransactions/PostScanned", financialTransactionScannedCheck ).AsIntegerOrNull();
+                }
+                else
+                {
+                    //FinancialTransactionDetail
+                    uploadedTransactionId = client.PostData<FinancialTransaction>( "api/FinancialTransactions", financialTransaction as FinancialTransaction ).AsIntegerOrNull();
+                }
+
+                // upload FinancialTransactionImage records for front/back
+                if ( frontImageBinaryFileId.HasValue )
+                {
+                    FinancialTransactionImage financialTransactionImageFront = new FinancialTransactionImage();
+                    financialTransactionImageFront.BinaryFileId = frontImageBinaryFileId.Value;
+                    financialTransactionImageFront.TransactionId = uploadedTransactionId.Value;
+                    financialTransactionImageFront.Order = 0;
+                    financialTransactionImageFront.Guid = Guid.NewGuid();
+                    client.PostData<FinancialTransactionImage>( "api/FinancialTransactionImages", financialTransactionImageFront );
+                }
+
+                if ( backImageBinaryFileId.HasValue )
+                {
+                    FinancialTransactionImage financialTransactionImageBack = new FinancialTransactionImage();
+                    financialTransactionImageBack.BinaryFileId = backImageBinaryFileId.Value;
+                    financialTransactionImageBack.TransactionId = uploadedTransactionId.Value;
+                    financialTransactionImageBack.Order = 1;
+                    financialTransactionImageBack.Guid = Guid.NewGuid();
+                    client.PostData<FinancialTransactionImage>( "api/FinancialTransactionImages", financialTransactionImageBack );
+                }
+
+                scannedDocInfo.TransactionId = uploadedTransactionId;
+                financialTransaction.Id = uploadedTransactionId ?? 0;
+                financialTransaction.CreatedDateTime = financialTransaction.CreatedDateTime ?? DateTime.Now;
+
+                var transactionList = batchPage.grdBatchItems.DataContext as BindingList<FinancialTransaction>;
+                transactionList.Insert( 0, financialTransaction );
+
+                ItemsUploaded++;
+                if ( UpdateProgressBarCallback != null )
+                {
+                    UpdateProgressBarCallback( ItemsUploaded );
+                }
+
+
+                return true;
             }
-            int? uploadedTransactionId;
-
-            if ( scannedDocInfo.IsCheck )
+            catch ( Exception e )
             {
-                financialTransaction.TransactionCode = scannedDocInfo.CheckNumber;
-                financialTransaction.MICRStatus = scannedDocInfo.BadMicr ? MICRStatus.Fail : MICRStatus.Success;
-
-                FinancialTransactionScannedCheck financialTransactionScannedCheck = new FinancialTransactionScannedCheck();
-
-                // Rock server will encrypt CheckMicrPlainText to this since we can't have the DataEncryptionKey in a RestClient
-                financialTransactionScannedCheck.FinancialTransaction = financialTransaction;
-                financialTransactionScannedCheck.ScannedCheckMicrData = scannedDocInfo.ScannedCheckMicrData;
-                financialTransactionScannedCheck.ScannedCheckMicrParts = scannedDocInfo.ScannedCheckMicrParts;
-                uploadedTransactionId = client.PostData<FinancialTransactionScannedCheck>( "api/FinancialTransactions/PostScanned", financialTransactionScannedCheck ).AsIntegerOrNull();
-            }
-            else
-            {
-              
-
-                //FinancialTransactionDetail
-                uploadedTransactionId = client.PostData<FinancialTransaction>( "api/FinancialTransactions", financialTransaction as FinancialTransaction ).AsIntegerOrNull();
-            }
-
-            // upload FinancialTransactionImage records for front/back
-            if ( frontImageBinaryFileId.HasValue )
-            {
-                FinancialTransactionImage financialTransactionImageFront = new FinancialTransactionImage();
-                financialTransactionImageFront.BinaryFileId = frontImageBinaryFileId.Value;
-                financialTransactionImageFront.TransactionId = uploadedTransactionId.Value;
-                financialTransactionImageFront.Order = 0;
-                financialTransactionImageFront.Guid = Guid.NewGuid();
-                client.PostData<FinancialTransactionImage>( "api/FinancialTransactionImages", financialTransactionImageFront );
-            }
-
-            if ( backImageBinaryFileId.HasValue )
-            {
-                FinancialTransactionImage financialTransactionImageBack = new FinancialTransactionImage();
-                financialTransactionImageBack.BinaryFileId = backImageBinaryFileId.Value;
-                financialTransactionImageBack.TransactionId = uploadedTransactionId.Value;
-                financialTransactionImageBack.Order = 1;
-                financialTransactionImageBack.Guid = Guid.NewGuid();
-                client.PostData<FinancialTransactionImage>( "api/FinancialTransactionImages", financialTransactionImageBack );
-            }
-
-            scannedDocInfo.TransactionId = uploadedTransactionId;
-            financialTransaction.Id = uploadedTransactionId ?? 0;
-            financialTransaction.CreatedDateTime = financialTransaction.CreatedDateTime ?? DateTime.Now;
-
-            var transactionList = batchPage.grdBatchItems.DataContext as BindingList<FinancialTransaction>;
-            transactionList.Insert( 0, financialTransaction );
-
-            ItemsUploaded++;
-            if ( UpdateProgressBarCallback != null )
-            {
-                UpdateProgressBarCallback( ItemsUploaded );
-
+                return false;
             }
 
         }

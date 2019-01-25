@@ -57,16 +57,23 @@
             </StackPanel>
             <!-- Progress Bars and Check images -->
             <ScrollViewer Grid.Row="1" Name="scrollViewerCheckImage" VerticalScrollBarVisibility="Hidden" HorizontalScrollBarVisibility="Disabled">
-            <StackPanel  Name="spCheckView" Height="{Binding ElementName=lvAccounts,Path=Height}" Grid.Column="0" Margin="0,20,0,0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" >
-                    <StackPanel Name="spAlertMessage" Visibility="Visible" HorizontalAlignment="Stretch"  VerticalAlignment="Top">
-                        <Label Name="lblAlertCaptionMessage" Visibility="Visible" />
-                        <Border Name="borderAlertBorder" Visibility="Visible" Margin="10,0,10,0">
+            <StackPanel  Name="spCheckView"  Height="{Binding ElementName=lvAccounts,Path=Height}"  Grid.Column="0" Margin="0,20,0,0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" >
+                    <Label Content="Uploaded 12, Skipped 4"
+                                       Visibility="Hidden"
+                                       Margin="0,-20,5,0"
+                               VerticalAlignment="Center"
+                                        Name="lblScanItemCountInfo"
+                                        Style="{StaticResource labelStyleHighlightInfo}"
+                                        HorizontalAlignment="Right" />
+                    <StackPanel Name="spAlertMessage" Visibility="Visible"  HorizontalAlignment="Stretch"  VerticalAlignment="Top">
+                        <Label Name="lblAlertCaptionMessage"  Visibility="Visible" />
+                        <Border Name="borderAlertBorder"  Margin="10,0,10,0">
                             <StackPanel>
                                 <StackPanel Name="spAlert" Visibility="Visible" >
                                     <Label Name="lblAlertCaption" HorizontalAlignment="Left" Visibility="Visible"/>
                                     <Label Name="lblAlertSubMessage" Visibility="Visible" BorderThickness="0" Background="Transparent"/>
                                 </StackPanel>
-                                <StackPanel Name="pnlPromptForUpload" Margin="5" Visibility="Collapsed">
+                                <StackPanel Name="pnlPromptForUpload" Margin="5" Visibility="Visible">
                                     <StackPanel Orientation="Horizontal"
                                 HorizontalAlignment="Center">
                                         <Button Margin="8"
@@ -217,7 +224,7 @@
             </StackPanel>
             </ScrollViewer>
             <!-- Account List View -->
-            <StackPanel Grid.Row="1" Grid.Column="1" Grid.RowSpan="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"  Background="#f3f3f3">
+            <StackPanel Grid.Row="1"  Grid.Column="1" Grid.RowSpan="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"  Background="#f3f3f3">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <ListView Margin="0,0,0,0"
                         IsTabStop="False" 
@@ -225,6 +232,7 @@
                         HorizontalAlignment="Stretch"
                         HorizontalContentAlignment="Stretch"
                         Name="lvAccounts"
+                        Visibility="Visible"
                         KeyboardNavigation.TabNavigation="Continue">
                         <ListView.ItemTemplate>
                             <DataTemplate>

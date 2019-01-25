@@ -163,7 +163,7 @@ namespace Rock.Apps.CheckScannerUtility
                 }
             }
             this.lvAccountDetails.ItemsSource = displayFinancialTransaction;
-            this.lblTotal.Content = sum.ToString( "C" );
+            this.txbTotals.Text = sum.ToString( "C" );
 
 
         }

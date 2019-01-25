@@ -79,17 +79,13 @@ namespace Rock.Apps.CheckScannerUtility
         {
             var client = this.RestClient;
             _allAccounts = client.GetData<List<FinancialAccount>>( "api/FinancialAccounts" );
-            SetParentChildAccounts( _allAccounts); 
-            icAccountsForBatches.Items.Clear();       
+            SetParentChildAccounts( _allAccounts );
+            icAccountsForBatches.Items.Clear();
             icAccountsForBatches.ItemsSource = _displayAccounts;
 
         }
 
-       
-
         private HybridDictionary _map = new HybridDictionary();
-
-        
 
         public void AddParentChild( DisplayAccountModel displayAccount, int id, int? parentId )
         {
@@ -113,14 +109,14 @@ namespace Rock.Apps.CheckScannerUtility
             }
         }
 
-        private void SetParentChildAccounts( List<FinancialAccount> accounts)
+        private void SetParentChildAccounts( List<FinancialAccount> accounts )
         {
             foreach ( var account in accounts )
             {
                 var parentDisplayAccount = new DisplayAccountModel();
-                    var children = _allAccounts.Where( a => a.ParentAccountId != null && a.ParentAccountId == account.Id ).ToList();
-                    parentDisplayAccount.AccountDisplayName = account.Name;
-                if ( _rockConfig.SelectedAccountForAmountsIds != null)
+                var children = _allAccounts.Where( a => a.ParentAccountId != null && a.ParentAccountId == account.Id ).ToList();
+                parentDisplayAccount.AccountDisplayName = account.Name;
+                if ( _rockConfig.SelectedAccountForAmountsIds != null )
                 {
                     parentDisplayAccount.IsAccountChecked = _rockConfig.SelectedAccountForAmountsIds.Contains( account.Id );
                     parentDisplayAccount.Id = account.Id;
@@ -161,12 +157,11 @@ namespace Rock.Apps.CheckScannerUtility
                 chkRequireControlItemCount.IsChecked = rockConfig.RequireControlItemCount;
                 chkCaptureAmountOnScan.IsChecked = rockConfig.CaptureAmountOnScan;
             }
-          
+
             if ( rockConfig.ScannerInterfaceType == RockConfig.InterfaceType.MICRImageRS232 )
             {
-                cboScannerInterfaceType.SelectedItem = "MagTek";
-                lblMakeModel.Content = "MagTek";
-
+                cboScannerInterfaceType.SelectedItem = "MagTek COM";
+                lblMakeModel.Content = "MagTek COM";
                 string version = "-1";
                 try
                 {
@@ -189,6 +184,35 @@ namespace Rock.Apps.CheckScannerUtility
                 {
                     lblInterfaceVersion.Content = "error";
                 }
+            }
+            else if ( rockConfig.ScannerInterfaceType == RockConfig.InterfaceType.MagTekImageSafe )
+            {
+                cboScannerInterfaceType.SelectedItem = "MagTek Image Safe";
+                lblMakeModel.Content = "MagTek Image Safe";
+                string version = "-1";
+                try
+                {
+                    this.Cursor = Cursors.Wait;
+                    if ( BatchPage.ImageSafe != null )
+                    {
+                        version = BatchPage.GetImageSafeVersion();
+                    }
+                }
+                finally
+                {
+                    this.Cursor = null;
+                }
+
+                if ( !version.Equals( "-1" ) )
+                {
+                    lblInterfaceVersion.Content = version;
+                }
+                else
+                {
+                    lblInterfaceVersion.Content = "error";
+                }
+
+
             }
             else
             {
@@ -260,9 +284,13 @@ namespace Rock.Apps.CheckScannerUtility
 
             if ( this.BatchPage.micrImage != null )
             {
-                cboScannerInterfaceType.Items.Add( "MagTek" );
+                cboScannerInterfaceType.Items.Add( "MagTek COM" );
             }
 
+            if ( this.BatchPage.ImageSafe != null )
+            {
+                cboScannerInterfaceType.Items.Add( "MagTek Image Safe" );
+            }
             if ( cboScannerInterfaceType.Items.Count == 0 )
             {
                 lblScannerError.Visibility = Visibility.Visible;
@@ -286,9 +314,15 @@ namespace Rock.Apps.CheckScannerUtility
         {
 
             _rockConfig.CaptureAmountOnScan = chkCaptureAmountOnScan.IsChecked == true;
+      
             _rockConfig.RequireControlAmount = chkRequireConrolAmount.IsChecked == true;
             _rockConfig.RequireControlItemCount = chkRequireControlItemCount.IsChecked == true;
             AddAccountsForAmountsToSave();
+            if ( _rockConfig.CaptureAmountOnScan && _rockConfig.SelectedAccountForAmountsIds.Count() == 0 )
+            {
+                MessageBox.Show( "Capture Amount selected but no accounts checked" );
+                return;
+            }
             try
             {
                 txtRockUrl.Text = txtRockUrl.Text.Trim();
@@ -333,13 +367,17 @@ namespace Rock.Apps.CheckScannerUtility
 
             _rockConfig.RockBaseUrl = txtRockUrl.Text;
 
-            if ( cboScannerInterfaceType.SelectedItem.Equals( "MagTek" ) )
+            switch ( cboScannerInterfaceType.SelectedItem )
             {
-                _rockConfig.ScannerInterfaceType = RockConfig.InterfaceType.MICRImageRS232;
-            }
-            else
-            {
-                _rockConfig.ScannerInterfaceType = RockConfig.InterfaceType.RangerApi;
+                case "MagTek COM":
+                    _rockConfig.ScannerInterfaceType = RockConfig.InterfaceType.MICRImageRS232;
+                    break;
+                case "MagTek Image Safe":
+                    _rockConfig.ScannerInterfaceType = RockConfig.InterfaceType.MagTekImageSafe;
+                    break;
+                default:
+                    _rockConfig.ScannerInterfaceType = RockConfig.InterfaceType.RangerApi;
+                    break;
             }
 
             string imageOption = cboImageOption.SelectedValue as string;
@@ -444,22 +482,46 @@ namespace Rock.Apps.CheckScannerUtility
         /// <param name="e">The <see cref="SelectionChangedEventArgs"/> instance containing the event data.</param>
         private void cboScannerInterfaceType_SelectionChanged( object sender, SelectionChangedEventArgs e )
         {
-            bool magTekSelected = cboScannerInterfaceType.SelectedItem != null && cboScannerInterfaceType.SelectedItem.Equals( "MagTek" );
+            // show Image Option only for Ranger so default Collapsed for both MagTeks
+            lblImageOption.Visibility = Visibility.Collapsed;
+            cboImageOption.Visibility = Visibility.Collapsed;
 
-            // show COM port option only for Mag Tek
-            lblMagTekCommPort.Visibility = magTekSelected ? Visibility.Visible : Visibility.Collapsed;
-            cboMagTekCommPort.Visibility = magTekSelected ? Visibility.Visible : Visibility.Collapsed;
+            // show Image Option only for Ranger so default Collapsed
+            lblAdvancedInfo.Visibility = Visibility.Collapsed;
+            lblSensitivity.Visibility = Visibility.Collapsed;
+            txtSensitivity.Visibility = Visibility.Collapsed;
+            lblPlurality.Visibility = Visibility.Collapsed;
+            txtPlurality.Visibility = Visibility.Collapsed;
 
-            // show Image Option only for Ranger
-            lblImageOption.Visibility = magTekSelected ? Visibility.Collapsed : Visibility.Visible;
-            cboImageOption.Visibility = magTekSelected ? Visibility.Collapsed : Visibility.Visible;
+            if ( cboScannerInterfaceType.SelectedItem != null )
+            {
+                switch ( cboScannerInterfaceType.SelectedItem.ToString() )
+                {
 
-            // show Sensitivity/Plurality Option only for Ranger
-            lblAdvancedInfo.Visibility = magTekSelected ? Visibility.Collapsed : Visibility.Visible;
-            lblSensitivity.Visibility = magTekSelected ? Visibility.Collapsed : Visibility.Visible;
-            txtSensitivity.Visibility = magTekSelected ? Visibility.Collapsed : Visibility.Visible;
-            lblPlurality.Visibility = magTekSelected ? Visibility.Collapsed : Visibility.Visible;
-            txtPlurality.Visibility = magTekSelected ? Visibility.Collapsed : Visibility.Visible;
+                    case "MagTek COM":
+                        // show COM port option only for Mag Tek COM
+                        lblMagTekCommPort.Visibility = Visibility.Visible;
+                        cboMagTekCommPort.Visibility = Visibility.Visible;
+                        break;
+                    case "MagTek Image Safe":
+                        //No COM Port for USB
+                        lblMagTekCommPort.Visibility = Visibility.Collapsed;
+                        cboMagTekCommPort.Visibility = Visibility.Collapsed;
+                        break;
+                    default:
+                        // show Image Option only for Ranger
+                        lblImageOption.Visibility = Visibility.Visible;
+                        cboImageOption.Visibility = Visibility.Visible;
+
+                        // show Sensitivity/Plurality Option only for Ranger
+                        lblAdvancedInfo.Visibility = Visibility.Visible;
+                        lblSensitivity.Visibility = Visibility.Visible;
+                        txtSensitivity.Visibility = Visibility.Visible;
+                        lblPlurality.Visibility = Visibility.Visible;
+                        txtPlurality.Visibility = Visibility.Visible;
+                        break;
+                }
+            }
         }
 
         private RockRestClient RestClient
@@ -481,6 +543,11 @@ namespace Rock.Apps.CheckScannerUtility
         {
             chkRequireConrolAmount.IsChecked = false;
             chkRequireControlItemCount.IsChecked = false;
+        }
+
+        private void Page_SizeChanged( object sender, SizeChangedEventArgs e )
+        {
+            this.sp_ScannerSettings.Height = this.ActualHeight - 400;
         }
     }
 }

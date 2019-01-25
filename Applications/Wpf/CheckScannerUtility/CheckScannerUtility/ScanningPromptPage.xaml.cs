@@ -153,6 +153,16 @@ namespace Rock.Apps.CheckScannerUtility
         {
             lblScannerDriverError.Visibility = Visibility.Collapsed;
             RockConfig rockConfig = RockConfig.Load();
+            if ( rockConfig.ScannerInterfaceType == RockConfig.InterfaceType.MagTekImageSafe || rockConfig.ScannerInterfaceType == RockConfig.InterfaceType.MICRImageRS232 )
+            {
+                this.chkPromptToScanRearImage.Visibility = Visibility.Visible;
+                this.spRangerOptions.Visibility = Visibility.Hidden;
+            }
+            else
+            {
+                this.chkPromptToScanRearImage.Visibility = Visibility.Hidden;
+                this.spRangerOptions.Visibility = Visibility.Visible;
+            }
 
             spTenderButtons.Children.Clear();
             foreach ( var currency in this.BatchPage.CurrencyValueList.OrderBy( a => a.Order ).ThenBy( a => a.Value ) )

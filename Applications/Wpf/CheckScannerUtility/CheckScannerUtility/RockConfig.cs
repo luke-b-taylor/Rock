@@ -157,7 +157,8 @@ namespace Rock.Apps.CheckScannerUtility
         public enum InterfaceType
         {
             RangerApi = 0,
-            MICRImageRS232 = 1
+            MICRImageRS232 = 1,
+            MagTekImageSafe = 2
         }
 
         /// <summary>

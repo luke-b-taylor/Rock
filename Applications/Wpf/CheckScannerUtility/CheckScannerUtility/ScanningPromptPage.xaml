@@ -90,7 +90,7 @@
                     <ComboBox Name="cboTransactionSourceType"
                           Margin="8,2,0,0"
                           Style="{StaticResource textboxStyle}" />
-                    <StackPanel Margin="0,25,0,0">
+                    <StackPanel Name="spRangerOptions" Margin="0,25,0,0">
                         <Label Name="lblOptionsCaption"
                        Style="{StaticResource labelStyleCaption}"
                        Margin="6,20,0,0">Options</Label>

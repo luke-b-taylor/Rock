@@ -19,11 +19,6 @@ namespace ImageScanInteropBuilder
         private int g_hLogFile;
         private string g_strLogFileName = null;
 
-        private bool m_bDeviceSelected;
-        private bool m_bRNDIS;
-        private int m_nCurrentDevice;
-        private string m_strQueryItem;
-
         private string[] m_arrQueryOptions = { "DeviceCapabilities", "DeviceStatus", "DeviceUsage" };
         private string[] m_arrFeederOptions = { "CHECK", "MSR" };
         private List<string> _deviceListNames;
@@ -130,6 +125,7 @@ namespace ImageScanInteropBuilder
             return MTMICRGetImage(strDeviceName,strImageID,imageBuf, ref nBufLength );
         }
 
+
         public int MICRCreateFile( string lpFileName, UInt32 dwDesiredAccess, UInt32 dwShareMode, UInt32 lpSecurityAttributes, UInt32 dwCreationDisposition, UInt32 dwFlagsAndAttributes, int hTemplateFile ) {
             return CreateFile(lpFileName,dwDesiredAccess, dwShareMode, lpSecurityAttributes,dwCreationDisposition, dwFlagsAndAttributes, hTemplateFile );
         }
@@ -137,6 +133,13 @@ namespace ImageScanInteropBuilder
         public bool MICRWriteFile( int hFile, byte[] pBuf, int nBytesToWrite, ref int nBytesWritten, IntPtr pOverlapped )
         {return WriteFile(hFile,pBuf, nBytesToWrite, ref nBytesWritten, pOverlapped );
         }
+
+        public int MICRQueryInfo( string strDeviceName, string strQueryParm, StringBuilder strResponse, ref int nResponseLength )
+        {
+            return MTMICRQueryInfo(strDeviceName, strQueryParm, strResponse, ref nResponseLength );
+        }
+
+
         #endregion        
         #region DLL Import
 
@@ -185,8 +188,6 @@ namespace ImageScanInteropBuilder
         public void Init( string executablePath )
         {
             DocType = DocType.CHECK;
-            m_bRNDIS = false;
-            m_bDeviceSelected = false;
             BDeviceOpened = false;
             m_nTotalDevice = 0;
 
@@ -197,9 +198,7 @@ namespace ImageScanInteropBuilder
             OpenDeviceEnabled = false;
             QueryDeviceEnabled = false;
             ProcessDocumentEnabled = false;
-
             CurrentDeviceName = "";
-            m_strQueryItem = "DeviceCapabilities";
             Options = new string( '\0', 4096 );
             Setup();
 

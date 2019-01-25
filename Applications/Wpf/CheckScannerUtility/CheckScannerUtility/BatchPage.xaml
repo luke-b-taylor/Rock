@@ -364,7 +364,7 @@
                                             Width="*"
                                             CanUserResize="False"
                                             CanUserSort="False" />
-                            <DataGridTemplateColumn Header="Amount"
+                            <DataGridTemplateColumn x:Name="colBatchItemAmount" Header="Amount"                                                    
                                                     HeaderStyle="{StaticResource gridHeaderStyle}"
                                                     CellStyle="{StaticResource gridCellStyle}">
                                 <DataGridTemplateColumn.CellTemplate>

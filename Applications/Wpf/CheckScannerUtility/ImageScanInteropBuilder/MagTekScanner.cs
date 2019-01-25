@@ -11,14 +11,8 @@ namespace ImageScanInteropBuilder
     /// Code will support EXCELLA_ETHER,EXCELLA_USB, STX_ETHER,STX_USB Mag Tek Devices
     ///
     /// </summary>
-    public class MagTekScanner
+    public class MagTekUsbScanner:IDisposable
     {
-        
-        /// <summary>
-        /// Structure of Check Data
-        /// </summary>
-     
-
         #region Private Members
 
         private string _deviceName = string.Empty;
@@ -36,17 +30,29 @@ namespace ImageScanInteropBuilder
                 return _magTekImageScanInterop;
             }
         }
-        /// <summary>
-        /// Sets the image data.
-        /// Call from Process Document
-        /// </summary>
 
 
         #endregion
 
         #region Public Members
+
+        public event EventHandler<oCheckData> OnDocumentProcessComplete;
+        /// <summary>
+        /// Sets the image data.
+        /// Call from Process Document
+        /// </summary>
         public struct oCheckData
         {
+            public bool HasError { get; set; }
+
+            /// <summary>
+            /// Gets or sets the image data.
+            /// </summary>
+            /// <value>
+            /// The image data.
+            /// </value>
+            public byte[] ImageData { get; set; }
+        
             public string RoutingNumber { get; set; }
 
             /// <summary>
@@ -72,6 +78,7 @@ namespace ImageScanInteropBuilder
             /// The other data.
             /// </value>
             public string OtherData { get; set; }
+            public string ScannedCheckMicrData { get; set; }
 
             /// <summary>
             /// Gets the masked account number.
@@ -83,18 +90,30 @@ namespace ImageScanInteropBuilder
             {
                 get
                 {
-                    int length = AccountNumber.Length;
-                    string result = new string( 'x', length - 4 ) + AccountNumber.Substring( length - 4 );
-                    return result;
+                    if ( !string.IsNullOrEmpty(AccountNumber) && AccountNumber.Length > 4)
+                    {
+                        int length = AccountNumber.Length;
+                        string result = new string( 'x', length - 4 ) + AccountNumber.Substring( length - 4 );
+                        return result;
+                    }
+                    return string.Empty;
                 }
             }
+
+            /// <summary>
+            /// Gets or sets the errors.
+            /// </summary>
+            /// <value>
+            /// The errors.
+            /// </value>
+            public StringBuilder Errors { get; set; }
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="MagTekScanner"/> class.
+        /// Initializes a new instance of the <see cref="MagTekUsbScanner"/> class.
         /// </summary>
         /// <param name="exectionPath">The exection path.</param>
-        public MagTekScanner( string exectionPath )
+        public MagTekUsbScanner( string exectionPath )
         {
             if ( ErrorLog == null )
             {
@@ -115,8 +134,7 @@ namespace ImageScanInteropBuilder
         /// <value>
         ///   <c>true</c> if this instance has error; otherwise, <c>false</c>.
         /// </value>
-        public bool HasError { get { return ErrorLog.Length > 0; } }
-
+        public bool HasError { get; set; }
         /// <summary>
         /// Gets or sets the error log.
         /// </summary>
@@ -132,15 +150,7 @@ namespace ImageScanInteropBuilder
         /// The total processed.
         /// </value>
         public int TotalProcessed { get { return nTotalDocProcessed; } }
-
-        /// <summary>
-        /// Gets or sets the image data.
-        /// </summary>
-        /// <value>
-        /// The image data.
-        /// </value>
-        public byte[] ImageData { get; set; }
-
+        
         /// <summary>
         /// Gets or sets the exection path.
         /// </summary>
@@ -204,14 +214,43 @@ namespace ImageScanInteropBuilder
             return _magTekImageScanInterop.DeviceListNames;
         }
 
+        public string QueryDevice(string queryInfo) {
+
+            StringBuilder strResults = new StringBuilder();
+
+            int nRet;
+            int nLength = 4096;
+            strResults.Capacity = 4096;
+
+            switch ( queryInfo )
+            {
+                case "DeviceCapabilities":
+                    nRet = _magTekImageScanInterop.MICRQueryInfo( _magTekImageScanInterop.CurrentDeviceName, "DeviceCapabilities", strResults, ref nLength );
+                    break;
+                case "DeviceStatus":
+                    nRet = _magTekImageScanInterop.MICRQueryInfo( _magTekImageScanInterop.CurrentDeviceName, "DeviceStatus", strResults, ref nLength );
+                    break;
+                case "DeviceUsage":
+                    nRet = _magTekImageScanInterop.MICRQueryInfo( _magTekImageScanInterop.CurrentDeviceName, "DeviceUsage", strResults, ref nLength );
+                    break;
+
+
+            }
+
+            return strResults.ToString();
+        }
+
         /// <summary>
         /// Processes the document.
         /// </summary>
         /// <returns></returns>
-        public bool ProcessDocument()
+        public void ProcessDocument()
         {
+            var checkData = new oCheckData();
+            EventHandler<oCheckData> handler = OnDocumentProcessComplete;
+
             // first time through get the device name and open the device
-            if ( string.IsNullOrEmpty( MagTekImageScanInterop.CurrentDeviceName ) )
+            if (!string.IsNullOrEmpty( MagTekImageScanInterop.CurrentDeviceName ) )
             {
                 var deviceList = this.GetDeviceList();
                 if ( deviceList != null && deviceList.Count > 0 )
@@ -242,7 +281,7 @@ namespace ImageScanInteropBuilder
                         strLog = "Setup Options FAILED...";
                         MagTekImageScanInterop.PrintStatus(strLog);
                         this.ErrorLog.AppendLine( strLog );
-                        return false;
+                        checkData.Errors = this.ErrorLog;
                     }
 
                     strLog = "Begin Process Options Info...";
@@ -278,52 +317,57 @@ namespace ImageScanInteropBuilder
                         {
                             if ( MagTekImageScanInterop.DocType == DocType.CHECK )
                             {
-                                SetImageData();
-                                SetCheckData();
+                                SetImageData(ref checkData);
+                                SetCheckData(ref checkData);
+                                handler( this,checkData);
+                                return;
                             }
                             else
                             {
+                                this.ErrorLog.AppendLine( strLog );
                                 MagTekImageScanInterop.PrintStatus( "Process Check Feeder not Set to Check." );
-                                this.ErrorLog.AppendLine( "Process Check Feeder not Set to Check." );
+                                this.HandleError( handler, "Process Check Feeder not Set to Check.",checkData );
+                                return;
                             }
 
                         }
                         else if ( nReturnCode == 250 )
                         {
-
+                            this.ErrorLog.AppendLine( strLog );
                             MagTekImageScanInterop.PrintStatus( "Check Waiting Timeout!" );
-                            this.ErrorLog.AppendLine( "Check Waiting Timeout!");
-
+                            this.HandleError( handler, "Check Waiting Timeout!", checkData );
+                            return;
                         }
                         else
                         {
                             MagTekImageScanInterop.PrintStatus( "Process Check FAILED!" );
                             this.ErrorLog.AppendLine( "Process Check FAILED!" );
+                            this.HandleError( handler, strLog, checkData );
+                            return;
                         }
-
-                        return true;
                     }
                     else
                     {
                         strLog = "MTMICRProcessCheck return code " + nRet;
-
                         MagTekImageScanInterop.PrintStatus( strLog );
-                        this.ErrorLog.AppendLine( strLog);
-                        return false;
+                        this.HandleError(handler,strLog, checkData );
+                        return;
                     }
 
                 }
             }
-            return false;
+
+            this.HandleError( handler, "No Current Device Name found.", checkData );
         }
 
-        /// <summary>
-        /// Gets or sets the check data.
-        /// </summary>
-        /// <value>
-        /// The check data.
-        /// </value>
-        public oCheckData CheckData { get; set; }
+        private void HandleError(EventHandler<oCheckData> handler, string message, oCheckData checkData )
+        {
+            checkData.HasError = true;
+            this.ErrorLog.AppendLine( message );
+            checkData.Errors = this.ErrorLog;
+            handler( this, checkData );
+        }
+
 
         #endregion
 
@@ -412,7 +456,7 @@ namespace ImageScanInteropBuilder
             return ( int ) ImageScanStatus.MICR_ST_OK;
 
         }
-        private void SetImageData()
+        private void SetImageData(ref oCheckData checkData)
         {
             int nRet;
             StringBuilder strResponse = new StringBuilder();
@@ -441,9 +485,7 @@ namespace ImageScanInteropBuilder
                 nRet = MagTekImageScanInterop.MICRGetImage( MagTekImageScanInterop.CurrentDeviceName, strImageID, imageBuf, ref nImageSize );
                 if ( nRet == ( int ) ImageScanStatus.MICR_ST_OK )
                 {
-                    this.ImageData = imageBuf;
-
-
+                    checkData.ImageData = imageBuf;
                     int nActualSize = nImageSize;
                     strLog = "NumOfBytes to write =" + nActualSize;
 
@@ -462,14 +504,13 @@ namespace ImageScanInteropBuilder
         /// Sets the check data.
         /// Called from Process Document
         /// </summary>
-        private void SetCheckData()
+        private void SetCheckData(ref oCheckData checkData)
         {
             int nRet;
             StringBuilder strResponse = new StringBuilder();
             strResponse.Capacity = 4096;
             int nResponseLength = 4096;
             string strTmp;
-            var checkData = new oCheckData();
             if ( MagTekImageScanInterop.DocType == DocType.MSR )
             {
                 checkData.OtherData = string.Empty;
@@ -482,7 +523,7 @@ namespace ImageScanInteropBuilder
             {
                 nRet = MagTekImageScanInterop.MICRGetValue( MagTekImageScanInterop.DocInfo, "DocInfo", "MICRRaw", strResponse, ref nResponseLength );
                 strTmp = strResponse.ToString();
-                checkData.OtherData = strTmp;
+                checkData.ScannedCheckMicrData = strTmp;
 
                 nRet = MagTekImageScanInterop.MICRGetValue( MagTekImageScanInterop.DocInfo, "DocInfo", "MICRTransit", strResponse, ref nResponseLength );
                 strTmp = strResponse.ToString();
@@ -495,8 +536,31 @@ namespace ImageScanInteropBuilder
                 nRet = MagTekImageScanInterop.MICRGetValue( MagTekImageScanInterop.DocInfo, "DocInfo", "MICRSerNum", strResponse, ref nResponseLength );
                 strTmp = strResponse.ToString();
                 checkData.CheckNumber = strTmp;
-                this.CheckData = checkData;
             }
+        }
+
+        #endregion
+        #region IDispose
+
+        bool disposed = false;
+        public void Dispose( bool disposing )
+        {
+            if ( disposed )
+                return;
+
+            if ( disposing )
+            {
+                this.ErrorLog = null;
+            }
+
+            this._magTekImageScanInterop = null;
+            disposed = true;
+        }
+
+        public void Dispose()
+        {
+            Dispose( true );
+            GC.SuppressFinalize( this );
         }
 
         #endregion

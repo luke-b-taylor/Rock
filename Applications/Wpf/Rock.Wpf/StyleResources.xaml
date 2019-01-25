@@ -243,12 +243,12 @@
     </Style>
 
     <Style x:Key="WarningTextStyle" TargetType="Label">
-        <Setter Property="Foreground" Value="#8a6d3b" />
+        <Setter Property="Foreground" Value="#484848" />
         <Setter Property="FontFamily" Value="Roboto-Medium"/>
         <Setter Property="FontWeight" Value="Medium" />
     </Style>
     <Style x:Key="AlertTextStyle" TargetType="Label">
-        <Setter Property="Foreground" Value="#e55235" />
+        <Setter Property="Foreground" Value="#484848" />
     </Style>
 
     <Style x:Key="labelStyleAlert"
