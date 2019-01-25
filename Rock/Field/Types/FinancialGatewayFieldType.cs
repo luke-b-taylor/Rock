@@ -27,7 +27,8 @@ using System.Data.Entity;
 namespace Rock.Field.Types
 {
     /// <summary>
-    /// Field Type used to display a dropdown list of binary file types
+    /// Field Type used to display a dropdown list of Financial Gateways.
+    /// Stored as FinancialGateway.Guid
     /// </summary>
     [Serializable]
     public class FinancialGatewayFieldType : FieldType
