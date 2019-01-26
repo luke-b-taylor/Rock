@@ -50,14 +50,14 @@
             <!-- Panel Header-->
             <StackPanel Grid.Row="0" Grid.ColumnSpan="2" Name="sp_Header" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
                 <Border Grid.ColumnSpan="2" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1">
-                    <StackPanel  Name="spBatchDetailCaption"  Background="{StaticResource PanelHeaderBrush}" HorizontalAlignment="Stretch">
+                    <StackPanel  Name="spBatchDetailCaption"   Background="{StaticResource PanelHeaderBrush}" HorizontalAlignment="Stretch">
                         <Label Name="lblBatcheDetailCaption"  Content="Check Scanning" HorizontalAlignment="Left" Margin="10" Style="{StaticResource labelStyleCaption}" />
                     </StackPanel>
                 </Border>
             </StackPanel>
             <!-- Progress Bars and Check images -->
-            <ScrollViewer Grid.Row="1" Name="scrollViewerCheckImage" VerticalScrollBarVisibility="Hidden" HorizontalScrollBarVisibility="Disabled">
-            <StackPanel  Name="spCheckView"  Height="{Binding ElementName=lvAccounts,Path=Height}"  Grid.Column="0" Margin="0,20,0,0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" >
+            <ScrollViewer Grid.Row="1" Name="scrollViewerCheckImage" VerticalScrollBarVisibility="Hidden" HorizontalScrollBarVisibility="Hidden">
+            <StackPanel  Name="spCheckView"   Height="{Binding ElementName=lvAccounts,Path=Height}"  Grid.Column="0" Margin="0,20,0,0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" >
                     <Label Content="Uploaded 12, Skipped 4"
                                        Visibility="Hidden"
                                        Margin="0,-20,5,0"
@@ -95,7 +95,7 @@
                         </Border>
                     </StackPanel>
                     <StackPanel Name="spException" Visibility="Collapsed">
-                    <Label  Name="lblExceptions"
+                        <Label  Name="lblExceptions"
                        Style="{StaticResource labelStyleAlertError}"
                        Content="ERROR: --"
                        Grid.Row="0"

@@ -125,8 +125,11 @@ namespace Rock.Apps.CheckScannerUtility
 
             if ( scannedDocInfo.Upload )
             {
-                ScanningPageUtility.UploadScannedItem( scannedDocInfo, ( x ) => { lblScanItemUploadSuccess.Visibility = Visibility.Visible; } );
-
+                var uploaded= ScanningPageUtility.UploadScannedItem( scannedDocInfo, ( x ) => { lblScanItemUploadSuccess.Visibility = Visibility.Visible; } );
+                if ( uploaded )
+                {
+                    this.ShowUploadSuccess();
+                }
                 if ( ScanningPageUtility.KeepScanning )
                 {
 
@@ -963,7 +966,7 @@ namespace Rock.Apps.CheckScannerUtility
         private void HideDisplayMessage()
         {
             this.spRoutingInfo.Visibility = Visibility.Collapsed;
-            this.spAlertMessage.Visibility = Visibility.Collapsed;
+           // this.spAlertMessage.Visibility = Visibility.Collapsed;
         }
         private void DisplayMessage( string messageType, string captionstyleKey = "", string captionMessage = "", string mainMessageStyleKey = "", string mainMessage = "" )
         {
