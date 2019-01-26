@@ -71,7 +71,7 @@ namespace RockWeb.Blocks.Finance
     [AccountsField(
         "Accounts",
         Key = AttributeKey.AccountsToDisplay,
-        Description = "The accounts to display. By default all active accounts with a Public Name will be displayed.",
+        Description = "The accounts to display. By default all active accounts with a Public Name will be displayed. If the account has a child account for the selected campus, the child account for that campus will be used.",
         Order = 5 )]
 
     [BooleanField(
@@ -99,15 +99,120 @@ namespace RockWeb.Blocks.Finance
         DefaultBooleanValue = true,
         Order = 8 )]
 
+    [BooleanField(
+        "Ask for Campus if Known",
+        Key = AttributeKey.AskForCampusIfKnown,
+        Description = "If the campus for the person is already known, should the campus still be prompted for?",
+        DefaultBooleanValue = true,
+        Order = 9 )]
+
+    [BooleanField(
+        "Enable Multi-Account",
+        Key = AttributeKey.EnableMultiAccount,
+        Description = "Should the person be able specify amounts for more than one account?",
+        DefaultBooleanValue = true,
+        Order = 9 )]
+
+    [CodeEditorField(
+        "Intro Message",
+        Key = AttributeKey.IntroMessage,
+        EditorMode = CodeEditorMode.Lava,
+        Description = "The text to place at the top of the amount entry",
+        DefaultValue = "Your Generosity Changes Lives",
+        Category = "Text Options",
+        Order = 9 )]
+
     [TextField(
         "Gift Term",
         Key = AttributeKey.GiftTerm,
         DefaultValue = "Gift",
+        Category = "Text Options",
+        Order = 9 )]
+
+    [TextField(
+        "Give Button Text",
+        Key = AttributeKey.GiveButtonText,
+        DefaultValue = "Give Now",
+        Category = "Text Options",
+        Order = 9 )]
+
+    [LinkedPage(
+        "Scheduled Transaction Edit Page",
+        Key = AttributeKey.ScheduledTransactionEditPage,
+        Description = "The page to use for editing scheduled transactions.",
+        Order = 9 )]
+
+    [CodeEditorField(
+        "Finish Lava Template",
+        Key = AttributeKey.FinishLavaTemplate,
+        EditorMode = CodeEditorMode.Lava,
+        Description = "The text (HTML) to display on the success page.",
+        DefaultValue = DefaultFinishLavaTemplate,
+        Category = "Text Options",
+        Order = 9 )]
+
+    [TextField(
+        "Save Account Title",
+        Key = AttributeKey.SaveAccountTitle,
+        Description = "The text to display as heading of section for saving payment information.",
+        DefaultValue = "Make Giving Even Easier",
+        Category = "Text Options",
         Order = 9 )]
 
     #endregion Block Attributes
     public partial class TransactionEntryV2 : RockBlock
     {
+        #region constants
+
+        public const string DefaultFinishLavaTemplate = @"
+{% if Transaction.ScheduledTransactionDetails %}
+    {% assign transactionDetails = Transaction.ScheduledTransactionDetails %}
+{% else %}
+    {% assign transactionDetails = Transaction.TransactionDetails %}
+{% endif %}
+
+<h1>Thank You!</h1>
+
+<p>Your support is helping Rock Solid Church Demo actively achieve our
+mission. We are so grateful for your commitment.</p>
+
+<dl>
+    <dt>Confirmation Code</dt>
+    <dd>{{ Transaction.TransactionCode }}</dd>
+
+    <dt>Name</dt>
+    <dd>{{ PaymentInfo.FullName }}</dd>
+    <dd></dd>
+    <dd>{{ PaymentInfo.Email }}</dd>
+    <dd>{{ PaymentInfo.Street }} {{ PaymentInfo.City }}, {{ PaymentInfo.State }} {{ PaymentInfo.PostalCode }}</dd>
+<dl>
+
+<dl class='dl-horizontal'>
+    {% for transactionDetail in transactionDetails %}
+        <dt>{{ transactionDetail.Account.PublicName }}</dt>
+        <dd>{{ transactionDetail.Amount }}</dd>
+    {% endfor %}
+
+    <dt>Payment Method</dt>
+    <dd>{{ PaymentInfo.CurrencyTypeValue.Description}}</dd>
+
+    {% if PaymentInfo.MaskedNumber != '' %}
+        <dt>Account Number</dt>
+        <dd>{{ PaymentInfo.MaskedNumber }}</dd>
+    {% endif %}
+
+    <dt>When<dt>
+    <dd>
+    {% if PaymentSchedule %}
+        {{ PaymentSchedule | ToString }}
+    {% else %}
+        Today
+    {% endif %}
+    </dd>
+</dl>
+";
+        #endregion
+
         #region Attribute Keys
 
         /// <summary>
@@ -131,7 +236,21 @@ namespace RockWeb.Blocks.Finance
 
             public const string ShowScheduledTransactions = "ShowScheduledTransactions";
 
+            public const string ScheduledTransactionEditPage = "ScheduledTransactionEditPage";
+
             public const string GiftTerm = "GiftTerm";
+
+            public const string GiveButtonText = "Give Button Text";
+
+            public const string AskForCampusIfKnown = "AskForCampusIfKnown";
+
+            public const string EnableMultiAccount = "EnableMultiAccount";
+
+            public const string IntroMessage = "IntroMessage";
+
+            public const string FinishLavaTemplate = "FinishLavaTemplate";
+
+            public const string SaveAccountTitle = "SaveAccountTitle";
         }
 
         #endregion
@@ -183,13 +302,23 @@ namespace RockWeb.Blocks.Finance
                 return;
             }
 
+            BindAccounts();
+
             pnlTransactionEntry.Visible = true;
+            bool enableMultiAccount = this.GetAttributeValue( AttributeKey.EnableMultiAccount ).AsBoolean();
+            nbAccountAmountSingle.Visible = !enableMultiAccount;
+            pnlPromptForAccountSingle.Visible = !enableMultiAccount;
+            pnlPromptForAccountsMulti.Visible = enableMultiAccount;
 
             if ( this.GetAttributeValue( AttributeKey.ShowScheduledTransactions ).AsBoolean() )
             {
                 lScheduledTransactionsTitle.Text = string.Format( "Scheduled {0}", ( this.GetAttributeValue( AttributeKey.GiftTerm ) ?? "Gift" ).Pluralize() );
                 pnlScheduledTransactions.Visible = true;
                 BindScheduledTransactions();
+            }
+            else
+            {
+                pnlScheduledTransactions.Visible = false;
             }
         }
 
@@ -279,6 +408,10 @@ namespace RockWeb.Blocks.Finance
                 ShowGatewayHelp();
                 return false;
             }
+            else
+            {
+                HideGatewayHelp();
+            }
 
             var testGatewayGuid = Rock.SystemGuid.EntityType.FINANCIAL_GATEWAY_TEST_GATEWAY.AsGuid();
 
@@ -288,7 +421,7 @@ namespace RockWeb.Blocks.Finance
                 return true;
             }
 
-            pnlGatewayHelp.Visible = false;
+
             HideConfigurationMessage();
 
             return true;
@@ -307,6 +440,14 @@ namespace RockWeb.Blocks.Finance
 
             rptInstalledGateways.DataSource = installedGatewayList;
             rptInstalledGateways.DataBind();
+        }
+
+        /// <summary>
+        /// Hides the gateway help.
+        /// </summary>
+        private void HideGatewayHelp()
+        {
+            pnlGatewayHelp.Visible = false;
         }
 
         /// <summary>
@@ -361,6 +502,8 @@ namespace RockWeb.Blocks.Finance
 
             rockContext.SaveChanges();
 
+            pnlScheduledTransactions.Visible = scheduledTransactionList.Any();
+
             scheduledTransactionList = scheduledTransactionList.OrderByDescending( a => a.NextPaymentDate ).ToList();
             rptScheduledTransactions.DataSource = scheduledTransactionList;
             rptScheduledTransactions.DataBind();
@@ -381,7 +524,10 @@ namespace RockWeb.Blocks.Finance
 
             HiddenField hfScheduledTransactionId = e.Item.FindControl( "hfScheduledTransactionId" ) as HiddenField;
             Literal lScheduledTransactionTitle = e.Item.FindControl( "lScheduledTransactionTitle" ) as Literal;
+            Literal lScheduledTransactionAmountTotal = e.Item.FindControl( "lScheduledTransactionAmountTotal" ) as Literal;
+            hfScheduledTransactionId.Value = financialScheduledTransaction.Id.ToString();
             lScheduledTransactionTitle.Text = financialScheduledTransaction.TransactionFrequencyValue.Value;
+            lScheduledTransactionAmountTotal.Text = financialScheduledTransaction.TotalAmount.FormatAsCurrency();
 
             Repeater rptScheduledTransactionAccounts = e.Item.FindControl( "rptScheduledTransactionAccounts" ) as Repeater;
             rptScheduledTransactionAccounts.DataSource = financialScheduledTransaction.ScheduledTransactionDetails.ToList();
@@ -403,16 +549,142 @@ namespace RockWeb.Blocks.Finance
             lScheduledTransactionAmount.Text = financialScheduledTransactionDetail.Amount.FormatAsCurrency();
         }
 
+        /// <summary>
+        /// Handles the Click event of the btnScheduledTransactionEdit control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
         protected void btnScheduledTransactionEdit_Click( object sender, EventArgs e )
         {
-
+            var scheduledTransactionId = ( ( sender as LinkButton ).NamingContainer.FindControl( "hfScheduledTransactionId" ) as HiddenField ).Value.AsInteger();
+            NavigateToLinkedPage( AttributeKey.ScheduledTransactionEditPage, "ScheduledTransactionId", scheduledTransactionId );
         }
 
+        /// <summary>
+        /// Handles the Click event of the btnScheduledTransactionDelete control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
         protected void btnScheduledTransactionDelete_Click( object sender, EventArgs e )
         {
+            var namingContainer = ( sender as LinkButton ).NamingContainer;
+            var scheduledTransactionId = ( namingContainer.FindControl( "hfScheduledTransactionId" ) as HiddenField ).Value.AsInteger();
+            NotificationBox nbScheduledTransactionMessage = namingContainer.FindControl( "nbScheduledTransactionMessage" ) as NotificationBox;
+            Panel pnlActions = namingContainer.FindControl( "pnlActions" ) as Panel;
 
+            using ( var rockContext = new Rock.Data.RockContext() )
+            {
+                FinancialScheduledTransactionService financialScheduledTransactionService = new FinancialScheduledTransactionService( rockContext );
+                var scheduledTransaction = financialScheduledTransactionService.Get( scheduledTransactionId );
+                if ( scheduledTransaction == null )
+                {
+                    return;
+                }
+
+                scheduledTransaction.FinancialGateway.LoadAttributes( rockContext );
+
+                string errorMessage = string.Empty;
+                if ( financialScheduledTransactionService.Cancel( scheduledTransaction, out errorMessage ) )
+                {
+                    try
+                    {
+                        financialScheduledTransactionService.GetStatus( scheduledTransaction, out errorMessage );
+                    }
+                    catch
+                    {
+                        // ignore
+                    }
+
+                    rockContext.SaveChanges();
+
+                    nbConfigurationNotification.Dismissable = true;
+                    nbConfigurationNotification.NotificationBoxType = NotificationBoxType.Success;
+                    nbScheduledTransactionMessage.Text = string.Format( "Your scheduled {0} has been deleted", GetAttributeValue( AttributeKey.GiftTerm ).ToLower() );
+                    nbScheduledTransactionMessage.Visible = true;
+                    pnlActions.Enabled = false;
+                    pnlActions.Controls.OfType<LinkButton>().ToList().ForEach( a => a.Enabled = false );
+                }
+                else
+                {
+                    nbConfigurationNotification.Dismissable = true;
+                    nbConfigurationNotification.NotificationBoxType = NotificationBoxType.Default;
+                    nbScheduledTransactionMessage.Text = string.Format( "An error occurred while deleting your scheduled {0}", GetAttributeValue( AttributeKey.GiftTerm ).ToLower() );
+                    nbConfigurationNotification.Details = errorMessage;
+                    nbScheduledTransactionMessage.Visible = true;
+                    pnlActions.Enabled = false;
+                    pnlActions.Controls.OfType<LinkButton>().ToList().ForEach( a => a.Enabled = false );
+                }
+            }
         }
 
         #endregion Scheduled Gifts
+
+        #region Transaction Entry Related
+
+        private void BindAccounts()
+        {
+            var rockContext = new RockContext();
+            var selectedAccountGuids = GetAttributeValues( AttributeKey.AccountsToDisplay ).AsGuidList();
+
+            IQueryable<FinancialAccount> accountsQry;
+            var financialAccountService = new FinancialAccountService( rockContext );
+
+            if ( selectedAccountGuids.Any() )
+            {
+                accountsQry = financialAccountService.GetByGuids( selectedAccountGuids );
+            }
+            else
+            {
+                accountsQry = financialAccountService.Queryable();
+            }
+
+            // limit to active, public accounts, and don't include ones that aren't within the date range
+            accountsQry = accountsQry.Where( f =>
+                    f.IsActive &&
+                    f.IsPublic.HasValue &&
+                    f.IsPublic.Value &&
+                    ( f.StartDate == null || f.StartDate <= RockDateTime.Today ) &&
+                    ( f.EndDate == null || f.EndDate >= RockDateTime.Today ) )
+                .OrderBy( f => f.Order );
+
+            var accountsList = accountsQry.AsNoTracking().ToList();
+
+            ddlAccountSingle.Items.Clear();
+
+            foreach ( var account in accountsList )
+            {
+                ddlAccountSingle.Items.Add( new ListItem( account.PublicName, account.Id.ToString() ) );
+            }
+
+            rptPromptForAccountsMulti.DataSource = accountsList;
+            rptPromptForAccountsMulti.DataBind();
+        }
+
+        /// <summary>
+        /// Handles the ItemDataBound event of the rptPromptForAccountsMulti control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="RepeaterItemEventArgs"/> instance containing the event data.</param>
+        protected void rptPromptForAccountsMulti_ItemDataBound( object sender, RepeaterItemEventArgs e )
+        {
+            var financialAccount = e.Item.DataItem as FinancialAccount;
+            if (financialAccount == null)
+            {
+                return;
+            }
+
+            var hfAccountAmountMultiAccountId = e.Item.FindControl( "hfAccountAmountMultiAccountId" ) as HiddenField;
+            var nbAccountAmountMulti = e.Item.FindControl( "nbAccountAmountMulti" ) as CurrencyBox;
+
+            hfAccountAmountMultiAccountId.Value = financialAccount.Id.ToString();
+            nbAccountAmountMulti.Label = financialAccount.PublicName;
+        }
+
+        protected void btnFrequency_SelectionChanged( object sender, EventArgs e )
+        {
+
+        }
+
+        #endregion Transaction Entry Related
     }
 }
