@@ -91,24 +91,27 @@ namespace Rock.Apps.CheckScannerUtility
                 var rangerScannerHostPage = new RangerScannerHostPage();
                 this.rangerScanner = rangerScannerHostPage.rangerScanner;
                 SetCaputureAmountOnScan();
-                this.rangerScanner.TransportNewState += rangerScanner_TransportNewState;
-                this.rangerScanner.TransportChangeOptionsState += rangerScanner_TransportChangeOptionsState;
+                if ( rockConfig.ScannerInterfaceType == RockConfig.InterfaceType.RangerApi )
+                {
+                     this.rangerScanner.TransportNewState += rangerScanner_TransportNewState;
+                    this.rangerScanner.TransportChangeOptionsState += rangerScanner_TransportChangeOptionsState;
 
-                // debug output only
-                this.rangerScanner.TransportEnablingOptionsState += rangerScannerHostPage.rangerScanner_TransportEnablingOptionsState;
-                this.rangerScanner.TransportExceptionComplete += rangerScannerHostPage.rangerScanner_TransportExceptionComplete;
-                this.rangerScanner.TransportInExceptionState += rangerScannerHostPage.rangerScanner_TransportInExceptionState;
+                    // debug output only
+                    this.rangerScanner.TransportEnablingOptionsState += rangerScannerHostPage.rangerScanner_TransportEnablingOptionsState;
+                    this.rangerScanner.TransportExceptionComplete += rangerScannerHostPage.rangerScanner_TransportExceptionComplete;
+                    this.rangerScanner.TransportInExceptionState += rangerScannerHostPage.rangerScanner_TransportInExceptionState;
 
-                this.rangerScanner.TransportItemInPocket += rangerScannerHostPage.rangerScanner_TransportItemInPocket;
-                this.rangerScanner.TransportItemSuspended += rangerScannerHostPage.rangerScanner_TransportItemSuspended;
-                this.rangerScanner.TransportOverrideOptions += rangerScannerHostPage.rangerScanner_TransportOverrideOptions;
-                this.rangerScanner.TransportPassthroughEvent += rangerScannerHostPage.rangerScanner_TransportPassthroughEvent;
-                this.rangerScanner.TransportReadyToFeedState += rangerScannerHostPage.rangerScanner_TransportReadyToFeedState;
-                this.rangerScanner.TransportReadyToSetEndorsement += rangerScannerHostPage.rangerScanner_TransportReadyToSetEndorsement;
-                this.rangerScanner.TransportShuttingDownState += rangerScannerHostPage.rangerScanner_TransportShuttingDownState;
-                this.rangerScanner.TransportShutDownState += rangerScannerHostPage.rangerScanner_TransportShutDownState;
-                this.rangerScanner.TransportStartingUpState += rangerScannerHostPage.rangerScanner_TransportStartingUpState;
-                this.rangerScanner.TransportTrackIsClear += rangerScannerHostPage.rangerScanner_TransportTrackIsClear;
+                    this.rangerScanner.TransportItemInPocket += rangerScannerHostPage.rangerScanner_TransportItemInPocket;
+                    this.rangerScanner.TransportItemSuspended += rangerScannerHostPage.rangerScanner_TransportItemSuspended;
+                    this.rangerScanner.TransportOverrideOptions += rangerScannerHostPage.rangerScanner_TransportOverrideOptions;
+                    this.rangerScanner.TransportPassthroughEvent += rangerScannerHostPage.rangerScanner_TransportPassthroughEvent;
+                    this.rangerScanner.TransportReadyToFeedState += rangerScannerHostPage.rangerScanner_TransportReadyToFeedState;
+                    this.rangerScanner.TransportReadyToSetEndorsement += rangerScannerHostPage.rangerScanner_TransportReadyToSetEndorsement;
+                    this.rangerScanner.TransportShuttingDownState += rangerScannerHostPage.rangerScanner_TransportShuttingDownState;
+                    this.rangerScanner.TransportShutDownState += rangerScannerHostPage.rangerScanner_TransportShutDownState;
+                    this.rangerScanner.TransportStartingUpState += rangerScannerHostPage.rangerScanner_TransportStartingUpState;
+                    this.rangerScanner.TransportTrackIsClear += rangerScannerHostPage.rangerScanner_TransportTrackIsClear;
+                }
             }
             catch
             {
@@ -537,6 +540,7 @@ namespace Rock.Apps.CheckScannerUtility
             this.shapeStatus.Fill = new SolidColorBrush( statusColor );
 
             ScanningPage.ShowScannerStatus( connected ? RangerTransportStates.TransportReadyToFeed : RangerTransportStates.TransportShutDown, statusColor, status );
+            CaptureAmountScanningPage.ShowScannerStatus( connected ? RangerTransportStates.TransportReadyToFeed : RangerTransportStates.TransportShutDown, statusColor, status );
         }
 
         /// <summary>
@@ -715,6 +719,7 @@ namespace Rock.Apps.CheckScannerUtility
             }
 
             ScannerFeederType = FeederType.SingleItem;
+
             return true;
         }
 
@@ -759,7 +764,7 @@ namespace Rock.Apps.CheckScannerUtility
         public void NavigateToOptionsPage()
         {
             var optionsPage = new OptionsPage( this );
-            this.NavigationService.Navigate( optionsPage );
+            ScanningPageUtility.batchPage.NavigationService.Navigate( optionsPage );
         }
 
         /// <summary>

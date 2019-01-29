@@ -472,6 +472,8 @@ namespace Rock.Apps.CheckScannerUtility
         /// <param name="e">The <see cref="RoutedEventArgs"/> instance containing the event data.</param>
         private void Page_Loaded( object sender, RoutedEventArgs e )
         {
+            lblMagTekCommPort.Visibility = Visibility.Collapsed;
+            cboMagTekCommPort.Visibility = Visibility.Collapsed;
             ShowDetail();
         }
 
@@ -512,7 +514,8 @@ namespace Rock.Apps.CheckScannerUtility
                         // show Image Option only for Ranger
                         lblImageOption.Visibility = Visibility.Visible;
                         cboImageOption.Visibility = Visibility.Visible;
-
+                        lblMagTekCommPort.Visibility = Visibility.Collapsed;
+                        cboMagTekCommPort.Visibility = Visibility.Collapsed;
                         // show Sensitivity/Plurality Option only for Ranger
                         lblAdvancedInfo.Visibility = Visibility.Visible;
                         lblSensitivity.Visibility = Visibility.Visible;
@@ -547,7 +550,8 @@ namespace Rock.Apps.CheckScannerUtility
 
         private void Page_SizeChanged( object sender, SizeChangedEventArgs e )
         {
-            this.sp_ScannerSettings.Height = this.ActualHeight - 400;
+
+            this.icAccountsForBatches.Height = sp_ScannerSettings.Height - 60;
         }
     }
 }

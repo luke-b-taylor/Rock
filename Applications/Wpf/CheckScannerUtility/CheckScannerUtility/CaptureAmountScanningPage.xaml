@@ -65,15 +65,15 @@
                                         Name="lblScanItemCountInfo"
                                         Style="{StaticResource labelStyleHighlightInfo}"
                                         HorizontalAlignment="Right" />
-                    <StackPanel Name="spAlertMessage" Visibility="Visible"  HorizontalAlignment="Stretch"  VerticalAlignment="Top">
-                        <Label Name="lblAlertCaptionMessage"  Visibility="Visible" />
+                    <StackPanel Name="spAlertMessage" Visibility="Collapsed"  HorizontalAlignment="Stretch"  VerticalAlignment="Top">
+                        <Label Name="lblAlertCaptionMessage"  Visibility="Collapsed" />
                         <Border Name="borderAlertBorder"  Margin="10,0,10,0">
                             <StackPanel>
                                 <StackPanel Name="spAlert" Visibility="Visible" >
                                     <Label Name="lblAlertCaption" HorizontalAlignment="Left" Visibility="Visible"/>
                                     <Label Name="lblAlertSubMessage" Visibility="Visible" BorderThickness="0" Background="Transparent"/>
                                 </StackPanel>
-                                <StackPanel Name="pnlPromptForUpload" Margin="5" Visibility="Visible">
+                                <StackPanel Name="pnlPromptForUpload" Margin="5" Visibility="Collapsed">
                                     <StackPanel Orientation="Horizontal"
                                 HorizontalAlignment="Center">
                                         <Button Margin="8"
@@ -326,6 +326,7 @@
                 <Border Grid.Column="0"  BorderBrush="{StaticResource BorderBrush}"  BorderThickness="1,0,0,0" Width="40">
                     <Button  x:Name="btnTools"
                             ToolTip="Options"
+                            TabIndex="300"
                             Style="{StaticResource WindowButton}"
                             HorizontalAlignment="Stretch"
                             VerticalAlignment="Center"

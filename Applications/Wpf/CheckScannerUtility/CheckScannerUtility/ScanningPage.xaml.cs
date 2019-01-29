@@ -119,7 +119,11 @@ namespace Rock.Apps.CheckScannerUtility
             {
                 scannedDocInfo.Duplicate = true;
                 scannedDocInfo.Upload = false;
-                this.DisplayMessage( "Warning", mainMessage: "A check with the same account information and check number has already been scanned." );
+                var message = @"A check with the same account information and check number has already been scanned.
+                                    Click 'Skip' to reject this check.    
+                                    Click 'Upload' to upload the check as-is.";
+                this.DisplayMessage( "Warning", mainMessage: message );
+
                 ShowUploadWarnings( scannedDocInfo );
             }
 
@@ -128,6 +132,10 @@ namespace Rock.Apps.CheckScannerUtility
                 var uploaded= ScanningPageUtility.UploadScannedItem( scannedDocInfo, ( x ) => { lblScanItemUploadSuccess.Visibility = Visibility.Visible; } );
                 if ( uploaded )
                 {
+                    if ( _interfaceType == RockConfig.InterfaceType.MICRImageRS232 )
+                    {
+                        DisplayMessage( "Warning", "labelStyleBannerTitle", "Ready to scan next check" );
+                    }
                     this.ShowUploadSuccess();
                 }
                 if ( ScanningPageUtility.KeepScanning )
@@ -153,6 +161,7 @@ namespace Rock.Apps.CheckScannerUtility
            var uploaded = ScanningPageUtility.UploadScannedItem( scannedDocInfo );
             if ( uploaded )
             {
+                this.ShowStartupPage();
                 this.ShowUploadSuccess();
             }
             if ( this._interfaceType == RockConfig.InterfaceType.RangerApi )
@@ -297,6 +306,11 @@ namespace Rock.Apps.CheckScannerUtility
         /// <param name="e">The <see cref="RoutedEventArgs"/> instance containing the event data.</param>
         private void Page_Loaded( object sender, RoutedEventArgs e )
         {
+            // Image safe is a manual feed so Stop button not Required
+            if ( _interfaceType == RockConfig.InterfaceType.MagTekImageSafe )
+            {
+                this.btnStopScanning.Visibility = Visibility.Collapsed;
+            }
             var rockConfig = RockConfig.Load();
             this._interfaceType = rockConfig.ScannerInterfaceType;
             this.spRoutingInfo.Visibility = Visibility.Collapsed;
@@ -328,8 +342,7 @@ namespace Rock.Apps.CheckScannerUtility
             {
                 grdImageThumbnailsButtons.Visibility = Visibility.Collapsed;
                 DisplayMessage( "Warning", "labelStyleBannerTitle", "Ready to scan next check" );
-                btnStart.Visibility = Visibility.Collapsed;
-                btnStopScanning.Visibility = Visibility.Collapsed;
+                btnStart.Visibility = Visibility.Collapsed; 
                 return;
             }
 
@@ -337,6 +350,7 @@ namespace Rock.Apps.CheckScannerUtility
             {
                 grdImageThumbnailsButtons.Visibility = Visibility.Collapsed;
                 DisplayMessage( "Warning", "labelStyleBannerTitle", "Click Start to begin" );
+                btnStopScanning.Visibility = Visibility.Collapsed;
                 btnStart.IsEnabled = true;
                 return;
             }
@@ -966,7 +980,7 @@ namespace Rock.Apps.CheckScannerUtility
         private void HideDisplayMessage()
         {
             this.spRoutingInfo.Visibility = Visibility.Collapsed;
-           // this.spAlertMessage.Visibility = Visibility.Collapsed;
+           this.spAlertMessage.Visibility = Visibility.Collapsed;
         }
         private void DisplayMessage( string messageType, string captionstyleKey = "", string captionMessage = "", string mainMessageStyleKey = "", string mainMessage = "" )
         {

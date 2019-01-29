@@ -57,7 +57,7 @@
                         </StackPanel>
                     </Border>
                 </StackPanel>
-                <StackPanel Name="sp_ScannerSettings"  Margin="5" Grid.Row="1" Grid.Column="0">
+                <StackPanel Name="sp_ScannerSettings" HorizontalAlignment="Stretch" MinHeight="350" VerticalAlignment="Stretch" Margin="5" Grid.Row="1" Grid.Column="0">
                     <Label Style="{StaticResource labelStyle}">Rock URL</Label>
                     <TextBox Name="txtRockUrl"
                          Style="{StaticResource textboxStyleUrl}" />
@@ -131,7 +131,7 @@
                         <StackPanel VerticalAlignment="Stretch"  HorizontalAlignment="Stretch" Height="365">
                             <Label Name="lblCapturingAccountAmounts"
                                  Style="{StaticResource labelStyle}">Accounts for Capturing Batches</Label>
-                            <TreeView x:Name="icAccountsForBatches" Margin="0,5,0,0" BorderThickness="0" Height="365" ScrollViewer.VerticalScrollBarVisibility="Auto">
+                            <TreeView x:Name="icAccountsForBatches" Margin="0,5,40,0" BorderThickness="0" Height="300" ScrollViewer.VerticalScrollBarVisibility="Auto">
                                 <TreeView.ItemContainerStyle>
                                     <Style>
                                         <Setter Property="TreeViewItem.IsExpanded" Value="True"/>
