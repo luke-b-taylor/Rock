@@ -390,6 +390,7 @@
     <Compile Include="Field\Types\AssetFieldType.cs" />
     <Compile Include="Field\Types\AssetStorageProviderFieldType.cs" />
     <Compile Include="Jobs\PostV90DataMigrations.cs" />
+    <Compile Include="Financial\IWebhookGatewayComponent.cs" />
     <Compile Include="Lava\Shortcodes\ScheduledContent.cs" />
     <Compile Include="Financial\AutomatedPaymentProcessor.cs" />
     <Compile Include="Financial\AutomatedPaymentArgs.cs" />
@@ -417,6 +418,7 @@
     <Compile Include="CheckIn\CheckInEditFamilyBlock.cs">
       <SubType>ASPXCodeBehind</SubType>
     </Compile>
+    <Compile Include="CheckIn\CheckInMessage.cs" />
     <Compile Include="CheckIn\CheckInSearchBlock.cs">
       <SubType>ASPXCodeBehind</SubType>
     </Compile>
@@ -440,6 +442,7 @@
     <Compile Include="Plugin\HotFixes\058_CheckinRegistration.cs" />
     <Compile Include="Plugin\HotFixes\062_MigrationRollupsForV8_7.cs" />
     <Compile Include="Plugin\HotFixes\061_MigrationRollupsForV8_6_2.cs" />
+    <Compile Include="Plugin\HotFixes\063_WhitelistBlacklist.cs" />
     <Compile Include="Plugin\HotFixes\HotFixMigrationResource.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
