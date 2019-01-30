@@ -41,11 +41,19 @@ namespace Rock.Apps.CheckScannerUtility
         private ScannedDocInfo _currentscannedDocInfo = null;
         private bool _isDoubleSided = false;
         private RockConfig.InterfaceType _interfaceType;
+        private ScannedDocInfo _currentMagtekScannedDoc { get; set; }
 
-
+        #region Public Properties
+        /// <summary>
+        /// Gets or sets the display account values context.
+        /// </summary>
+        /// <value>
+        /// The display account values context.
+        /// </value>
         public ObservableCollection<DisplayAccountValueModel> _displayAccountValuesContext { get; set; }
+        #endregion
 
-
+        #region Initialize
         /// <summary>
         /// Initializes a new instance of the <see cref="CaptureAmountScanningPage"/> class.
         /// </summary>
@@ -72,11 +80,12 @@ namespace Rock.Apps.CheckScannerUtility
             }
 
         }
+
         /// <summary>
         /// Handles the Loaded event of the Page control.
         /// </summary>
         /// <param name="sender">The source of the event.</param>
-        /// <param name="e">The <see cref="RoutedEventArgs"/> instance containing the event data.</param>
+        /// <param name="e">The <see cref="RoutedEventArgs" /> instance containing the event data.</param>
         private void Page_Loaded( object sender, RoutedEventArgs e )
         {
 
@@ -113,6 +122,9 @@ namespace Rock.Apps.CheckScannerUtility
             }
         }
 
+        /// <summary>
+        /// Initializes the controls.
+        /// </summary>
         private void InitalizeControls()
         {
 
@@ -124,6 +136,10 @@ namespace Rock.Apps.CheckScannerUtility
             this.grdImageThumbnailsButtons.Visibility = Visibility.Collapsed;
         }
 
+        /// <summary>
+        /// Synchronizes any existing transaction.
+        /// Reads in transactions from Batch details 
+        /// </summary>
         private void SyncAnyExistingTransaction()
         {
             decimal sum = 0;
@@ -160,103 +176,103 @@ namespace Rock.Apps.CheckScannerUtility
 
         }
 
-        private void ShowUploadSuccess()
-        {
-            lblScanItemUploadSuccess.Visibility = Visibility.Visible;
-
-            pnlPromptForUpload.Visibility = Visibility.Collapsed;
-        }
-
-        private void ShowUploadStats()
-        {
-            List<string> statsList = new List<string>();
-            if ( ScanningPageUtility.ItemsUploaded > 0 )
-            {
-                statsList.Add( string.Format( "Uploaded: {0}", ScanningPageUtility.ItemsUploaded ) );
-            }
-
-            if ( ScanningPageUtility.ItemsSkipped > 0 )
-            {
-                statsList.Add( string.Format( "Skipped: {0}", ScanningPageUtility.ItemsSkipped ) );
-            }
-
-            lblScanItemCountInfo.Visibility = statsList.Any() ? Visibility.Visible : Visibility.Collapsed;
-            lblScanItemCountInfo.Content = string.Join( ", ", statsList );
-        }
         /// <summary>
-        /// Displays the scanned document information.
+        /// Initializes the first scan.
         /// </summary>
-        /// <param name="scannedDocInfo">The scanned document information.</param>
-        private void DisplayScannedDocInfo( ScannedDocInfo scannedDocInfo )
+        private void InitializeFirstScan()
         {
-            if ( scannedDocInfo.FrontImageData != null )
+            var rockConfig = RockConfig.Load();
+            if ( rockConfig.ScannerInterfaceType == RockConfig.InterfaceType.RangerApi )
             {
-                spCheckDisplay.Visibility = Visibility.Visible;
-                if ( _interfaceType != RockConfig.InterfaceType.MagTekImageSafe )
-                {
-                    this.lblAlertCaptionMessage.Visibility = Visibility.Collapsed;
-                }
-
+                ScanningPageUtility.KeepScanning = true;
                 lvAccounts.IsEnabled = true;
-                BitmapImage bitmapImageFront = new BitmapImage();
-                bitmapImageFront.BeginInit();
-                bitmapImageFront.StreamSource = new MemoryStream( scannedDocInfo.FrontImageData );
-                bitmapImageFront.EndInit();
-                imgCheckFront.Source = bitmapImageFront;
-                imgFrontThumb.Source = bitmapImageFront;
-                Rock.Wpf.WpfHelper.FadeIn( imgCheckFront, 100 );
+                ScanningPageUtility.ResumeScanning();
+                btnNext.IsEnabled = false;
             }
-            else
-            {
-                imgCheckFront.Source = null;
-            }
+        }
+        #endregion
 
-            if ( scannedDocInfo.BackImageData != null )
-            {
-                this._isDoubleSided = true;
-                grdImageThumbnailsButtons.Visibility = Visibility.Visible;
-                BitmapImage bitmapImageBack = new BitmapImage();
-                bitmapImageBack.BeginInit();
-                bitmapImageBack.StreamSource = new MemoryStream( scannedDocInfo.BackImageData );
-                bitmapImageBack.EndInit();
-                imgCheckBack.Source = bitmapImageBack;
-                Rock.Wpf.WpfHelper.FadeIn( imgBackThumb, 100 );
-            }
-            else
-            {
-                this._isDoubleSided = false;
-                grdImageThumbnailsButtons.Visibility = Visibility.Collapsed;
+        #region Button Click Events
 
-            }
-
-            if ( scannedDocInfo.IsCheck )
-            {
-                CheckImages.Visibility = Visibility.Visible;
-                this.lblRoutingAccountValue.Content = string.Format( "{0} / {1}", scannedDocInfo.RoutingNumber, scannedDocInfo.AccountNumber );
-                lblOtherData.Content = scannedDocInfo.OtherData;
-                spOtherData.Visibility = !string.IsNullOrWhiteSpace( scannedDocInfo.OtherData ) ? Visibility.Visible : Visibility.Collapsed;
-                lblCheckNumber.Content = scannedDocInfo.CheckNumber;
-                lblOtherData.Content = scannedDocInfo.OtherData;
-            }
-            lvAccounts.SelectedIndex = 1;
-            lvAccounts.SelectedIndex = 0;
+        /// <summary>
+        /// Handles the Click event of the BtnClose control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="System.Windows.RoutedEventArgs"/> instance containing the event data.</param>
+        private void BtnClose_Click( object sender, System.Windows.RoutedEventArgs e )
+        {
+            this.NavigationService.Navigate( ScanningPageUtility.batchPage );
         }
 
-        private double GetImageWidth()
+        /// <summary>
+        /// Handles the Click event of the BtnComplete control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="System.Windows.RoutedEventArgs"/> instance containing the event data.</param>
+        private void BtnComplete_Click( object sender, System.Windows.RoutedEventArgs e )
         {
-            if ( _isDoubleSided )
-            {
-                return this.RenderSize.Width * .6;
-            }
-            return this.RenderSize.Width * .9;
+            ScanningPageUtility.batchPage.NavigationService.Navigate( ScanningPageUtility.batchPage );
+
         }
 
-
-        private void ShowNoAmountMessage()
+        /// <summary>
+        /// Handles the Click event of the BtnNext control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="System.Windows.RoutedEventArgs"/> instance containing the event data.</param>
+        private void BtnNext_Click( object sender, System.Windows.RoutedEventArgs e )
         {
-            MessageBox.Show( "No values have been entered", "No Amount Entered", MessageBoxButton.OK );
-            lvAccounts.SelectedIndex = 1;
-            lvAccounts.SelectedIndex = 0;
+
+            if ( !HasAmount() && this.lblAlertCaption.Visibility != Visibility.Visible )
+            {
+                ShowNoAmountMessage();
+                return;
+            }
+
+            HandleCurrentDocInfo( () =>
+             {
+                 this._currentscannedDocInfo = null;
+                 this.ResetUIForNextScan();
+                 var remainingItemsToScan = ScanningPageUtility.ItemsToProcess - ScanningPageUtility.ItemsUploaded;
+                 if ( remainingItemsToScan > 0 )
+                 {
+                     if ( _interfaceType == RockConfig.InterfaceType.MICRImageRS232 )
+                     {
+                         ShowStartupPage();
+                     }
+                     if ( _interfaceType == RockConfig.InterfaceType.MagTekImageSafe )
+                     {
+                         ScanningPageUtility.batchPage.ImageSafe.ProcessDocument();
+                     }
+                     else
+                     {
+                         ScanningPageUtility.ResumeScanning();
+                     }
+
+                 }
+             } );
+
+        }
+
+        /// <summary>
+        /// Handles the Click event of the BtnImageToggle_FrontBack control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="RoutedEventArgs"/> instance containing the event data.</param>
+        private void BtnImageToggle_FrontBack_Click( object sender, RoutedEventArgs e )
+        {
+            var parameter = ( ( Button ) e.OriginalSource ).CommandParameter;
+            switch ( parameter )
+            {
+                case "Front":
+                    this.imgCheckBack.Visibility = Visibility.Collapsed;
+                    this.imgCheckFront.Visibility = Visibility.Visible;
+                    break;
+                case "Back":
+                    this.imgCheckBack.Visibility = Visibility.Visible;
+                    this.imgCheckFront.Visibility = Visibility.Collapsed;
+                    break;
+            }
         }
         private void BtnIgnoreAndUpload_Click( object sender, RoutedEventArgs e )
         {
@@ -267,8 +283,8 @@ namespace Rock.Apps.CheckScannerUtility
             }
 
             HideUploadWarningPrompts();
-        
-  
+
+
 
             var scannedDocInfo = ScanningPageUtility.ConfirmUploadBadScannedDoc;
             scannedDocInfo.Upload = true;
@@ -295,24 +311,21 @@ namespace Rock.Apps.CheckScannerUtility
             }
         }
 
-        private bool HasAmount()
+        /// <summary>
+        /// Handles the Click event of the btnOptions control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="RoutedEventArgs"/> instance containing the event data.</param>
+        private void btnOptions_Click( object sender, RoutedEventArgs e )
         {
-            foreach ( DisplayAccountValueModel account in lvAccounts.Items )
-            {
-                if ( account.Amount != null && account.Amount > 0 )
-                {
-                    return true;
-
-                }
-            }
-            return false;
+            ScanningPageUtility.batchPage.NavigateToOptionsPage();
         }
 
         /// <summary>
         /// Handles the Click event of the BtnSkipAndContinue control.
         /// </summary>
         /// <param name="sender">The source of the event.</param>
-        /// <param name="e">The <see cref="RoutedEventArgs"/> instance containing the event data.</param>
+        /// <param name="e">The <see cref="RoutedEventArgs" /> instance containing the event data.</param>
         private void BtnSkipAndContinue_Click( object sender, RoutedEventArgs e )
         {
             HideUploadWarningPrompts();
@@ -352,356 +365,6 @@ namespace Rock.Apps.CheckScannerUtility
             {
                 ScanningPageUtility.ResumeScanning();
             }
-        }
-
-        internal void rangerScanner_TransportIsDead( object sender, EventArgs e )
-        {
-            ScanningPageUtility.rangerScanner_TransportIsDead( sender, e, () => { DisplayMessage( "Warning", "labelStyleBannerTitle", "Click Next to begin", "labelStyleAlert", "Scanner is not ready. Verify that the scanner is powered on and connected." ); } );
-        }
-
-        /// <summary>
-        /// Adds the scanned doc to a history of scanned docs, and shows info and status.
-        /// </summary>
-        /// <param name="scannedDocInfo">The scanned check info.</param>
-        public void ShowScannedDocStatusAndUpload( ScannedDocInfo scannedDocInfo )
-        {
-
-            DisplayScannedDocInfo( scannedDocInfo );
-
-            var rockConfig = RockConfig.Load();
-
-            bool scanningChecks = rockConfig.TenderTypeValueGuid.AsGuid() == Rock.Client.SystemGuid.DefinedValue.CURRENCY_TYPE_CHECK.AsGuid();
-
-            // if they don't enable smart scan, don't warn about bad micr's. For example, they might be scanning a mixture of checks and envelopes
-            if ( rockConfig.EnableSmartScan )
-            {
-                if ( scannedDocInfo.BadMicr )
-                {
-                    string message;
-                    if ( rockConfig.ScannerInterfaceType == RockConfig.InterfaceType.RangerApi )
-                    {
-
-                        message = @"Unable to read check information
-                                Click 'Skip' to reject this check and continue scanning.
-                                To retry this check, put the check back into the feed tray.
-
-                                Click 'Upload' to upload the check as-is.
-                                Click 'Stop' to reject this check and stop scanning.";
-                    }
-                    else
-                    {
-                        message = @"Unable to read check information
-                                    Click 'Skip' to reject this check.    
-                                    Click 'Upload' to upload the check as-is.";
-
-                    }
-
-                    this.DisplayMessage( "Warning", mainMessageStyleKey: "WarningTextStyle", mainMessage: message );
-                    ShowUploadWarnings( scannedDocInfo );
-
-                }
-            }
-            else
-            {
-                // if Enable Smart Scan is disabled, upload even if there is a bad or missing MICR
-                if ( !scannedDocInfo.Upload )
-                {
-                    scannedDocInfo.Upload = true;
-                }
-            }
-
-            if ( scannedDocInfo.Upload && ScanningPageUtility.IsDuplicateScan( scannedDocInfo ) )
-            {
-                scannedDocInfo.Duplicate = true;
-                scannedDocInfo.Upload = false;
-                this.DisplayMessage( "Warning", mainMessageStyleKey: "labelStyleAlertInfo", mainMessage: "A check with the same account information and check number has already been scanned." );
-                ShowUploadWarnings( scannedDocInfo );
-            }
-
-            if ( scannedDocInfo.Upload )
-            {
-                this._currentscannedDocInfo = scannedDocInfo;
-            }
-            else
-            {
-                ShowUploadWarnings( scannedDocInfo );
-            }
-        }
-
-
-        /// <summary>
-        /// Hides the warnings messages and prompts
-        /// </summary>
-        private void HideUploadWarningPrompts( bool hideWarningMessages = true )
-        {
-            if ( !hideWarningMessages )
-            {
-                btnNext.IsEnabled = false;
-            }
-
-            borderAlertBorder.Visibility = Visibility.Collapsed;
-            lblScanItemUploadSuccess.Visibility = Visibility.Collapsed;
-            pnlPromptForUpload.Visibility = Visibility.Collapsed;
-            this.spCheckDisplay.Visibility = Visibility.Collapsed;
-        }
-        /// <summary>
-        /// Initializes the first scan.
-        /// When the page loads an initial check will be scanned then paused to allow
-        /// user to enter in Amount and Select Next button to proceed.
-        /// </summary>
-        private void InitializeFirstScan()
-        {
-            var rockConfig = RockConfig.Load();
-            if ( rockConfig.ScannerInterfaceType == RockConfig.InterfaceType.RangerApi )
-            {
-                ScanningPageUtility.KeepScanning = true;
-                lvAccounts.IsEnabled = true;
-                ScanningPageUtility.ResumeScanning();
-                btnNext.IsEnabled = false;
-            }
-        }
-
-
-        /// <summary>
-        /// Loads the account information.
-        /// GetData api/FinancialAccounts
-        /// </summary>
-        private void LoadAccountInfo()
-        {
-            RockConfig rockConfig = RockConfig.Load();
-            InitializeProgressBarsOfSelectedBatch( rockConfig );
-            var client = new RockRestClient( rockConfig.RockBaseUrl );
-            client.Login( rockConfig.Username, rockConfig.Password );
-            var allAccounts = client.GetData<List<FinancialAccount>>( "api/FinancialAccounts" );
-            LoadFilteredAccountsIntoListView( allAccounts, rockConfig );
-
-        }
-
-        private void InitializeProgressBarsOfSelectedBatch( RockConfig rockConfig )
-        {
-
-            ScanningPageUtility.TotalAmountScanned = 0;
-            var selectedBatch = ScanningPageUtility.batchPage.SelectedFinancialBatch;
-
-            if ( ScanningPageUtility.batchPage.SelectedFinancialBatch != null )
-            {
-                if ( rockConfig.RequireControlAmount )
-                {
-
-                    ScanningPageUtility.BatchAmount = selectedBatch.ControlAmount;
-                    this.pbControlAmounts.Minimum = 0;
-                    this.pbControlAmounts.Maximum = 100;
-                    this.spControlAmountProgressBar.Visibility = Visibility.Visible;
-
-                }
-                else
-                {
-                    this.spControlAmountProgressBar.Visibility = Visibility.Collapsed;
-
-                }
-
-                if ( rockConfig.RequireControlItemCount )
-                {
-                    //Control Amount
-                    ScanningPageUtility.BatchAmount = selectedBatch.ControlAmount;
-                    //Control Item Count
-                    ScanningPageUtility.ItemsToProcess = selectedBatch.ControlItemCount;
-                    this.pbControlItems.Minimum = 0;
-                    this.pbControlItems.Maximum = ScanningPageUtility.ItemsToProcess != null ? ( int ) ScanningPageUtility.ItemsToProcess : 0;
-                    this.spControlItemProgressbar.Visibility = Visibility.Visible;
-                    this.UpdateProgressBarLegend();
-                }
-                else
-                {
-                    this.spControlItemProgressbar.Visibility = Visibility.Collapsed;
-                }
-            }
-
-        }
-
-        internal void ShowScannerStatus( RangerTransportStates xportState, Color statusColor, string status )
-        {
-            
-            ScanningPageUtility.ShowScannerStatus( xportState, statusColor, status, ref this.shapeStatus );
-        }
-
-        /// <summary>
-        /// Updates the progress bar legend.
-        /// </summary>
-        private void UpdateProgressBarLegend()
-        {
-            var remainingItems = ScanningPageUtility.ItemsToProcess - ScanningPageUtility.ItemsUploaded;
-            if ( spControlItemProgressbar.Visibility == Visibility.Visible )
-            {
-                //Control Items
-                this.lblItemScannedValue.Content = string.Format( "{0} of {1}", ScanningPageUtility.ItemsUploaded, ScanningPageUtility.ItemsToProcess );
-
-            }
-
-            if ( spControlAmountProgressBar.Visibility == Visibility.Visible )
-            {
-                var currentTotals = ScanningPageUtility.TotalAmountScanned + SumAllAccountEntries();
-                if ( ScanningPageUtility.TotalAmountScanned > ScanningPageUtility.BatchAmount )
-                {
-                    pbControlAmounts.Value = 100;
-                    SetAmountlegendInvalid( true );
-                }
-
-                var amountRemaining = string.Format( new System.Globalization.CultureInfo( "en-US" ), "{0:C}", ScanningPageUtility.BatchAmount - ScanningPageUtility.TotalAmountScanned );
-                var currentTotal = string.Format( new System.Globalization.CultureInfo( "en-US" ), "{0:C}", currentTotals );
-                this.lblAmountRemaininValue.Content = string.Format( "{0} of {1}", currentTotal, amountRemaining );
-            }
-
-            if ( remainingItems == 0 )
-            {
-                if ( ScanningPageUtility.BatchAmount != ScanningPageUtility.TotalAmountScanned )
-                {
-                    SetAmountlegendInvalid( true );
-                }
-
-                this.pbControlAmounts.Value = 100;
-                this.btnComplete.Visibility = Visibility.Visible;
-                this.btnNext.Visibility = Visibility.Hidden;
-                ScanningPageUtility.KeepScanning = false;
-            }
-        }
-
-        private void SetAmountlegendInvalid( bool isInvalid )
-        {
-            var defaultbrush = ( SolidColorBrush ) ( new BrushConverter().ConvertFrom( "#ee7725" ) );
-            lblAmountRemaininValue.Foreground = isInvalid ? Brushes.Red : defaultbrush;
-            pbControlAmounts.Foreground = isInvalid ? Brushes.Red : defaultbrush;
-        }
-
-        /// <summary>
-        /// Filters the accounts by configured.
-        /// Returns only the values checked in the Rock config settings
-        /// </summary>
-        /// <param name="allAccounts">All accounts.</param>
-        /// <param name="rockConfig">The rock configuration.</param>
-        private void LoadFilteredAccountsIntoListView( List<FinancialAccount> allAccounts, RockConfig rockConfig )
-        {
-            var filteredAccounts = allAccounts.Where( a => rockConfig.SelectedAccountForAmountsIds.Contains( a.Id ) );
-            var displayAccountValues = new ObservableCollection<DisplayAccountValueModel>();
-            int index = 0;
-            foreach ( var account in filteredAccounts )
-            {
-
-                displayAccountValues.Add( new DisplayAccountValueModel { Account = account, AccountDisplayName = account.Name, Index = index } );
-                index++;
-            }
-
-            this._displayAccountValuesContext = displayAccountValues;
-            lvAccounts.ItemsSource = this._displayAccountValuesContext;
-            lvAccounts.SelectedIndex = 0;
-            lvAccounts.Visibility = Visibility.Visible;
-
-        }
-
-
-        private decimal SumAllAccountEntries()
-        {
-            decimal sum = 0;
-            if ( this._displayAccountValuesContext != null )
-            {
-                foreach ( DisplayAccountValueModel accountValue in this._displayAccountValuesContext )
-                {
-                    if ( accountValue.Amount != null )
-                    {
-                        sum += ( decimal ) accountValue.Amount;
-                    }
-                }
-                ScanningPageUtility.TotalAmountScanned += sum;
-            }
-            return sum;
-        }
-
-        #region Button Click Events
-
-        private void BtnClose_Click( object sender, System.Windows.RoutedEventArgs e )
-        {
-            this.NavigationService.Navigate( ScanningPageUtility.batchPage );
-        }
-
-        private void BtnComplete_Click( object sender, System.Windows.RoutedEventArgs e )
-        {
-            ScanningPageUtility.batchPage.NavigationService.Navigate( ScanningPageUtility.batchPage );
-
-        }
-
-        private void BtnNext_Click( object sender, System.Windows.RoutedEventArgs e )
-        {
-
-            if ( !HasAmount() && this.lblAlertCaption.Visibility != Visibility.Visible )
-            {
-                ShowNoAmountMessage();
-                return;
-            }
-
-            HandleCurrentDocInfo( () =>
-             {
-                 this._currentscannedDocInfo = null;
-                 this.ResetUIForNextScan();
-                 var remainingItemsToScan = ScanningPageUtility.ItemsToProcess - ScanningPageUtility.ItemsUploaded;
-                 if ( remainingItemsToScan > 0 )
-                 {
-                     if ( _interfaceType == RockConfig.InterfaceType.MICRImageRS232 )
-                     {
-                         ShowStartupPage();
-                     }
-                     if ( _interfaceType == RockConfig.InterfaceType.MagTekImageSafe )
-                     {
-                         ScanningPageUtility.batchPage.ImageSafe.ProcessDocument();
-                     }
-                     else
-                     {
-                         ScanningPageUtility.ResumeScanning();
-                     }
-
-                 }
-             } );
-
-        }
-
-        /// <summary>
-        /// Clears the previous check values.
-        /// Set the controls back to 0 for next check
-        /// </summary>
-        private void ResetUIForNextScan()
-        {
-            this.scrollViewerCheckImage.VerticalScrollBarVisibility = ScrollBarVisibility.Hidden;
-            spCheckDisplay.Visibility = Visibility.Collapsed;
-            foreach ( DisplayAccountValueModel item in lvAccounts.Items )
-            {
-                item.Amount = null;
-            }
-            lvAccounts.SelectedIndex = 1;
-            lvAccounts.SelectedIndex = 0;
-            this.lblRoutingAccountValue.Content = string.Empty;
-            this.lblCheckNumber.Content = string.Empty;
-            if ( _interfaceType == RockConfig.InterfaceType.MagTekImageSafe  || _interfaceType == RockConfig.InterfaceType.MICRImageRS232 )
-            {
-                lvAccounts.IsEnabled = false;
-                btnNext.IsEnabled = true;
-                ShowStartupPage();
-            }
-            
-        }
-
-        private void HandleCurrentDocInfo( Action callback )
-        {
-            if ( this._currentscannedDocInfo != null )
-            {
-                var uploaded = ScanningPageUtility.UploadScannedItem( _currentscannedDocInfo, accounts: this._displayAccountValuesContext.ToList() );
-                if ( uploaded )
-                {
-                    this.ShowUploadSuccess();
-                }
-                this.UpdateProgressBars( ScanningPageUtility.ItemsUploaded );
-            }
-
-            callback.DynamicInvoke();
-
         }
 
         #endregion
@@ -904,11 +567,19 @@ namespace Rock.Apps.CheckScannerUtility
             }
         }
 
+        /// <summary>
+        /// Handles the TransportIsDead event of the rangerScanner control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
+        internal void rangerScanner_TransportIsDead( object sender, EventArgs e )
+        {
+            ScanningPageUtility.rangerScanner_TransportIsDead( sender, e, () => { DisplayMessage( "Warning", "labelStyleBannerTitle", "Click Next to begin", "labelStyleAlert", "Scanner is not ready. Verify that the scanner is powered on and connected." ); } );
+        }
+
         #endregion
 
         #region Scanner (MagTek MICRImage RS232) Events
-
-        private ScannedDocInfo _currentMagtekScannedDoc { get; set; }
 
         /// <summary>
         /// Handles the MicrDataReceived event of the micrImage control.
@@ -1048,11 +719,15 @@ namespace Rock.Apps.CheckScannerUtility
                 ScanningPageUtility.batchPage.micrImage.ClearBuffer();
             }
         }
-
         #endregion
 
         #region Scanner (MagTek ImageFafe) Events
 
+        /// <summary>
+        /// Images the safe on document process complete.
+        /// </summary>
+        /// <param name="sender">The sender.</param>
+        /// <param name="e">The e.</param>
         public void ImageSafe_OnDocumentProcessComplete( object sender, ImageScanInteropBuilder.MagTekUsbScanner.oCheckData e )
         {
             System.Diagnostics.Debug.WriteLine( string.Format( "{0} : ImageSafe_CheckData", DateTime.Now.ToString( "o" ) ) );
@@ -1116,6 +791,11 @@ namespace Rock.Apps.CheckScannerUtility
             }
         }
 
+        /// <summary>
+        /// Gets the other data from micr data.
+        /// </summary>
+        /// <param name="e">The e.</param>
+        /// <returns></returns>
         private string GetOtherDataFromMicrData( MagTekUsbScanner.oCheckData e )
         {
 
@@ -1124,9 +804,100 @@ namespace Rock.Apps.CheckScannerUtility
         }
         #endregion
 
+        #region Display Methods
+
+        /// <summary>
+        /// Shows the upload success.
+        /// </summary>
+        private void ShowUploadSuccess()
+        {
+            lblScanItemUploadSuccess.Visibility = Visibility.Visible;
+
+            pnlPromptForUpload.Visibility = Visibility.Collapsed;
+        }
+
+        /// <summary>
+        /// Shows the upload stats.
+        /// </summary>
+        private void ShowUploadStats()
+        {
+            List<string> statsList = new List<string>();
+            if ( ScanningPageUtility.ItemsUploaded > 0 )
+            {
+                statsList.Add( string.Format( "Uploaded: {0}", ScanningPageUtility.ItemsUploaded ) );
+            }
+
+            if ( ScanningPageUtility.ItemsSkipped > 0 )
+            {
+                statsList.Add( string.Format( "Skipped: {0}", ScanningPageUtility.ItemsSkipped ) );
+            }
+
+            lblScanItemCountInfo.Visibility = statsList.Any() ? Visibility.Visible : Visibility.Collapsed;
+            lblScanItemCountInfo.Content = string.Join( ", ", statsList );
+        }
+        /// <summary>
+        /// Displays the scanned document information.
+        /// </summary>
+        /// <param name="scannedDocInfo">The scanned document information.</param>
+        private void DisplayScannedDocInfo( ScannedDocInfo scannedDocInfo )
+        {
+            if ( scannedDocInfo.FrontImageData != null )
+            {
+                spCheckDisplay.Visibility = Visibility.Visible;
+                if ( _interfaceType != RockConfig.InterfaceType.MagTekImageSafe )
+                {
+                    this.lblAlertCaptionMessage.Visibility = Visibility.Collapsed;
+                }
+
+                lvAccounts.IsEnabled = true;
+                BitmapImage bitmapImageFront = new BitmapImage();
+                bitmapImageFront.BeginInit();
+                bitmapImageFront.StreamSource = new MemoryStream( scannedDocInfo.FrontImageData );
+                bitmapImageFront.EndInit();
+                imgCheckFront.Source = bitmapImageFront;
+                imgFrontThumb.Source = bitmapImageFront;
+                Rock.Wpf.WpfHelper.FadeIn( imgCheckFront, 100 );
+            }
+            else
+            {
+                imgCheckFront.Source = null;
+            }
+
+            if ( scannedDocInfo.BackImageData != null )
+            {
+                this._isDoubleSided = true;
+                grdImageThumbnailsButtons.Visibility = Visibility.Visible;
+                BitmapImage bitmapImageBack = new BitmapImage();
+                bitmapImageBack.BeginInit();
+                bitmapImageBack.StreamSource = new MemoryStream( scannedDocInfo.BackImageData );
+                bitmapImageBack.EndInit();
+                imgCheckBack.Source = bitmapImageBack;
+                Rock.Wpf.WpfHelper.FadeIn( imgBackThumb, 100 );
+            }
+            else
+            {
+                this._isDoubleSided = false;
+                grdImageThumbnailsButtons.Visibility = Visibility.Collapsed;
+
+            }
+
+            if ( scannedDocInfo.IsCheck )
+            {
+                CheckImages.Visibility = Visibility.Visible;
+                this.lblRoutingAccountValue.Content = string.Format( "{0} / {1}", scannedDocInfo.RoutingNumber, scannedDocInfo.AccountNumber );
+                lblOtherData.Content = scannedDocInfo.OtherData;
+                spOtherData.Visibility = !string.IsNullOrWhiteSpace( scannedDocInfo.OtherData ) ? Visibility.Visible : Visibility.Collapsed;
+                lblCheckNumber.Content = scannedDocInfo.CheckNumber;
+                lblOtherData.Content = scannedDocInfo.OtherData;
+            }
+            lvAccounts.SelectedIndex = 1;
+            lvAccounts.SelectedIndex = 0;
+        }
+
         /// <summary>
         /// Shows the upload warnings.
         /// </summary>
+        /// <param name="scannedDocInfo">The scanned document information.</param>
         private void ShowUploadWarnings( ScannedDocInfo scannedDocInfo )
         {
             var rockConfig = RockConfig.Load();
@@ -1141,137 +912,159 @@ namespace Rock.Apps.CheckScannerUtility
             this.scrollViewerCheckImage.VerticalScrollBarVisibility = ScrollBarVisibility.Auto;
         }
 
-        private void HideUploadSuccess()
+        /// <summary>
+        /// Shows the scanned document status and upload.
+        /// </summary>
+        /// <param name="scannedDocInfo">The scanned document information.</param>
+        public void ShowScannedDocStatusAndUpload( ScannedDocInfo scannedDocInfo )
         {
+
+            DisplayScannedDocInfo( scannedDocInfo );
+
+            var rockConfig = RockConfig.Load();
+
+            bool scanningChecks = rockConfig.TenderTypeValueGuid.AsGuid() == Rock.Client.SystemGuid.DefinedValue.CURRENCY_TYPE_CHECK.AsGuid();
+
+            // if they don't enable smart scan, don't warn about bad micr's. For example, they might be scanning a mixture of checks and envelopes
+            if ( rockConfig.EnableSmartScan )
+            {
+                if ( scannedDocInfo.BadMicr )
+                {
+                    string message;
+                    if ( rockConfig.ScannerInterfaceType == RockConfig.InterfaceType.RangerApi )
+                    {
+
+                        message = @"Unable to read check information
+                                Click 'Skip' to reject this check and continue scanning.
+                                To retry this check, put the check back into the feed tray.
+
+                                Click 'Upload' to upload the check as-is.
+                                Click 'Stop' to reject this check and stop scanning.";
+                    }
+                    else
+                    {
+                        message = @"Unable to read check information
+                                    Click 'Skip' to reject this check.    
+                                    Click 'Upload' to upload the check as-is.";
+
+                    }
+
+                    this.DisplayMessage( "Warning", mainMessageStyleKey: "WarningTextStyle", mainMessage: message );
+                    ShowUploadWarnings( scannedDocInfo );
+
+                }
+            }
+            else
+            {
+                // if Enable Smart Scan is disabled, upload even if there is a bad or missing MICR
+                if ( !scannedDocInfo.Upload )
+                {
+                    scannedDocInfo.Upload = true;
+                }
+            }
+
+            if ( scannedDocInfo.Upload && ScanningPageUtility.IsDuplicateScan( scannedDocInfo ) )
+            {
+                scannedDocInfo.Duplicate = true;
+                scannedDocInfo.Upload = false;
+                this.DisplayMessage( "Warning", mainMessageStyleKey: "labelStyleAlertInfo", mainMessage: "A check with the same account information and check number has already been scanned." );
+                ShowUploadWarnings( scannedDocInfo );
+            }
+
+            if ( scannedDocInfo.Upload )
+            {
+                this._currentscannedDocInfo = scannedDocInfo;
+            }
+            else
+            {
+                ShowUploadWarnings( scannedDocInfo );
+            }
+        }
+
+        /// <summary>
+        /// Hides the warnings messages and prompts
+        /// </summary>
+        private void HideUploadWarningPrompts( bool hideWarningMessages = true )
+        {
+            if ( !hideWarningMessages )
+            {
+                btnNext.IsEnabled = false;
+            }
+
+            borderAlertBorder.Visibility = Visibility.Collapsed;
             lblScanItemUploadSuccess.Visibility = Visibility.Collapsed;
             pnlPromptForUpload.Visibility = Visibility.Collapsed;
-
+            this.spCheckDisplay.Visibility = Visibility.Collapsed;
         }
         /// <summary>
-        /// Shows the startup page.
+        /// Initializes the first scan.
+        /// When the page loads an initial check will be scanned then paused to allow
+        /// user to enter in Amount and Select Next button to proceed.
         /// </summary>
-        private void ShowStartupPage()
+        /// <param name="rockConfig">The rock configuration.</param>
+
+        private void InitializeProgressBarsOfSelectedBatch( RockConfig rockConfig )
         {
-            var rockConfig = RockConfig.Load();
-            HideUploadWarningPrompts();
-            this.HideUploadSuccess();
-            if ( rockConfig.ScannerInterfaceType == RockConfig.InterfaceType.MICRImageRS232 )
+
+            ScanningPageUtility.TotalAmountScanned = 0;
+            var selectedBatch = ScanningPageUtility.batchPage.SelectedFinancialBatch;
+
+            if ( ScanningPageUtility.batchPage.SelectedFinancialBatch != null )
             {
-                this.lblAlertCaptionMessage.Visibility = Visibility.Visible;
-                grdImageThumbnailsButtons.Visibility = Visibility.Collapsed;
-                DisplayMessage( "Warning", "labelStyleBannerTitle", "Load check and click next" );
-                lvAccounts.IsEnabled = false;
-                return;
-            }
-
-            if ( rockConfig.ScannerInterfaceType == RockConfig.InterfaceType.MagTekImageSafe )
-            {
-                grdImageThumbnailsButtons.Visibility = Visibility.Collapsed;
-                this.lblAlertCaptionMessage.Visibility = Visibility.Visible;
-                DisplayMessage( "Warning", "labelStyleBannerTitle", "Load check and click next" );
-                lvAccounts.IsEnabled = false;
-                btnNext.IsEnabled = true;
-                return;
-            }
-
-        }
-        private void UpdateProgressBars( int itemsUploaded )
-        {
-            if ( spControlItemProgressbar.Visibility == Visibility.Visible )
-            {
-                this.pbControlItems.Value = itemsUploaded;
-            }
-            if ( spControlAmountProgressBar.Visibility == Visibility.Visible )
-            {
-
-                this.pbControlAmounts.Value = ScanningPageUtility.GetPercentageAmountComplete();
-            }
-
-            this.UpdateProgressBarLegend();
-
-
-        }
-        /// <summary>
-        /// Handles the Loaded event of the TextBox control.
-        /// Need to Set Focus on the First Element is the list view and more specific the text box
-        /// </summary>
-        /// <param name="sender">The source of the event.</param>
-        /// <param name="e">The <see cref="RoutedEventArgs"/> instance containing the event data.</param>
-        private void TextBox_Loaded( object sender, RoutedEventArgs e )
-        {
-            var textbox = sender as System.Windows.Controls.TextBox;
-            if ( textbox != null )
-            {
-                var dataContext = textbox.DataContext as DisplayAccountValueModel;
-                if ( dataContext != null )
+                if ( rockConfig.RequireControlAmount )
                 {
-                    if ( dataContext.Index == 0 )
-                    {
-                        textbox.Focus();
-                    }
+
+                    ScanningPageUtility.BatchAmount = selectedBatch.ControlAmount;
+                    this.pbControlAmounts.Minimum = 0;
+                    this.pbControlAmounts.Maximum = 100;
+                    this.spControlAmountProgressBar.Visibility = Visibility.Visible;
+
                 }
-            }
-        }
-
-        /// <summary>
-        /// Handles the KeyDown event of the TextBox control.
-        /// This allow for user to process enter key
-        /// </summary>
-        /// <param name="sender">The source of the event.</param>
-        /// <param name="e">The <see cref="System.Windows.Input.KeyEventArgs"/> instance containing the event data.</param>
-        private void TextBox_KeyDown( object sender, System.Windows.Input.KeyEventArgs e )
-        {
-            var textbox = sender as TextBox;
-            if ( e.Key == Key.Return )
-            {
-                if ( !string.IsNullOrEmpty( textbox.Text ) )
+                else
                 {
-                    var dataContext = textbox.DataContext as DisplayAccountValueModel;
-                    dataContext.Amount = decimal.Parse( textbox.Text );
+                    this.spControlAmountProgressBar.Visibility = Visibility.Collapsed;
+
                 }
-                if ( pnlPromptForUpload.Visibility != Visibility.Visible )
-                {
 
-                    this.BtnNext_Click( sender, e );
+                if ( rockConfig.RequireControlItemCount )
+                {
+                    //Control Amount
+                    ScanningPageUtility.BatchAmount = selectedBatch.ControlAmount;
+                    //Control Item Count
+                    ScanningPageUtility.ItemsToProcess = selectedBatch.ControlItemCount;
+                    this.pbControlItems.Minimum = 0;
+                    this.pbControlItems.Maximum = ScanningPageUtility.ItemsToProcess != null ? ( int ) ScanningPageUtility.ItemsToProcess : 0;
+                    this.spControlItemProgressbar.Visibility = Visibility.Visible;
+                    this.UpdateProgressBarLegend();
+                }
+                else
+                {
+                    this.spControlItemProgressbar.Visibility = Visibility.Collapsed;
                 }
             }
 
         }
 
         /// <summary>
-        /// Handles the TextChanged event of the TextBox control.
+        /// Shows the scanner status.
         /// </summary>
-        /// <param name="sender">The source of the event.</param>
-        /// <param name="e">The <see cref="TextChangedEventArgs"/> instance containing the event data.</param>
-        private void TextBox_TextChanged( object sender, TextChangedEventArgs e )
+        /// <param name="xportState">State of the xport.</param>
+        /// <param name="statusColor">Color of the status.</param>
+        /// <param name="status">The status.</param>
+        internal void ShowScannerStatus( RangerTransportStates xportState, Color statusColor, string status )
         {
-            if ( pnlPromptForUpload.Visibility != Visibility.Visible )
-            {
-                btnNext.IsEnabled = true;
-            }
+
+            ScanningPageUtility.ShowScannerStatus( xportState, statusColor, status, ref this.shapeStatus );
         }
 
-        private void BtnImageToggle_FrontBack_Click( object sender, RoutedEventArgs e )
-        {
-            var parameter = ( ( Button ) e.OriginalSource ).CommandParameter;
-            switch ( parameter )
-            {
-                case "Front":
-                    this.imgCheckBack.Visibility = Visibility.Collapsed;
-                    this.imgCheckFront.Visibility = Visibility.Visible;
-                    break;
-                case "Back":
-                    this.imgCheckBack.Visibility = Visibility.Visible;
-                    this.imgCheckFront.Visibility = Visibility.Collapsed;
-                    break;
-            }
-        }
-
-        private void Page_SizeChanged( object sender, SizeChangedEventArgs e )
-        {
-            this.lvAccounts.Height = this.RenderSize.Height - 90;
-        }
-
+        /// <summary>
+        /// Displays the message.
+        /// </summary>
+        /// <param name="messageType">Type of the message.</param>
+        /// <param name="captionstyleKey">The captionstyle key.</param>
+        /// <param name="captionMessage">The caption message.</param>
+        /// <param name="mainMessageStyleKey">The main message style key.</param>
+        /// <param name="mainMessage">The main message.</param>
         private void DisplayMessage( string messageType, string captionstyleKey = "", string captionMessage = "", string mainMessageStyleKey = "", string mainMessage = "" )
         {
             this.lblAlertCaptionMessage.Content = string.Empty;
@@ -1333,10 +1126,341 @@ namespace Rock.Apps.CheckScannerUtility
             }
         }
 
-
-        private void btnOptions_Click( object sender, RoutedEventArgs e )
+        /// <summary>
+        /// Hides the upload success.
+        /// </summary>
+        private void HideUploadSuccess()
         {
-            ScanningPageUtility.batchPage.NavigateToOptionsPage();
+            lblScanItemUploadSuccess.Visibility = Visibility.Collapsed;
+            pnlPromptForUpload.Visibility = Visibility.Collapsed;
+
         }
+
+        /// <summary>
+        /// Shows the startup page.
+        /// </summary>
+        private void ShowStartupPage()
+        {
+            var rockConfig = RockConfig.Load();
+            HideUploadWarningPrompts();
+            this.HideUploadSuccess();
+            if ( rockConfig.ScannerInterfaceType == RockConfig.InterfaceType.MICRImageRS232 )
+            {
+                this.lblAlertCaptionMessage.Visibility = Visibility.Visible;
+                grdImageThumbnailsButtons.Visibility = Visibility.Collapsed;
+                DisplayMessage( "Warning", "labelStyleBannerTitle", "Load check and click next" );
+                lvAccounts.IsEnabled = false;
+                return;
+            }
+
+            if ( rockConfig.ScannerInterfaceType == RockConfig.InterfaceType.MagTekImageSafe )
+            {
+                grdImageThumbnailsButtons.Visibility = Visibility.Collapsed;
+                this.lblAlertCaptionMessage.Visibility = Visibility.Visible;
+                DisplayMessage( "Warning", "labelStyleBannerTitle", "Load check and click next" );
+                lvAccounts.IsEnabled = false;
+                btnNext.IsEnabled = true;
+                return;
+            }
+
+        }
+
+        /// <summary>
+        /// Updates the progress bars.
+        /// </summary>
+        /// <param name="itemsUploaded">The items uploaded.</param>
+        private void UpdateProgressBars( int itemsUploaded )
+        {
+            if ( spControlItemProgressbar.Visibility == Visibility.Visible )
+            {
+                this.pbControlItems.Value = itemsUploaded;
+            }
+            if ( spControlAmountProgressBar.Visibility == Visibility.Visible )
+            {
+
+                this.pbControlAmounts.Value = ScanningPageUtility.GetPercentageAmountComplete();
+            }
+
+            this.UpdateProgressBarLegend();
+
+
+        }
+
+        /// <summary>
+        /// Handles the Loaded event of the TextBox control.
+        /// Need to Set Focus on the First Element is the list view and more specific the text box
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="RoutedEventArgs" /> instance containing the event data.</param>
+        private void TextBox_Loaded( object sender, RoutedEventArgs e )
+        {
+            var textbox = sender as System.Windows.Controls.TextBox;
+            if ( textbox != null )
+            {
+                var dataContext = textbox.DataContext as DisplayAccountValueModel;
+                if ( dataContext != null )
+                {
+                    if ( dataContext.Index == 0 )
+                    {
+                        textbox.Focus();
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Handles the KeyDown event of the TextBox control.
+        /// This allow for user to process enter key
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="System.Windows.Input.KeyEventArgs"/> instance containing the event data.</param>
+        private void TextBox_KeyDown( object sender, System.Windows.Input.KeyEventArgs e )
+        {
+            var textbox = sender as TextBox;
+            if ( e.Key == Key.Return )
+            {
+                if ( !string.IsNullOrEmpty( textbox.Text ) )
+                {
+                    var dataContext = textbox.DataContext as DisplayAccountValueModel;
+                    dataContext.Amount = decimal.Parse( textbox.Text );
+                }
+                if ( pnlPromptForUpload.Visibility != Visibility.Visible )
+                {
+
+                    this.BtnNext_Click( sender, e );
+                }
+            }
+
+        }
+
+        /// <summary>
+        /// Handles the TextChanged event of the TextBox control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="TextChangedEventArgs"/> instance containing the event data.</param>
+        private void TextBox_TextChanged( object sender, TextChangedEventArgs e )
+        {
+            if ( pnlPromptForUpload.Visibility != Visibility.Visible )
+            {
+                btnNext.IsEnabled = true;
+            }
+        }
+
+        /// <summary>
+        /// Handles the current document information.
+        /// </summary>
+        /// <param name="callback">The callback.</param>
+        private void HandleCurrentDocInfo( Action callback )
+        {
+            if ( this._currentscannedDocInfo != null )
+            {
+                var uploaded = ScanningPageUtility.UploadScannedItem( _currentscannedDocInfo, accounts: this._displayAccountValuesContext.ToList() );
+                if ( uploaded )
+                {
+                    this.ShowUploadSuccess();
+                }
+                this.UpdateProgressBars( ScanningPageUtility.ItemsUploaded );
+            }
+
+            callback.DynamicInvoke();
+
+        }
+
+        /// <summary>
+        /// Handles the SizeChanged event of the Page control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="SizeChangedEventArgs"/> instance containing the event data.</param>
+        private void Page_SizeChanged( object sender, SizeChangedEventArgs e )
+        {
+            this.lvAccounts.Height = this.RenderSize.Height - 90;
+        }
+
+        /// <summary>
+        /// Resets the UI for next scan.
+        /// </summary>
+        private void ResetUIForNextScan()
+        {
+            this.scrollViewerCheckImage.VerticalScrollBarVisibility = ScrollBarVisibility.Hidden;
+            spCheckDisplay.Visibility = Visibility.Collapsed;
+            foreach ( DisplayAccountValueModel item in lvAccounts.Items )
+            {
+                item.Amount = null;
+            }
+            lvAccounts.SelectedIndex = 1;
+            lvAccounts.SelectedIndex = 0;
+            this.lblRoutingAccountValue.Content = string.Empty;
+            this.lblCheckNumber.Content = string.Empty;
+            if ( _interfaceType == RockConfig.InterfaceType.MagTekImageSafe || _interfaceType == RockConfig.InterfaceType.MICRImageRS232 )
+            {
+                lvAccounts.IsEnabled = false;
+                btnNext.IsEnabled = true;
+                ShowStartupPage();
+            }
+
+        }
+
+        /// <summary>
+        /// Gets the width of the image.
+        /// Used in rendering of Checks in display
+        /// </summary>
+        /// <returns></returns>
+        private double GetImageWidth()
+        {
+            if ( _isDoubleSided )
+            {
+                return this.RenderSize.Width * .6;
+            }
+            return this.RenderSize.Width * .9;
+        }
+
+        /// <summary>
+        /// Shows the no amount message.
+        /// When user attempts to upload or hit next
+        /// A prompt will let them know to add an account amount
+        /// </summary>
+        private void ShowNoAmountMessage()
+        {
+            MessageBox.Show( "No values have been entered", "No Amount Entered", MessageBoxButton.OK );
+            lvAccounts.SelectedIndex = 1;
+            lvAccounts.SelectedIndex = 0;
+        }
+
+        /// <summary>
+        /// Updates the progress bar legend.
+        /// </summary>
+        private void UpdateProgressBarLegend()
+        {
+            var remainingItems = ScanningPageUtility.ItemsToProcess - ScanningPageUtility.ItemsUploaded;
+            if ( spControlItemProgressbar.Visibility == Visibility.Visible )
+            {
+                //Control Items
+                this.lblItemScannedValue.Content = string.Format( "{0} of {1}", ScanningPageUtility.ItemsUploaded, ScanningPageUtility.ItemsToProcess );
+
+            }
+
+            if ( spControlAmountProgressBar.Visibility == Visibility.Visible )
+            {
+                var currentTotals = ScanningPageUtility.TotalAmountScanned + SumAllAccountEntries();
+                if ( ScanningPageUtility.TotalAmountScanned > ScanningPageUtility.BatchAmount )
+                {
+                    pbControlAmounts.Value = 100;
+                    SetAmountlegendInvalid( true );
+                }
+
+                var amountRemaining = string.Format( new System.Globalization.CultureInfo( "en-US" ), "{0:C}", ScanningPageUtility.BatchAmount - ScanningPageUtility.TotalAmountScanned );
+                var currentTotal = string.Format( new System.Globalization.CultureInfo( "en-US" ), "{0:C}", currentTotals );
+                this.lblAmountRemaininValue.Content = string.Format( "{0} of {1}", currentTotal, amountRemaining );
+            }
+
+            if ( remainingItems == 0 )
+            {
+                if ( ScanningPageUtility.BatchAmount != ScanningPageUtility.TotalAmountScanned )
+                {
+                    SetAmountlegendInvalid( true );
+                }
+
+                this.pbControlAmounts.Value = 100;
+                this.btnComplete.Visibility = Visibility.Visible;
+                this.btnNext.Visibility = Visibility.Hidden;
+                ScanningPageUtility.KeepScanning = false;
+            }
+        }
+
+        /// <summary>
+        /// Sets the amountlegend invalid.
+        /// </summary>
+        /// <param name="isInvalid">if set to <c>true</c> [is invalid].</param>
+        private void SetAmountlegendInvalid( bool isInvalid )
+        {
+            var defaultbrush = ( SolidColorBrush ) ( new BrushConverter().ConvertFrom( "#ee7725" ) );
+            lblAmountRemaininValue.Foreground = isInvalid ? Brushes.Red : defaultbrush;
+            pbControlAmounts.Foreground = isInvalid ? Brushes.Red : defaultbrush;
+        }
+        #endregion
+
+        #region Utility Functions
+
+        /// <summary>
+        /// Loads the filtered accounts into ListView.
+        /// </summary>
+        /// <param name="allAccounts">All accounts.</param>
+        /// <param name="rockConfig">The rock configuration.</param>
+        private void LoadFilteredAccountsIntoListView( List<FinancialAccount> allAccounts, RockConfig rockConfig )
+        {
+            var filteredAccounts = allAccounts.Where( a => rockConfig.SelectedAccountForAmountsIds.Contains( a.Id ) );
+            var displayAccountValues = new ObservableCollection<DisplayAccountValueModel>();
+            int index = 0;
+            foreach ( var account in filteredAccounts )
+            {
+
+                displayAccountValues.Add( new DisplayAccountValueModel { Account = account, AccountDisplayName = account.Name, Index = index } );
+                index++;
+            }
+
+            this._displayAccountValuesContext = displayAccountValues;
+            lvAccounts.ItemsSource = this._displayAccountValuesContext;
+            lvAccounts.SelectedIndex = 0;
+            lvAccounts.Visibility = Visibility.Visible;
+
+        }
+
+        /// <summary>
+        /// Sums all account entries.
+        /// </summary>
+        /// <returns></returns>
+        private decimal SumAllAccountEntries()
+        {
+            decimal sum = 0;
+            if ( this._displayAccountValuesContext != null )
+            {
+                foreach ( DisplayAccountValueModel accountValue in this._displayAccountValuesContext )
+                {
+                    if ( accountValue.Amount != null )
+                    {
+                        sum += ( decimal ) accountValue.Amount;
+                    }
+                }
+                ScanningPageUtility.TotalAmountScanned += sum;
+            }
+            return sum;
+        }
+
+        /// <summary>
+        /// Loads the account information.
+        /// GetData api/FinancialAccounts
+        /// </summary>
+        private void LoadAccountInfo()
+        {
+            RockConfig rockConfig = RockConfig.Load();
+            InitializeProgressBarsOfSelectedBatch( rockConfig );
+            var client = new RockRestClient( rockConfig.RockBaseUrl );
+            client.Login( rockConfig.Username, rockConfig.Password );
+            var allAccounts = client.GetData<List<FinancialAccount>>( "api/FinancialAccounts" );
+            LoadFilteredAccountsIntoListView( allAccounts, rockConfig );
+
+        }
+
+        /// <summary>
+        /// Determines whether this instance has amount.
+        /// </summary>
+        /// <returns>
+        ///   <c>true</c> if this instance has amount; otherwise, <c>false</c>.
+        /// </returns>
+        private bool HasAmount()
+        {
+            foreach ( DisplayAccountValueModel account in lvAccounts.Items )
+            {
+                if ( account.Amount != null && account.Amount > 0 )
+                {
+                    return true;
+
+                }
+            }
+            return false;
+        }
+
+        #endregion
+
     }
 }

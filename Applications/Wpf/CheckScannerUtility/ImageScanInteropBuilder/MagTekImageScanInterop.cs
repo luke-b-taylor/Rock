@@ -5,12 +5,28 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
 
-
+// <copyright>
+// Copyright by the Spark Development Network
+//
+// Licensed under the Rock Community License (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.rockrms.com/license
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// </copyright>
 namespace ImageScanInteropBuilder
 {
     /// <summary>
     /// Used to interact with MagTek Image Scanner USB
-    /// DllImport is used for consuming a UnManged Code 
+    /// DllImport is used for consuming a UnManged Code
+    /// Example provided by https://www.magtek.com/support/excella
+    /// Windows API programming manual for Excella and Excella STX.
     /// </summary>
     public class MagTekImageScanInterop
     {
@@ -40,24 +56,6 @@ namespace ImageScanInteropBuilder
         public bool QueryDeviceEnabled { get; private set; }
         public bool ProcessDocumentEnabled { get; private set; }
         public StringBuilder sbLogText { get; private set; }
-        public struct SHELLEXECUTEINFO
-        {
-            public int cbSize;
-            public uint fMask;
-            public IntPtr hwnd;
-            public String lpVerb;
-            public String lpFile;
-            public String lpParameters;
-            public String lpDirectory;
-            public int nShow;
-            public int hInstApp;
-            public int lpIDList;
-            public String lpClass;
-            public int hkeyClass;
-            public uint dwHotKey;
-            public int hIcon;
-            public int hProcess;
-        }
         #endregion
         #region Public Methods
         public bool OpenDevice( string strDeviceName )
@@ -147,14 +145,10 @@ namespace ImageScanInteropBuilder
         [DllImport( "kernel32.dll", SetLastError = true )]
         public static extern unsafe int CreateFile( string lpFileName, UInt32 dwDesiredAccess, UInt32 dwShareMode,UInt32 lpSecurityAttributes, UInt32 dwCreationDisposition,UInt32 dwFlagsAndAttributes, int hTemplateFile );
 
-
         [DllImport( "kernel32.dll", SetLastError = true )]
         static extern unsafe bool WriteFile( int hFile, byte[] pBuf, int nBytesToWrite, ref int nBytesWritten, IntPtr pOverlapped );
         [DllImport( "kernel32.dll", SetLastError = true )]
         static extern unsafe bool CloseHandle( int hHandle );
-        [DllImport( "shell32.dll", CharSet = CharSet.Ansi )]
-        static extern bool ShellExecuteEx( ref SHELLEXECUTEINFO lpExecInfo );
-
 
         #endregion
         #region MTXMLMCR.DLL
