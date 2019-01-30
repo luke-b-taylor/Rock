@@ -17,6 +17,7 @@
 using System;
 using System.ComponentModel;
 using System.Data.Entity;
+using System.Diagnostics;
 using System.Linq;
 using System.Web.UI;
 using System.Web.UI.WebControls;
@@ -24,6 +25,7 @@ using Rock;
 using Rock.Attribute;
 using Rock.Data;
 using Rock.Model;
+using Rock.Web.Cache;
 using Rock.Web.UI;
 using Rock.Web.UI.Controls;
 
@@ -75,43 +77,34 @@ namespace RockWeb.Blocks.Finance
         Order = 5 )]
 
     [BooleanField(
-        "Additional Accounts",
-        Key = AttributeKey.PromptForAdditionalAccounts,
-        Description = "Should users be allowed to select additional accounts? If so, any active account with a Public Name value will be available.",
-        TrueText = "Display option for selecting additional accounts",
-        FalseText = "Don't display option",
-        DefaultBooleanValue = true,
-        Order = 6 )]
-
-    [BooleanField(
         "Scheduled Transactions",
         Key = AttributeKey.AllowScheduledTransactions,
         Description = "If the selected gateway(s) allow scheduled transactions, should that option be provided to user.",
         TrueText = "Allow",
         FalseText = "Don't Allow",
         DefaultBooleanValue = true,
-        Order = 7 )]
+        Order = 8 )]
 
     [BooleanField(
         "Show Scheduled Gifts",
         Key = AttributeKey.ShowScheduledTransactions,
         Description = "If the person has any scheduled gifts, show a summary of their scheduled gifts.",
         DefaultBooleanValue = true,
-        Order = 8 )]
+        Order = 9 )]
 
     [BooleanField(
         "Ask for Campus if Known",
         Key = AttributeKey.AskForCampusIfKnown,
         Description = "If the campus for the person is already known, should the campus still be prompted for?",
         DefaultBooleanValue = true,
-        Order = 9 )]
+        Order = 10 )]
 
     [BooleanField(
         "Enable Multi-Account",
         Key = AttributeKey.EnableMultiAccount,
         Description = "Should the person be able specify amounts for more than one account?",
         DefaultBooleanValue = true,
-        Order = 9 )]
+        Order = 11 )]
 
     [CodeEditorField(
         "Intro Message",
@@ -119,28 +112,28 @@ namespace RockWeb.Blocks.Finance
         EditorMode = CodeEditorMode.Lava,
         Description = "The text to place at the top of the amount entry",
         DefaultValue = "Your Generosity Changes Lives",
-        Category = "Text Options",
-        Order = 9 )]
+        Category = AttributeCategory.TextOptions,
+        Order = 12 )]
 
     [TextField(
         "Gift Term",
         Key = AttributeKey.GiftTerm,
         DefaultValue = "Gift",
-        Category = "Text Options",
-        Order = 9 )]
+        Category = AttributeCategory.TextOptions,
+        Order = 13 )]
 
     [TextField(
         "Give Button Text",
         Key = AttributeKey.GiveButtonText,
         DefaultValue = "Give Now",
-        Category = "Text Options",
-        Order = 9 )]
+        Category = AttributeCategory.TextOptions,
+        Order = 14 )]
 
     [LinkedPage(
         "Scheduled Transaction Edit Page",
         Key = AttributeKey.ScheduledTransactionEditPage,
         Description = "The page to use for editing scheduled transactions.",
-        Order = 9 )]
+        Order = 15 )]
 
     [CodeEditorField(
         "Finish Lava Template",
@@ -148,16 +141,16 @@ namespace RockWeb.Blocks.Finance
         EditorMode = CodeEditorMode.Lava,
         Description = "The text (HTML) to display on the success page.",
         DefaultValue = DefaultFinishLavaTemplate,
-        Category = "Text Options",
-        Order = 9 )]
+        Category = AttributeCategory.TextOptions,
+        Order = 16 )]
 
     [TextField(
         "Save Account Title",
         Key = AttributeKey.SaveAccountTitle,
         Description = "The text to display as heading of section for saving payment information.",
         DefaultValue = "Make Giving Even Easier",
-        Category = "Text Options",
-        Order = 9 )]
+        Category = AttributeCategory.TextOptions,
+        Order = 17 )]
 
     #endregion Block Attributes
     public partial class TransactionEntryV2 : RockBlock
@@ -222,8 +215,6 @@ mission. We are so grateful for your commitment.</p>
         {
             public const string AccountsToDisplay = "AccountsToDisplay";
 
-            public const string PromptForAdditionalAccounts = "PromptForAdditionalAccounts";
-
             public const string AllowImpersonation = "AllowImpersonation";
 
             public const string AllowScheduledTransactions = "AllowScheduledTransactions";
@@ -253,15 +244,26 @@ mission. We are so grateful for your commitment.</p>
             public const string SaveAccountTitle = "SaveAccountTitle";
         }
 
+        #endregion Attribute Keys
+
+        #region Attribute Categories
+
+        public static class AttributeCategory
+        {
+            public const string TextOptions = "Text Options";
+        }
+
+        #endregion Attribute Categories
+
+        #region PageParameterKeys
+
+        public static class PageParameterKey
+        {
+            public const string Person = "Person";
+        }
+
         #endregion
 
-        #region Fields
-
-        #endregion
-
-        #region Properties
-
-        #endregion
 
         #region Base Control Methods
 
@@ -297,11 +299,16 @@ mission. We are so grateful for your commitment.</p>
         /// </summary>
         private void ShowDetails()
         {
-            if ( !LoadGateways() )
+            if ( !LoadGatewayOptions() )
             {
                 return;
             }
 
+            SetTargetPerson();
+
+            lIntroMessage.Text = this.GetAttributeValue( AttributeKey.IntroMessage );
+
+            LoadCampuses();
             BindAccounts();
 
             pnlTransactionEntry.Visible = true;
@@ -309,7 +316,7 @@ mission. We are so grateful for your commitment.</p>
             nbAccountAmountSingle.Visible = !enableMultiAccount;
             pnlPromptForAccountSingle.Visible = !enableMultiAccount;
             pnlPromptForAccountsMulti.Visible = enableMultiAccount;
-
+            
             if ( this.GetAttributeValue( AttributeKey.ShowScheduledTransactions ).AsBoolean() )
             {
                 lScheduledTransactionsTitle.Text = string.Format( "Scheduled {0}", ( this.GetAttributeValue( AttributeKey.GiftTerm ) ?? "Gift" ).Pluralize() );
@@ -320,6 +327,8 @@ mission. We are so grateful for your commitment.</p>
             {
                 pnlScheduledTransactions.Visible = false;
             }
+
+            UpdateGivingControlsForSelections();
         }
 
         #endregion
@@ -393,7 +402,7 @@ mission. We are so grateful for your commitment.</p>
         /// <summary>
         /// Loads and Validates the gateways, showing a message if the gateways aren't configured correctly
         /// </summary>
-        private bool LoadGateways()
+        private bool LoadGatewayOptions()
         {
             var financialGatewayGuid = this.GetAttributeValue( AttributeKey.FinancialGateway ).AsGuidOrNull();
             var rockContext = new RockContext();
@@ -418,11 +427,30 @@ mission. We are so grateful for your commitment.</p>
             if ( _financialGateway.GetGatewayComponent().TypeGuid == testGatewayGuid )
             {
                 ShowConfigurationMessage( NotificationBoxType.Warning, "Testing", "You are using the Test Financial Gateway. No actual amounts will be charged to your card or bank account." );
-                return true;
+            }
+            else
+            {
+
+                HideConfigurationMessage();
             }
 
+            var _financialGatewayComponent = _financialGateway.GetGatewayComponent();
+            var supportedFrequencies = _financialGatewayComponent.SupportedPaymentSchedules;
+            foreach ( var supportedFrequency in supportedFrequencies )
+            {
+                ddlFrequency.Items.Add( new ListItem( supportedFrequency.Value, supportedFrequency.Id.ToString() ) );
+            }
 
-            HideConfigurationMessage();
+            // If gateway didn't specifically support one-time, add it anyway for immediate gifts
+            var oneTimeFrequency = DefinedValueCache.Get( Rock.SystemGuid.DefinedValue.TRANSACTION_FREQUENCY_ONE_TIME );
+            if ( !supportedFrequencies.Where( f => f.Id == oneTimeFrequency.Id ).Any() )
+            {
+                ddlFrequency.Items.Insert( 0, new ListItem( oneTimeFrequency.Value, oneTimeFrequency.Id.ToString() ) );
+            }
+
+            ddlFrequency.SelectedValue = oneTimeFrequency.Id.ToString();
+            dtpStartDate.SelectedDate = RockDateTime.Today;
+            pnlScheduledTransaction.Visible = this.GetAttributeValue( AttributeKey.AllowScheduledTransactions ).AsBoolean();
 
             return true;
         }
@@ -621,6 +649,176 @@ mission. We are so grateful for your commitment.</p>
 
         #region Transaction Entry Related
 
+        /// <summary>
+        /// Sets the target person.
+        /// </summary>
+        /// <param name="rockContext">The rock context.</param>
+        private void SetTargetPerson()
+        {
+            // If impersonation is allowed, and a valid person key was used, set the target to that person
+
+            Person targetPerson = null;
+
+            if ( GetAttributeValue( AttributeKey.AllowImpersonation ).AsBoolean() )
+            {
+                string personKey = PageParameter( PageParameterKey.Person );
+                if ( personKey.IsNotNullOrWhiteSpace() )
+                {
+                    var incrementKeyUsage = !this.IsPostBack;
+                    var rockContext = new RockContext();
+                    targetPerson = new PersonService( rockContext ).GetByImpersonationToken( personKey, incrementKeyUsage, this.PageCache.Id );
+
+                    if ( targetPerson == null )
+                    {
+                        nbInvalidPersonWarning.Text = "Invalid or Expired Person Token specified";
+                        nbInvalidPersonWarning.NotificationBoxType = NotificationBoxType.Danger;
+                        nbInvalidPersonWarning.Visible = true;
+                        return;
+                    }
+                }
+            }
+
+            if ( targetPerson == null )
+            {
+                targetPerson = CurrentPerson;
+            }
+
+            if ( targetPerson != null )
+            {
+                hfTargetPersonId.Value = targetPerson.Id.ToString();
+            }
+            else
+            {
+                hfTargetPersonId.Value = string.Empty;
+            }
+        }
+
+        /// <summary>
+        /// Binds the person saved accounts that are available for the <paramref name="selectedScheduleFrequencyId"/>
+        /// </summary>
+        /// <param name="selectedScheduleFrequencyId">The selected schedule frequency identifier.</param>
+        private void BindPersonSavedAccounts( int selectedScheduleFrequencyId )
+        {
+            ddlPersonSavedAccount.Visible = false;
+            var currentSavedAccountSelection = ddlPersonSavedAccount.SelectedValue;
+
+            int? targetPersonId = hfTargetPersonId.Value.AsIntegerOrNull();
+            if ( targetPersonId == null )
+            {
+                return;
+            }
+
+            var rockContext = new RockContext();
+            var personSavedAccountsQuery = new FinancialPersonSavedAccountService( rockContext )
+                .GetByPersonId( targetPersonId.Value )
+                .Where( a => !a.IsSystem )
+                .AsNoTracking();
+
+            DefinedValueCache[] allowedCurrencyTypes = {
+                DefinedValueCache.Get(Rock.SystemGuid.DefinedValue.CURRENCY_TYPE_CREDIT_CARD.AsGuid()),
+                DefinedValueCache.Get(Rock.SystemGuid.DefinedValue.CURRENCY_TYPE_ACH.AsGuid())
+                };
+
+            int[] allowedCurrencyTypeIds = allowedCurrencyTypes.Select( a => a.Id ).ToArray();
+
+            var financialGateway = this.GetFinancialGateway();
+            if ( financialGateway == null )
+            {
+                return;
+            }
+
+            var financialGatewayComponent = financialGateway.GetGatewayComponent();
+            if ( financialGatewayComponent == null )
+            {
+                return;
+            }
+
+            int oneTimeFrequencyId = DefinedValueCache.GetId( Rock.SystemGuid.DefinedValue.TRANSACTION_FREQUENCY_ONE_TIME.AsGuid() ) ?? 0;
+            bool oneTime = selectedScheduleFrequencyId == oneTimeFrequencyId;
+
+            personSavedAccountsQuery = personSavedAccountsQuery.Where( a =>
+                a.FinancialGatewayId == financialGateway.Id
+                && ( a.FinancialPaymentDetail.CurrencyTypeValueId != null )
+                && allowedCurrencyTypeIds.Contains( a.FinancialPaymentDetail.CurrencyTypeValueId.Value ) );
+
+            var personSavedAccountList = personSavedAccountsQuery.OrderBy( a => a.Name ).AsNoTracking().Select( a => new
+            {
+                a.Id,
+                a.Name,
+                a.FinancialPaymentDetail.AccountNumberMasked,
+            } );
+
+            ddlPersonSavedAccount.Visible = personSavedAccountList.Any();
+
+            ddlPersonSavedAccount.Items.Clear();
+            foreach ( var personSavedAccount in personSavedAccountList )
+            {
+                var displayName = string.Format( "{0} ({1})", personSavedAccount.Name, personSavedAccount.AccountNumberMasked );
+                ddlPersonSavedAccount.Items.Add( new ListItem( displayName, personSavedAccount.Id.ToString() ) );
+            }
+
+            ddlPersonSavedAccount.Items.Add( new ListItem( "Use a different payment method", 0.ToString() ) );
+
+            if ( currentSavedAccountSelection.IsNotNullOrWhiteSpace() )
+            {
+                ddlPersonSavedAccount.SetValue( currentSavedAccountSelection );
+            }
+            else
+            {
+
+                ddlPersonSavedAccount.SelectedIndex = 0;
+            }
+        }
+
+        private FinancialGateway _financialGateway = null;
+
+        /// <summary>
+        /// Gets the financial gateway component that is configured for this block
+        /// </summary>
+        /// <returns></returns>
+        private FinancialGateway GetFinancialGateway()
+        {
+            if ( _financialGateway == null )
+            {
+                RockContext rockContext = new RockContext();
+                var financialGatewayGuid = this.GetAttributeValue( AttributeKey.FinancialGateway ).AsGuid();
+                _financialGateway = new FinancialGatewayService( rockContext ).GetNoTracking( financialGatewayGuid );
+            }
+
+            return _financialGateway;
+        }
+
+        /// <summary>
+        /// Loads the campuses.
+        /// </summary>
+        private void LoadCampuses()
+        {
+            ddlCampus.Items.Clear();
+            foreach ( var campus in CampusCache.All().OrderBy( a => a.Order ) )
+            {
+                ddlCampus.Items.Add( new ListItem( campus.Name, campus.Id.ToString() ) );
+            }
+
+            CampusCache defaultCampus = CampusCache.All().FirstOrDefault();
+
+            if ( CurrentPerson != null )
+            {
+                var personCampus = CurrentPerson.GetCampus();
+                if ( personCampus != null )
+                {
+                    defaultCampus = CampusCache.Get( personCampus.Id );
+                }
+            }
+
+            if ( ddlCampus.Items.Count > 0 )
+            {
+                ddlCampus.SetValue( defaultCampus );
+            }
+        }
+
+        /// <summary>
+        /// Binds the accounts.
+        /// </summary>
         private void BindAccounts()
         {
             var rockContext = new RockContext();
@@ -656,6 +854,8 @@ mission. We are so grateful for your commitment.</p>
                 ddlAccountSingle.Items.Add( new ListItem( account.PublicName, account.Id.ToString() ) );
             }
 
+            ddlAccountSingle.SetValue( accountsList.FirstOrDefault() );
+
             rptPromptForAccountsMulti.DataSource = accountsList;
             rptPromptForAccountsMulti.DataBind();
         }
@@ -668,7 +868,7 @@ mission. We are so grateful for your commitment.</p>
         protected void rptPromptForAccountsMulti_ItemDataBound( object sender, RepeaterItemEventArgs e )
         {
             var financialAccount = e.Item.DataItem as FinancialAccount;
-            if (financialAccount == null)
+            if ( financialAccount == null )
             {
                 return;
             }
@@ -680,9 +880,54 @@ mission. We are so grateful for your commitment.</p>
             nbAccountAmountMulti.Label = financialAccount.PublicName;
         }
 
-        protected void btnFrequency_SelectionChanged( object sender, EventArgs e )
+        /// <summary>
+        /// Handles the SelectionChanged event of the ddlFrequency control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="System.EventArgs" /> instance containing the event data.</param>
+        protected void ddlFrequency_SelectionChanged( object sender, EventArgs e )
         {
+            UpdateGivingControlsForSelections();
+        }
 
+        /// <summary>
+        /// Updates the giving controls based on what options are selected in the UI
+        /// </summary>
+        private void UpdateGivingControlsForSelections()
+        {
+            BindPersonSavedAccounts( ddlFrequency.SelectedValue.AsInteger() );
+
+            int selectedScheduleFrequencyId = ddlFrequency.SelectedValue.AsInteger();
+
+            int oneTimeFrequencyId = DefinedValueCache.GetId( Rock.SystemGuid.DefinedValue.TRANSACTION_FREQUENCY_ONE_TIME.AsGuid() ) ?? 0;
+            bool oneTime = selectedScheduleFrequencyId == oneTimeFrequencyId;
+            var giftTerm = this.GetAttributeValue( AttributeKey.GiftTerm );
+
+            if ( oneTime )
+            {
+                dtpStartDate.Label = string.Format( "Process {0} On", giftTerm );
+            }
+            else
+            {
+                dtpStartDate.Label = "Start Giving On";
+            }
+
+            
+            // if scheduling recurring, it can't start today since the gateway will be taking care of automated giving, it might have already processed today's transaction. So make sure it is no earlier than tomorrow.
+            if ( !oneTime && ( !dtpStartDate.SelectedDate.HasValue || dtpStartDate.SelectedDate.Value.Date <= RockDateTime.Today ) )
+            {
+                dtpStartDate.SelectedDate = RockDateTime.Today.AddDays( 1 );
+            }
+        }
+
+        /// <summary>
+        /// Handles the SelectionChanged event of the ddlPersonSavedAccount control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
+        protected void ddlPersonSavedAccount_SelectionChanged( object sender, EventArgs e )
+        {
+            UpdateGivingControlsForSelections();
         }
 
         #endregion Transaction Entry Related

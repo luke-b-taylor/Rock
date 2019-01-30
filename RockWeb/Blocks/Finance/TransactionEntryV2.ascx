@@ -6,6 +6,8 @@
         <%-- Message for any configuration warnings --%>
         <Rock:NotificationBox ID="nbConfigurationNotification" runat="server" Visible="false" />
 
+        <Rock:NotificationBox ID="nbInvalidPersonWarning" runat="server" Visible="false" />
+
 
         <%-- Friendly Help if there is no Gateway configured --%>
         <asp:Panel ID="pnlGatewayHelp" runat="server" Visible="false">
@@ -32,6 +34,7 @@
         </asp:Panel>
 
         <asp:Panel ID="pnlTransactionEntry" runat="server">
+            <asp:HiddenField ID="hfTargetPersonId" runat="server" />
 
             <div class="row">
                 <%-- Scheduled Gifts Panel --%>
@@ -72,7 +75,7 @@
                                                     </div>
                                                 </ItemTemplate>
                                             </asp:Repeater>
-                                            
+
                                             <Rock:NotificationBox ID="nbScheduledTransactionMessage" runat="server" Visible="false" />
 
                                             <asp:Panel ID="pnlActions" runat="server" CssClass="scheduled-details-actions">
@@ -90,8 +93,11 @@
 
                 <%-- Transaction Entry Panel --%>
                 <div class="col-sm-8">
-                    <h2><asp:Literal ID="lIntroMessage" runat="server" /></h2>
-                    <input type="number" id="nbAccountAmountSingle" runat="server" class="account-amount-single-entry h1" value="0.00" placeholder="Enter Amount" style="border:none" />
+                    <h2>
+                        <asp:Literal ID="lIntroMessage" runat="server" /></h2>
+                    <div class="account-amount-single-entry">
+                        <input type="number" id="nbAccountAmountSingle" runat="server" class="text-center h1" value="0.00" placeholder="Enter Amount" style="border: none;" />
+                    </div>
 
                     <%-- Collect Transaction Info --%>
                     <asp:Panel ID="pnlPromptForAmounts" runat="server">
@@ -106,18 +112,33 @@
                             </asp:Repeater>
                         </asp:Panel>
 
-                        <Rock:ButtonDropDownList ID="ddlCampus" runat="server" />
+                        <%-- Note: Campus is shown AFTER accounts when in MultiAccount mode, but BEFORE accounts when in SingleAccount mode --%>
+                        <Rock:ButtonDropDownList ID="ddlCampus" runat="server" FormGroupCssClass=" margin-t-md" />
 
                         <%-- Prompt for single account amount (in SingleAccount mode) --%>
                         <asp:Panel ID="pnlPromptForAccountSingle" runat="server" Visible="false">
-                            
-                            <Rock:ButtonDropDownList ID="ddlAccountSingle" runat="server" />
+                            <Rock:ButtonDropDownList ID="ddlAccountSingle" runat="server" FormGroupCssClass=" margin-t-md" />
                         </asp:Panel>
 
-                        <Rock:ButtonDropDownList ID="ddlFrequency" runat="server" Label="Frequency" AutoPostBack="true" OnSelectionChanged="btnFrequency_SelectionChanged" />
+                        <asp:Panel ID="pnlScheduledTransaction" runat="server">
+
+                            <Rock:ButtonDropDownList ID="ddlFrequency" runat="server" FormGroupCssClass=" margin-t-md" AutoPostBack="true" OnSelectionChanged="ddlFrequency_SelectionChanged" />
+
+                            <div class="margin-t-md">
+                                <Rock:ButtonDropDownList ID="ddlPersonSavedAccount" runat="server" Label="Giving Method" />
+                                <Rock:DatePicker ID="dtpStartDate" runat="server" Label="First Gift" AllowPastDateSelection="false" />
+                            </div>
+
+                        </asp:Panel>
                     </asp:Panel>
 
-                    <asp:Panel ID="pnlPaymentInfo" runat="server">
+                    <%-- Collect/Update Personal Information --%>
+                    <asp:Panel ID="pnlPersonalInformation" runat="server" Visible="false">
+
+                    </asp:Panel>
+
+                    <%-- Collect Payment Info --%>
+                    <asp:Panel ID="pnlPaymentInfo" runat="server" Visible="false">
                         <%-- Placeholder for the Gateway's Payment Control --%>
                         ##TODO: Gateway's PaymentInfo control would go here##
                         <asp:PlaceHolder ID="phGatewayPaymentInfoControl" runat="server" />
