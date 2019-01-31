@@ -179,6 +179,10 @@
                                     <Rock:GradePicker ID="ddlGradePicker" runat="server" Label="Grade" UseAbbreviation="true" UseGradeOffsetAsValue="true" Visible="false" />
                                 </div>
                             </div>
+
+                            <asp:Panel ID="pnlCampus" runat="server">
+                                <Rock:CampusPicker ID="cpCampus" runat="server" Label="Campus" />
+                            </asp:Panel>
                         </div>
                     </div>
                     <hr />

@@ -56,10 +56,11 @@ namespace RockWeb.Blocks.Security
     [GroupLocationTypeField( Rock.SystemGuid.GroupType.GROUPTYPE_FAMILY, "Location Type",
         "The type of location that address should use.", false, Rock.SystemGuid.DefinedValue.GROUP_LOCATION_TYPE_HOME, "", 14 )]
     [BooleanField( "Address Required", "Whether the address is required.", false, order: 15 )]
-    [BooleanField( "Show Phone Numbers", "Allows hiding the phone numbers.", false, order: 16 )]
+    [BooleanField("Show Phone Numbers", "Allows hiding the phone numbers.", false, order: 16)]
     [IntegerField( "Minimum Age", "The minimum age allowed to create an account. Warning: The Children's Online Privacy Protection Act disallows children under the age of 13 from giving out personal information without their parents' permission.", false, 13, order: 17 )]
     [DefinedValueField( Rock.SystemGuid.DefinedType.PERSON_PHONE_TYPE, "Phone Types", "The phone numbers to display for editing.", false, true, order: 18 )]
     [DefinedValueField( Rock.SystemGuid.DefinedType.PERSON_PHONE_TYPE, "Phone Types Required", "The phone numbers that are required.", false, true, order: 19 )]
+    [BooleanField("Show Campus Selector", "Allows selection of primary campus.", false, order: 20)]
     public partial class AccountEntry : Rock.Web.UI.RockBlock
     {
         #region Fields
@@ -122,6 +123,13 @@ namespace RockWeb.Blocks.Security
                 pnlAddress.Visible = GetAttributeValue( "ShowAddress" ).AsBoolean();
                 pnlPhoneNumbers.Visible = GetAttributeValue( "ShowPhoneNumbers" ).AsBoolean();
                 acAddress.Required = GetAttributeValue( "AddressRequired" ).AsBoolean();
+
+                // show/hide campus selector
+                cpCampus.Visible = GetAttributeValue("ShowCampusSelector").AsBoolean();
+                if ( cpCampus.Visible )
+                {
+                    cpCampus.Campuses = CampusCache.All(false);
+                }
 
                 // set birthday picker required if minimum age > 0
                 if ( GetAttributeValue( "MinimumAge" ).AsInteger() > 0 )
@@ -479,6 +487,11 @@ namespace RockWeb.Blocks.Security
                 cbSms.Checked = phoneNumber.IsMessagingEnabled;
                 cbIsUnlisted.Checked = phoneNumber.IsUnlisted;
             }
+
+            if ( cpCampus.Visible )
+            {
+                cpCampus.SetValue( CurrentPerson.GetCampus() );
+            }
         }
 
         /// <summary>
@@ -762,7 +775,12 @@ namespace RockWeb.Blocks.Security
                 }
             }
 
-            PersonService.SaveNewPerson( person, rockContext, null, false );
+            int? campusId = null;
+            if ( cpCampus.Visible )
+            {
+                campusId = cpCampus.SelectedCampusId;
+            }
+            PersonService.SaveNewPerson( person, rockContext, campusId, false );
 
             // save address
             if ( pnlAddress.Visible )
