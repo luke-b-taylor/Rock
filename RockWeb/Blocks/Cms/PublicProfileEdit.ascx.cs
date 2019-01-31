@@ -50,7 +50,7 @@ namespace RockWeb.Blocks.Cms
     [AttributeField( Rock.SystemGuid.EntityType.GROUP, "GroupTypeId", Rock.SystemGuid.GroupType.GROUPTYPE_FAMILY, "Family Attributes", "The family attributes that should be displayed / edited.", false, true, order: 9 )]
     [AttributeField( Rock.SystemGuid.EntityType.PERSON, "Person Attributes (adults)", "The person attributes that should be displayed / edited for adults.", false, true, order: 10 )]
     [AttributeField( Rock.SystemGuid.EntityType.PERSON, "Person Attributes (children)", "The person attributes that should be displayed / edited for children.", false, true, order: 11 )]
-    [BooleanField( "Show Campus Selector", "Allows selection of primary campus.", false, order: 12 )s]
+    [BooleanField( "Show Campus Selector", "Allows selection of primary campus.", false, order: 12 )]
     public partial class PublicProfileEdit : RockBlock
     {
         #region Properties
@@ -941,6 +941,10 @@ namespace RockWeb.Blocks.Cms
                             rblGender.SelectedValue = person.Gender.ConvertToString();
                             if ( group.Members.Where( gm => gm.PersonId == person.Id && gm.GroupRole.Guid == childGuid ).Any() )
                             {
+                                // don't display campus selector to children.
+                                pnlCampus.Visible = false;
+                                cpCampus.Visible = false;
+
                                 if ( person.GraduationYear.HasValue )
                                 {
                                     ypGraduation.SelectedYear = person.GraduationYear.Value;
