@@ -261,7 +261,7 @@ namespace Rock.Apps.CheckScannerUtility
         /// <param name="e">The <see cref="RoutedEventArgs"/> instance containing the event data.</param>
         private void BtnImageToggle_FrontBack_Click( object sender, RoutedEventArgs e )
         {
-            var parameter = ( ( Button ) e.OriginalSource ).CommandParameter;
+            var parameter = ((Button)e.OriginalSource).CommandParameter as string;
             switch ( parameter )
             {
                 case "Front":

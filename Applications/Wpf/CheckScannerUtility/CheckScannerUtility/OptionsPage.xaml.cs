@@ -367,7 +367,7 @@ namespace Rock.Apps.CheckScannerUtility
 
             _rockConfig.RockBaseUrl = txtRockUrl.Text;
 
-            switch ( cboScannerInterfaceType.SelectedItem )
+            switch ( cboScannerInterfaceType.SelectedItem as string )
             {
                 case "MagTek COM":
                     _rockConfig.ScannerInterfaceType = RockConfig.InterfaceType.MICRImageRS232;

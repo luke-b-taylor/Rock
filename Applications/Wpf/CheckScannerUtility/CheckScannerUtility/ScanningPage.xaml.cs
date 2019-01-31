@@ -958,7 +958,7 @@ namespace Rock.Apps.CheckScannerUtility
 
         private void BtnImageToggle_FrontBack_Click( object sender, RoutedEventArgs e )
         {
-            var parameter = ( ( Button ) e.OriginalSource ).CommandParameter;
+            var parameter = ((Button)e.OriginalSource).CommandParameter as string;
             switch ( parameter )
             {
                 case "Front":
