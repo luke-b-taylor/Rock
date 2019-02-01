@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 using Rock.Financial;
 using Rock.Model;
 
-namespace Rock.TransNational
+namespace Rock.TransNational.Pi
 {
     [Description( "TransNational Pi Gateway" )]
     [Export( typeof( GatewayComponent ) )]
