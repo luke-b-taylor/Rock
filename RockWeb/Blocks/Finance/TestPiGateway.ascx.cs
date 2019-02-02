@@ -120,20 +120,21 @@ namespace RockWeb.Blocks.Finance
             SetEnabledPaymentTypes();
         }
 
+        /// <summary>
+        /// Handles the Click event of the btnProcessSale control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
         protected void btnProcessSale_Click( object sender, EventArgs e )
         {
             var restClient = new RestClient( "https://sandbox.gotnpgateway.com" );
             RestRequest restRequest = new RestRequest( "api/transaction", Method.POST );
             restRequest.AddHeader( "Authorization", tbApiKey.Text );
-            //restRequest.AddHeader( "Content-Type", "application/json" );
-            //restRequest.AddHeader( "Accept", "application/json" );
-            //restRequest.RequestFormat = DataFormat.Json;
-            //restRequest.Resource = ;
-            
+
             var transaction = new
             {
                 type = "sale",
-                amount = (int)(cbAmount.Text.AsDecimal() * 100),
+                amount = ( int ) ( cbAmount.Text.AsDecimal() * 100 ),
                 payment_method = new
                 {
                     token = hfResponseToken.Value
@@ -142,8 +143,11 @@ namespace RockWeb.Blocks.Finance
 
             restRequest.AddJsonBody( transaction );
 
-            //restRequest.AddBody( transaction );
+            //HttpWebRequestElement httpWebRequestElement = new HttpWebRequestElement();
+            //httpWebRequestElement.UseUnsafeHeaderParsing = false;
+
             var response = restClient.Execute( restRequest );
+
             var responseObject = JsonConvert.DeserializeObject( response.Content );
             ceSaleResponse.Text = responseObject.ToJson( Formatting.Indented );
         }
