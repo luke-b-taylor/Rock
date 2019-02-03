@@ -14,6 +14,7 @@
 // limitations under the License.
 // </copyright>
 //
+using ImageSafeInterop;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -23,7 +24,6 @@ using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media.Imaging;
-using ImageScanInteropBuilder;
 
 namespace Rock.Apps.CheckScannerUtility
 {
@@ -716,19 +716,14 @@ namespace Rock.Apps.CheckScannerUtility
 
         #region MagTek USB
 
-        /// <summary>
-        /// Images the safe on document process complete.
-        /// </summary>
-        /// <param name="sender">The sender.</param>
-        /// <param name="e">The e.</param>
-        public void ImageSafe_OnDocumentProcessComplete( object sender, ImageScanInteropBuilder.MagTekUsbScanner.oCheckData e )
+        private void imageSafeCallback(CheckData e)
         {
-            System.Diagnostics.Debug.WriteLine( string.Format( "{0} : ImageSafe_CheckData", DateTime.Now.ToString( "o" ) ) );
+            System.Diagnostics.Debug.WriteLine(string.Format("{0} : ImageSafe_CheckData", DateTime.Now.ToString("o")));
             ScannedDocInfo scannedDoc = new ScannedDocInfo();
 
             var currentPage = Application.Current.MainWindow.Content;
 
-            if ( currentPage != this )
+            if (currentPage != this)
             {
                 // only accept scans when the scanning page is showing
                 ScanningPageUtility.batchPage.micrImage.ClearBuffer();
@@ -736,15 +731,15 @@ namespace Rock.Apps.CheckScannerUtility
             }
             try
             {
-                if ( e.HasError )
+                if (e.HasError)
                 {
                     StringBuilder sb = e.Errors;
-                    var timeoutError = sb.ToString().Contains( "Timeout" );
-                    if ( timeoutError )
+                    var timeoutError = sb.ToString().Contains("Timeout");
+                    if (timeoutError)
                     {
                         bool scanningChecks = RockConfig.Load().TenderTypeValueGuid.AsGuid() == Rock.Client.SystemGuid.DefinedValue.CURRENCY_TYPE_CHECK.AsGuid();
-                        var noItemfound = string.Format( "No {0} detected in scanner. Make sure {0} are properly in the feed tray.", scanningChecks ? "checks" : "items" );
-                        DisplayMessage( "Warning", "labelStyleBannerTitle", "Click Start to begin", "labelStyleAlert", noItemfound );
+                        var noItemfound = string.Format("No {0} detected in scanner. Make sure {0} are properly in the feed tray.", scanningChecks ? "checks" : "items");
+                        DisplayMessage("Warning", "labelStyleBannerTitle", "Click Start to begin", "labelStyleAlert", noItemfound);
                         btnStart.IsEnabled = true;
 
                     }
@@ -752,7 +747,7 @@ namespace Rock.Apps.CheckScannerUtility
                 }
 
                 //Bad Read
-                if ( e.ScannedCheckMicrData.Contains( "?" ) )
+                if (e.ScannedCheckMicrData.Contains("?"))
                 {
                     scannedDoc.BadMicr = true;
                 }
@@ -762,33 +757,29 @@ namespace Rock.Apps.CheckScannerUtility
                 scannedDoc.Upload = true;
                 scannedDoc.CurrencyTypeValue = ScanningPageUtility.batchPage.SelectedCurrencyValue;
                 scannedDoc.SourceTypeValue = ScanningPageUtility.batchPage.SelectedSourceTypeValue;
-                if ( scannedDoc.IsCheck )
+                if (scannedDoc.IsCheck)
                 {
                     scannedDoc.AccountNumber = e.AccountNumber;
                     scannedDoc.RoutingNumber = e.RoutingNumber;
                     scannedDoc.CheckNumber = e.CheckNumber;
                     scannedDoc.FrontImageData = e.ImageData;
                     scannedDoc.ScannedCheckMicrData = e.ScannedCheckMicrData;
-                    if ( !scannedDoc.BadMicr )
+                    if (!scannedDoc.BadMicr)
                     {
-                        scannedDoc.OtherData = GetOtherDataFromMicrData( e );
+                        scannedDoc.OtherData = ImageSafeHelper.GetOtherDataFromMicrData(e);
                     }
                 }
 
-                ShowScannedDocStatusAndUpload( scannedDoc );
+                ShowScannedDocStatusAndUpload(scannedDoc);
             }
-            catch ( Exception ex )
+            catch (Exception ex)
             {
 
             }
+
         }
 
-        private string GetOtherDataFromMicrData( MagTekUsbScanner.oCheckData e )
-        {
-
-            var otherData = e.ScannedCheckMicrData.ToString().Replace( e.AccountNumber, "" ).Replace( e.CheckNumber, "" ).Replace( e.RoutingNumber, "" ).Replace( "TTU", "" );
-            return otherData;
-        }
+      
 
         #endregion
 
@@ -886,11 +877,12 @@ namespace Rock.Apps.CheckScannerUtility
             {
                 if ( rockConfig.ScannerInterfaceType == RockConfig.InterfaceType.MagTekImageSafe )
                 {
-                    this.batchPage.ImageSafe.ProcessDocument();
+                    ImageSafeHelper.ProcessDocument(imageSafeCallback);
                 }
 
             }
         }
+
 
         /// <summary>
         /// Handles the TransportIsDead event of the rangerScanner control.

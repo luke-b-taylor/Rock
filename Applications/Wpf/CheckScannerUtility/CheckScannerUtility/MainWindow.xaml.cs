@@ -14,6 +14,7 @@
 // limitations under the License.
 // </copyright>
 //
+using ImageSafeInterop;
 using System.Linq;
 using System.Windows;
 using System.Windows.Navigation;
@@ -44,16 +45,21 @@ namespace Rock.Apps.CheckScannerUtility
         /// <param name="e">The <see cref="System.ComponentModel.CancelEventArgs"/> instance containing the event data.</param>
         private void mainWindow_Closing( object sender, System.ComponentModel.CancelEventArgs e )
         {
-            var rockConfig = RockConfig.Load();
-            var window = sender as NavigationWindow;
-            rockConfig.WindowCurrentHeight = window.ActualHeight;
-            rockConfig.WindowCurrentWidth = window.ActualWidth;
-            rockConfig.Save();
+            //var rockConfig = RockConfig.Load();
+            //var window = sender as NavigationWindow;
+            //rockConfig.WindowCurrentHeight = window.ActualHeight;
+            //rockConfig.WindowCurrentWidth = window.ActualWidth;
+            //rockConfig.Save();
+
+            ImageSafeHelper.CloseDevice();
             
+          
             BatchPage batchPage = null;
             if ( mainWindow.Content is BatchPage )
             {
                 batchPage = mainWindow.Content as BatchPage;
+                batchPage.BatchPage_Unloaded();
+
             }
             else if ( mainWindow.Content is ScanningPage )
             {
@@ -63,6 +69,7 @@ namespace Rock.Apps.CheckScannerUtility
             if ( batchPage != null && batchPage.rangerScanner != null)
             {
                 batchPage.rangerScanner.ShutDown();
+              
             }
 
             Application.Current.Shutdown();

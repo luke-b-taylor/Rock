@@ -16,6 +16,7 @@
     <IsWebBootstrapper>false</IsWebBootstrapper>
     <TargetFrameworkProfile />
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <PublishUrl>publish\</PublishUrl>
     <Install>true</Install>
     <InstallFrom>Disk</InstallFrom>
     <UpdateEnabled>false</UpdateEnabled>
@@ -25,6 +26,7 @@
     <UpdatePeriodically>false</UpdatePeriodically>
     <UpdateRequired>false</UpdateRequired>
     <MapFileExtensions>true</MapFileExtensions>
+    <ApplicationRevision>0</ApplicationRevision>
     <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
     <UseApplicationTrust>false</UseApplicationTrust>
     <BootstrapperEnabled>true</BootstrapperEnabled>
@@ -39,6 +41,7 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <UseVSHostingProcess>false</UseVSHostingProcess>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <PlatformTarget>x86</PlatformTarget>
@@ -48,6 +51,8 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <UseVSHostingProcess>true</UseVSHostingProcess>
   </PropertyGroup>
   <PropertyGroup>
     <ApplicationIcon>resources\check-scanner.ico</ApplicationIcon>
@@ -122,6 +127,8 @@
     <Compile Include="CaptureAmountScanningPage.xaml.cs">
       <DependentUpon>CaptureAmountScanningPage.xaml</DependentUpon>
     </Compile>
+    <Compile Include="ImageSafe\CheckData.cs" />
+    <Compile Include="ImageSafe\ImageSafeHelper.cs" />
     <Compile Include="MicrImageHostPage.xaml.cs">
       <DependentUpon>MicrImageHostPage.xaml</DependentUpon>
     </Compile>
@@ -274,10 +281,6 @@
       <Project>{eccfb547-327b-42dc-9891-745de7a52923}</Project>
       <Name>AXInteropBuilder</Name>
     </ProjectReference>
-    <ProjectReference Include="..\ImageScanInteropBuilder\ImageScanInteropBuilder.csproj">
-      <Project>{f17a0f57-b8d8-4e86-95ce-4802acafdbe7}</Project>
-      <Name>ImageScanInteropBuilder</Name>
-    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include=".NETFramework,Version=v4.5">
@@ -305,6 +308,7 @@
   <ItemGroup>
     <Resource Include="images\check-image-back.png" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Professional\Common7\Tools\VsDevCmd.bat"

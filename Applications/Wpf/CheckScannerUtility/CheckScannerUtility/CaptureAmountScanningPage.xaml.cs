@@ -25,7 +25,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using ImageScanInteropBuilder;
+using ImageSafeInterop;
 using Rock.Apps.CheckScannerUtility.Models;
 using Rock.Client;
 using Rock.Net;
@@ -201,7 +201,19 @@ namespace Rock.Apps.CheckScannerUtility
         /// <param name="e">The <see cref="System.Windows.RoutedEventArgs"/> instance containing the event data.</param>
         private void BtnClose_Click( object sender, System.Windows.RoutedEventArgs e )
         {
-            this.NavigationService.Navigate( ScanningPageUtility.batchPage );
+            // Save the last entered values before closing
+            if (HasAmount() && !this._currentscannedDocInfo.BadMicr)
+            {
+                HandleCurrentDocInfo(() =>
+                {
+                    this._currentscannedDocInfo = null;
+                    this.NavigationService.Navigate(ScanningPageUtility.batchPage);
+                });
+            }
+            else {
+                this._currentscannedDocInfo = null;
+                this.NavigationService.Navigate(ScanningPageUtility.batchPage);
+            }
         }
 
         /// <summary>
@@ -242,7 +254,7 @@ namespace Rock.Apps.CheckScannerUtility
                      }
                      if ( _interfaceType == RockConfig.InterfaceType.MagTekImageSafe )
                      {
-                         ScanningPageUtility.batchPage.ImageSafe.ProcessDocument();
+                         ImageSafeHelper.ProcessDocument(ImageSafeCallback);
                      }
                      else
                      {
@@ -253,6 +265,7 @@ namespace Rock.Apps.CheckScannerUtility
              } );
 
         }
+
 
         /// <summary>
         /// Handles the Click event of the BtnImageToggle_FrontBack control.
@@ -723,44 +736,45 @@ namespace Rock.Apps.CheckScannerUtility
 
         #region Scanner (MagTek ImageFafe) Events
 
+
         /// <summary>
-        /// Images the safe on document process complete.
+        /// Images the safe callback.
+        /// Called from Process Document Next button Click event
         /// </summary>
-        /// <param name="sender">The sender.</param>
         /// <param name="e">The e.</param>
-        public void ImageSafe_OnDocumentProcessComplete( object sender, ImageScanInteropBuilder.MagTekUsbScanner.oCheckData e )
+        private void ImageSafeCallback(CheckData e)
         {
-            System.Diagnostics.Debug.WriteLine( string.Format( "{0} : ImageSafe_CheckData", DateTime.Now.ToString( "o" ) ) );
+            System.Diagnostics.Debug.WriteLine(string.Format("{0} : ImageSafe_CheckData", DateTime.Now.ToString("o")));
             borderAlertBorder.Visibility = Visibility.Collapsed;
             ScannedDocInfo scannedDoc = new ScannedDocInfo();
-
             var currentPage = Application.Current.MainWindow.Content;
 
-            if ( currentPage != this )
+            if (currentPage != this)
             {
                 // only accept scans when the scanning page is showing
                 ScanningPageUtility.batchPage.micrImage.ClearBuffer();
                 return;
             }
+
             try
             {
-                if ( e.HasError )
+                if (e.HasError)
                 {
                     StringBuilder sb = e.Errors;
-                    var timeoutError = sb.ToString().Contains( "Timeout" );
-                    if ( timeoutError )
+                    var timeoutError = sb.ToString().Contains("Timeout");
+                    if (timeoutError)
                     {
                         bool scanningChecks = RockConfig.Load().TenderTypeValueGuid.AsGuid() == Rock.Client.SystemGuid.DefinedValue.CURRENCY_TYPE_CHECK.AsGuid();
-                        var noItemfound = string.Format( "No {0} detected in scanner. Make sure {0} are properly in the feed tray.", scanningChecks ? "checks" : "items" );
+                        var noItemfound = string.Format("No {0} detected in scanner. Make sure {0} are properly in the feed tray.", scanningChecks ? "checks" : "items");
                         borderAlertBorder.Visibility = Visibility.Visible;
-                        DisplayMessage( "Warning", "labelStyleBannerTitle", "Load Check  click next", "labelStyleAlert", noItemfound );
+                        DisplayMessage("Warning", "labelStyleBannerTitle", "Load Check  click next", "labelStyleAlert", noItemfound);
                         btnNext.IsEnabled = true;
                     }
                     return;
                 }
 
                 //Bad Read
-                if ( e.ScannedCheckMicrData.Contains( "?" ) )
+                if (e.ScannedCheckMicrData == null || e.ScannedCheckMicrData.Contains("?"))
                 {
                     scannedDoc.BadMicr = true;
                 }
@@ -770,38 +784,30 @@ namespace Rock.Apps.CheckScannerUtility
                 scannedDoc.Upload = true;
                 scannedDoc.CurrencyTypeValue = ScanningPageUtility.batchPage.SelectedCurrencyValue;
                 scannedDoc.SourceTypeValue = ScanningPageUtility.batchPage.SelectedSourceTypeValue;
-                if ( scannedDoc.IsCheck )
+                if (scannedDoc.IsCheck)
                 {
                     scannedDoc.AccountNumber = e.AccountNumber;
                     scannedDoc.RoutingNumber = e.RoutingNumber;
                     scannedDoc.CheckNumber = e.CheckNumber;
                     scannedDoc.FrontImageData = e.ImageData;
                     scannedDoc.ScannedCheckMicrData = e.ScannedCheckMicrData;
-                    if ( !scannedDoc.BadMicr )
+                    if (!scannedDoc.BadMicr)
                     {
-                        scannedDoc.OtherData = GetOtherDataFromMicrData( e );
+                        scannedDoc.OtherData = ImageSafeHelper.GetOtherDataFromMicrData(e);
                     }
                 }
 
-                ShowScannedDocStatusAndUpload( scannedDoc );
+                ShowScannedDocStatusAndUpload(scannedDoc);
             }
-            catch ( Exception ex )
+            catch (Exception ex)
             {
 
             }
+
+
+
         }
 
-        /// <summary>
-        /// Gets the other data from micr data.
-        /// </summary>
-        /// <param name="e">The e.</param>
-        /// <returns></returns>
-        private string GetOtherDataFromMicrData( MagTekUsbScanner.oCheckData e )
-        {
-
-            var otherData = e.ScannedCheckMicrData.ToString().Replace( e.AccountNumber, "" ).Replace( e.CheckNumber, "" ).Replace( e.RoutingNumber, "" ).Replace( "TTU", "" );
-            return otherData;
-        }
         #endregion
 
         #region Display Methods

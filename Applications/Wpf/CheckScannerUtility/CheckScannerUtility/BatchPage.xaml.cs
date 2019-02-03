@@ -22,24 +22,29 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Navigation;
 using System.Xml;
+using ImageSafeInterop;
 using Rock.Client;
 using Rock.Client.Enums;
 using Rock.Net;
 
 namespace Rock.Apps.CheckScannerUtility
 {
+
     /// <summary>
     /// Interaction logic for BatchPage.xaml
     /// </summary>
     public partial class BatchPage : System.Windows.Controls.Page
     {
+        private static NavigationService _navigationService;
         /// <summary>
         /// Initializes a new instance of the <see cref="BatchPage" /> class.
         /// </summary>
         /// <param name="loggedInPerson">The logged in person.</param>
         public BatchPage( Person loggedInPerson )
         {
+            
             var rockConfig = RockConfig.Load();
             LoggedInPerson = loggedInPerson;
             InitializeComponent();
@@ -67,30 +72,11 @@ namespace Rock.Apps.CheckScannerUtility
             {
                 // intentionally nothing.  means they don't have the MagTek driver
             }
-
-            try
-            {
-                var executionPath = System.AppDomain.CurrentDomain.BaseDirectory;
-                this.ImageSafe = new ImageScanInteropBuilder.MagTekUsbScanner( executionPath );
-                if ( rockConfig.CaptureAmountOnScan == true )
-                {
-                    this.ImageSafe.OnDocumentProcessComplete += CaptureAmountScanningPage.ImageSafe_OnDocumentProcessComplete;
-                }
-                else
-                {
-                    this.ImageSafe.OnDocumentProcessComplete += ScanningPage.ImageSafe_OnDocumentProcessComplete;
-                }        
-               
-            }
-            catch
-            {
-
-            }
             try
             {
                 var rangerScannerHostPage = new RangerScannerHostPage();
                 this.rangerScanner = rangerScannerHostPage.rangerScanner;
-                SetCaputureAmountOnScan();
+           
                 if ( rockConfig.ScannerInterfaceType == RockConfig.InterfaceType.RangerApi )
                 {
                      this.rangerScanner.TransportNewState += rangerScanner_TransportNewState;
@@ -112,6 +98,8 @@ namespace Rock.Apps.CheckScannerUtility
                     this.rangerScanner.TransportStartingUpState += rangerScannerHostPage.rangerScanner_TransportStartingUpState;
                     this.rangerScanner.TransportTrackIsClear += rangerScannerHostPage.rangerScanner_TransportTrackIsClear;
                 }
+
+                BindDeviceToPage();
             }
             catch
             {
@@ -119,31 +107,69 @@ namespace Rock.Apps.CheckScannerUtility
             }
         }
 
-        public void SetCaputureAmountOnScan()
+
+        public void BindDeviceToPage()
         {
             var rockConfig = RockConfig.Load();
-            if ( rockConfig.CaptureAmountOnScan == true )
+            if (rockConfig.CaptureAmountOnScan == true)
             {
-                this.BindRangeScannerEventsCaputureAmountScanningPage();
+
+                this.BindDeviceToCaptureAmountScreen();
             }
             else
             {
-                this.BindRangeScannerEventsScanningPage();
+                this.BindDeviceToScanningPage();
             }
         }
 
-        private void BindRangeScannerEventsScanningPage()
+        public void UnbindAllEvents()
         {
+
+            //Unbind to ScannigScreen
+            this.micrImage.MicrDataReceived -= ScanningPage.micrImage_MicrDataReceived;
+            // this.ImageSafe.OnDocumentProcessComplete -= ScanningPage.ImageSafe_OnDocumentProcessComplete;
+            this.rangerScanner.TransportFeedingState -= ScanningPage.rangerScanner_TransportFeedingState;
+            this.rangerScanner.TransportFeedingStopped -= ScanningPage.rangerScanner_TransportFeedingStopped;
+            this.rangerScanner.TransportNewItem -= ScanningPage.rangerScanner_TransportNewItem;
+            this.rangerScanner.TransportSetItemOutput -= ScanningPage.rangerScanner_TransportSetItemOutput;
+            this.rangerScanner.TransportIsDead -= ScanningPage.rangerScanner_TransportIsDead;
+
+            //Unbind to Capture Screen
+            this.micrImage.MicrDataReceived -= CaptureAmountScanningPage.micrImage_MicrDataReceived;
+            //  this.ImageSafe.OnDocumentProcessComplete -= CaptureAmountScanningPage.ImageSafe_OnDocumentProcessComplete;
+            this.rangerScanner.TransportFeedingState -= CaptureAmountScanningPage.rangerScanner_TransportFeedingState;
+            this.rangerScanner.TransportFeedingStopped -= CaptureAmountScanningPage.rangerScanner_TransportFeedingStopped;
+            this.rangerScanner.TransportNewItem -= CaptureAmountScanningPage.rangerScanner_TransportNewItem;
+            this.rangerScanner.TransportSetItemOutput -= CaptureAmountScanningPage.rangerScanner_TransportSetItemOutput;
+            this.rangerScanner.TransportIsDead -= CaptureAmountScanningPage.rangerScanner_TransportIsDead;
+
+        }
+        private void BindDeviceToScanningPage()
+        {
+            //Bind to Scanning Screen
+
+            this.micrImage.MicrDataReceived += ScanningPage.micrImage_MicrDataReceived;
+            // this.ImageSafe.OnDocumentProcessComplete -= ScanningPage.ImageSafe_OnDocumentProcessComplete;
+            // this.ImageSafe.OnDocumentProcessComplete += ScanningPage.ImageSafe_OnDocumentProcessComplete;
             this.rangerScanner.TransportFeedingState += ScanningPage.rangerScanner_TransportFeedingState;
             this.rangerScanner.TransportFeedingStopped += ScanningPage.rangerScanner_TransportFeedingStopped;
             this.rangerScanner.TransportNewItem += ScanningPage.rangerScanner_TransportNewItem;
             this.rangerScanner.TransportSetItemOutput += ScanningPage.rangerScanner_TransportSetItemOutput;
             this.rangerScanner.TransportIsDead += ScanningPage.rangerScanner_TransportIsDead;
-
         }
 
-        private void BindRangeScannerEventsCaputureAmountScanningPage()
+        private void BindDeviceToCaptureAmountScreen()
         {
+            //if (this.ImageSafe == null)
+            //{
+            //    var executionPath = System.AppDomain.CurrentDomain.BaseDirectory;
+            //    this.ImageSafe = new ImageScanInteropBuilder.MagTekUsbScanner(executionPath);
+            //}
+
+            this.micrImage.MicrDataReceived -= CaptureAmountScanningPage.micrImage_MicrDataReceived;
+            this.micrImage.MicrDataReceived += CaptureAmountScanningPage.micrImage_MicrDataReceived;
+            //this.ImageSafe.OnDocumentProcessComplete -= ScanningPage.ImageSafe_OnDocumentProcessComplete;
+            //this.ImageSafe.OnDocumentProcessComplete += CaptureAmountScanningPage.ImageSafe_OnDocumentProcessComplete;
             this.rangerScanner.TransportFeedingState += CaptureAmountScanningPage.rangerScanner_TransportFeedingState;
             this.rangerScanner.TransportFeedingStopped += CaptureAmountScanningPage.rangerScanner_TransportFeedingStopped;
             this.rangerScanner.TransportNewItem += CaptureAmountScanningPage.rangerScanner_TransportNewItem;
@@ -159,7 +185,6 @@ namespace Rock.Apps.CheckScannerUtility
         /// </value>
         public AxMTMicrImage.AxMicrImage micrImage { get; set; }
 
-        public ImageScanInteropBuilder.MagTekUsbScanner ImageSafe { get; set; }
 
         /// <summary>
         /// Gets or sets the ranger scanner.
@@ -286,6 +311,8 @@ namespace Rock.Apps.CheckScannerUtility
             }
         }
 
+   
+
         #region Ranger (Canon CR50/80) Scanner Events
 
         /// <summary>
@@ -399,6 +426,7 @@ namespace Rock.Apps.CheckScannerUtility
         /// <param name="e">The <see cref="RoutedEventArgs"/> instance containing the event data.</param>
         private void batchPage_Loaded( object sender, RoutedEventArgs e )
         {
+            _navigationService = this.NavigationService;
             spBatchDetailReadOnly.Visibility = Visibility.Visible;
             spBatchDetailEdit.Visibility = Visibility.Collapsed;
 
@@ -606,11 +634,6 @@ namespace Rock.Apps.CheckScannerUtility
         {
             this.Cursor = Cursors.Wait;
             UpdateScannerStatusForMagtek( false );
-            if ( this.ImageSafe == null )
-            {
-                //No Image Safe
-                return false;
-            }
 
             //Port Open Connects
             var firmware = this.GetImageSafeVersion();
@@ -627,15 +650,16 @@ namespace Rock.Apps.CheckScannerUtility
             }
         }
 
+     
         public string GetImageSafeVersion()
         {
             
-            if ( this.ImageSafe.PortOpen )
+            if ( ImageSafeHelper.OpenDevice() )
             {
                 //Query Device to See its Working
                 //option are : DeviceCapabilities,DeviceStatus,DeviceUsage
                 //Results are and XML String
-                var results = this.ImageSafe.QueryDevice( "DeviceCapabilities" );
+                var results = ImageSafeHelper.QueryDevice( "DeviceCapabilities" );
                 if ( results.Length > 0 )
                 {
                     XmlDocument document = new XmlDocument();
@@ -731,7 +755,8 @@ namespace Rock.Apps.CheckScannerUtility
         private void btnScan_Click( object sender, RoutedEventArgs e )
         {
             var rockConfig = RockConfig.Load();
-
+            ScanningPageUtility.CurrentFinacialTransactions = null;
+            ScanningPageUtility.ItemsUploaded = 0;
             if ( grdBatchItems.DataContext != null )
             {
                 ScanningPageUtility.CurrentFinacialTransactions = ( grdBatchItems.DataContext as BindingList<FinancialTransaction> ).ToList();
@@ -740,7 +765,7 @@ namespace Rock.Apps.CheckScannerUtility
             // NOTE: If ranger is powered down after the app starts, it might report that is is connected.  We'll catch that later when they actually start scanning
             if ( ConnectToScanner() )
             {
-                this.NavigationService.Navigate( this.ScanningPromptPage );
+                _navigationService.Navigate( this.ScanningPromptPage );
             }
             else
             {
@@ -764,7 +789,7 @@ namespace Rock.Apps.CheckScannerUtility
         public void NavigateToOptionsPage()
         {
             var optionsPage = new OptionsPage( this );
-            ScanningPageUtility.batchPage.NavigationService.Navigate( optionsPage );
+            _navigationService.Navigate( optionsPage );
         }
 
         /// <summary>
@@ -1241,7 +1266,7 @@ namespace Rock.Apps.CheckScannerUtility
                     BatchItemDetailPage.FinancialTransaction = financialTransaction;
                     if ( this.NavigationService != null )
                     {
-                        this.NavigationService.Navigate( BatchItemDetailPage );
+                        _navigationService.Navigate( BatchItemDetailPage );
                     }
                 }
             }
@@ -1329,5 +1354,10 @@ namespace Rock.Apps.CheckScannerUtility
             textblock.Text = sum.ToString( "C" );
         }
 
+        public void BatchPage_Unloaded()
+        {
+            
+
+        }
     }
 }

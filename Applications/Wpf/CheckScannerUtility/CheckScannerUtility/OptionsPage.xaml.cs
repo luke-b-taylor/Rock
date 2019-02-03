@@ -23,6 +23,7 @@ using System.Net;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using ImageSafeInterop;
 using Rock.Apps.CheckScannerUtility.Models;
 using Rock.Client;
 using Rock.Net;
@@ -40,7 +41,7 @@ namespace Rock.Apps.CheckScannerUtility
         private List<FinancialAccount> _allAccounts;
         private RockConfig _rockConfig;
         private ObservableCollection<DisplayAccountModel> _displayAccounts = new ObservableCollection<DisplayAccountModel>();
-
+        private RockConfig.InterfaceType _interfaceType;
         /// <summary>
         /// Initializes a new instance of the <see cref="OptionsPage"/> class.
         /// </summary>
@@ -192,11 +193,10 @@ namespace Rock.Apps.CheckScannerUtility
                 string version = "-1";
                 try
                 {
+
                     this.Cursor = Cursors.Wait;
-                    if ( BatchPage.ImageSafe != null )
-                    {
-                        version = BatchPage.GetImageSafeVersion();
-                    }
+                 
+                    version = BatchPage.GetImageSafeVersion();
                 }
                 finally
                 {
@@ -287,7 +287,7 @@ namespace Rock.Apps.CheckScannerUtility
                 cboScannerInterfaceType.Items.Add( "MagTek COM" );
             }
 
-            if ( this.BatchPage.ImageSafe != null )
+            if ( ImageSafeHelper.OpenDevice())
             {
                 cboScannerInterfaceType.Items.Add( "MagTek Image Safe" );
             }
@@ -412,7 +412,9 @@ namespace Rock.Apps.CheckScannerUtility
             {
                 BatchPage.rangerScanner.ShutDown();
             }
-            BatchPage.SetCaputureAmountOnScan();
+
+            BatchPage.UnbindAllEvents();
+            BatchPage.BindDeviceToPage();
             BatchPage.ConnectToScanner();
 
             this.NavigationService.GoBack();
