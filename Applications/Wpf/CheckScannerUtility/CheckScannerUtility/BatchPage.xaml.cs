@@ -440,6 +440,13 @@ namespace Rock.Apps.CheckScannerUtility
                 this.FirstPageLoad = false;
             }
 
+            if (!string.IsNullOrEmpty(txtControlItemCount.Text))
+            {
+                if (int.TryParse(txtControlItemCount.Text, out int itemsToProcess))
+                {
+                    ScanningPageUtility.ItemsToProcess = itemsToProcess;
+                }
+            }
             CheckBatchCompleted();
   
         }
@@ -1330,7 +1337,7 @@ namespace Rock.Apps.CheckScannerUtility
 
         private void BatchPage_SizeChanged( object sender, SizeChangedEventArgs e )
         {
-            this.grdBatchItems.Height = this.RenderSize.Height * .515;
+            this.grdBatchItems.Height = this.RenderSize.Height - 385;
         }
 
         private void TextBlock_Loaded( object sender, RoutedEventArgs e )

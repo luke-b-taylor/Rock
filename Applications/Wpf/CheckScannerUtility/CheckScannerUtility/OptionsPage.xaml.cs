@@ -405,6 +405,8 @@ namespace Rock.Apps.CheckScannerUtility
                 _rockConfig.MICRImageComPort = short.Parse( comPortName.Replace( "COM", string.Empty ) );
             }
 
+
+
             _rockConfig.Save();
 
             // shutdown the scanner so that options will be reloaded when the batch page loads
@@ -417,7 +419,7 @@ namespace Rock.Apps.CheckScannerUtility
             BatchPage.BindDeviceToPage();
             BatchPage.ConnectToScanner();
 
-            this.NavigationService.GoBack();
+            this.NavigationService.Navigate(BatchPage);
         }
 
         private void AddAccountsForAmountsToSave()
@@ -487,15 +489,15 @@ namespace Rock.Apps.CheckScannerUtility
         private void cboScannerInterfaceType_SelectionChanged( object sender, SelectionChangedEventArgs e )
         {
             // show Image Option only for Ranger so default Collapsed for both MagTeks
-            lblImageOption.Visibility = Visibility.Collapsed;
-            cboImageOption.Visibility = Visibility.Collapsed;
+            lblImageOption.Visibility = Visibility.Hidden;
+            cboImageOption.Visibility = Visibility.Hidden;
 
             // show Image Option only for Ranger so default Collapsed
-            lblAdvancedInfo.Visibility = Visibility.Collapsed;
-            lblSensitivity.Visibility = Visibility.Collapsed;
-            txtSensitivity.Visibility = Visibility.Collapsed;
-            lblPlurality.Visibility = Visibility.Collapsed;
-            txtPlurality.Visibility = Visibility.Collapsed;
+            lblAdvancedInfo.Visibility = Visibility.Hidden;
+            lblSensitivity.Visibility = Visibility.Hidden;
+            txtSensitivity.Visibility = Visibility.Hidden;
+            lblPlurality.Visibility = Visibility.Hidden;
+            txtPlurality.Visibility = Visibility.Hidden;
 
             if ( cboScannerInterfaceType.SelectedItem != null )
             {
@@ -506,6 +508,10 @@ namespace Rock.Apps.CheckScannerUtility
                         // show COM port option only for Mag Tek COM
                         lblMagTekCommPort.Visibility = Visibility.Visible;
                         cboMagTekCommPort.Visibility = Visibility.Visible;
+                        lblSensitivity.Visibility = Visibility.Collapsed;
+                        txtSensitivity.Visibility = Visibility.Collapsed;
+                        lblPlurality.Visibility = Visibility.Collapsed;
+                        txtPlurality.Visibility = Visibility.Collapsed;
                         break;
                     case "MagTek Image Safe":
                         //No COM Port for USB

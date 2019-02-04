@@ -85,19 +85,23 @@ namespace Rock.Apps.CheckScannerUtility
                     string message;
                     if ( rockConfig.ScannerInterfaceType == RockConfig.InterfaceType.RangerApi )
                     {
-
-                        message = @"Unable to read check information
-                                Click 'Skip' to reject this check and continue scanning.
-                                To retry this check, put the check back into the feed tray.
-
-                                Click 'Upload' to upload the check as-is.
-                                Click 'Stop' to reject this check and stop scanning.";
+                        message = @"Unable to read check information."
+                                + Environment.NewLine
+                                + "Click 'Skip' to reject this check and continue scanning."
+                                + Environment.NewLine
+                                + "To retry this check, put the check back into the feed tray."
+                                + Environment.NewLine
+                                + "Click 'Upload' to upload the check as-is."
+                                + Environment.NewLine
+                                + "Click 'Stop' to reject this check and stop scanning.";
                     }
                     else
                     {
-                        message = @"Unable to read check information
-                                    Click 'Skip' to reject this check.    
-                                    Click 'Upload' to upload the check as-is.";
+                        message = @"Unable to read check information."
+                                  + Environment.NewLine
+                                  + "Click 'Skip' to reject this check."
+                                  + Environment.NewLine
+                                  + "Click 'Upload' to upload the check as-is.";
 
                     }
 
@@ -341,7 +345,6 @@ namespace Rock.Apps.CheckScannerUtility
             if ( rockConfig.ScannerInterfaceType == RockConfig.InterfaceType.MICRImageRS232 )
             {
                 grdImageThumbnailsButtons.Visibility = Visibility.Collapsed;
-                DisplayMessage( "Warning", "labelStyleBannerTitle", "Ready to scan next check" );
                 btnStart.Visibility = Visibility.Collapsed; 
                 return;
             }
@@ -349,7 +352,6 @@ namespace Rock.Apps.CheckScannerUtility
             if ( rockConfig.ScannerInterfaceType == RockConfig.InterfaceType.MagTekImageSafe )
             {
                 grdImageThumbnailsButtons.Visibility = Visibility.Collapsed;
-                DisplayMessage( "Warning", "labelStyleBannerTitle", "Click Start to begin" );
                 btnStopScanning.Visibility = Visibility.Collapsed;
                 btnStart.IsEnabled = true;
                 return;

@@ -7,15 +7,13 @@ using System.Text;
 
 namespace ImageSafeInterop
 {
+    /// <summary>
+    /// With the Interop Process without having the Code directly in the same project
+    /// When the app was closed the mtxmlmcr.dll would stay in memory
+    /// This Static Helper Interfaces the MagTek image safe scanner
+    /// </summary>
     public static class ImageSafeHelper
     {
-        /// <summary>
-        /// Required designer variable.
-        /// </summary>
-
-
-        private const int DEFAULT_STRING_BUFFER_SIZE = 4096;
-        static int nTotalDocProcessed = 0;
         public enum DocType
         {
             CHECK,

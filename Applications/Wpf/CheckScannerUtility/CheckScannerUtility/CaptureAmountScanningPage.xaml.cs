@@ -940,22 +940,27 @@ namespace Rock.Apps.CheckScannerUtility
                     if ( rockConfig.ScannerInterfaceType == RockConfig.InterfaceType.RangerApi )
                     {
 
-                        message = @"Unable to read check information
-                                Click 'Skip' to reject this check and continue scanning.
-                                To retry this check, put the check back into the feed tray.
-
-                                Click 'Upload' to upload the check as-is.
-                                Click 'Stop' to reject this check and stop scanning.";
+                        message = @"Unable to read check information."
+                                + Environment.NewLine
+                                + "Click 'Skip' to reject this check and continue scanning."
+                                + Environment.NewLine
+                                + "To retry this check, put the check back into the feed tray."
+                                + Environment.NewLine
+                                + Environment.NewLine
+                                + "Click 'Upload' to upload the check as-is."
+                                + Environment.NewLine
+                                + "Click 'Stop' to reject this check and stop scanning.";
                     }
                     else
                     {
-                        message = @"Unable to read check information
-                                    Click 'Skip' to reject this check.    
-                                    Click 'Upload' to upload the check as-is.";
+                        message = @"Unable to read check information."
+                                  + Environment.NewLine
+                                  + "Click 'Skip' to reject this check."    
+                                  + "Click 'Upload' to upload the check as-is.";
 
                     }
 
-                    this.DisplayMessage( "Warning", mainMessageStyleKey: "WarningTextStyle", mainMessage: message );
+                    this.DisplayMessage("Alert", mainMessageStyleKey: "AlertTextStyle", mainMessage: message);
                     ShowUploadWarnings( scannedDocInfo );
 
                 }
@@ -1154,7 +1159,6 @@ namespace Rock.Apps.CheckScannerUtility
             {
                 this.lblAlertCaptionMessage.Visibility = Visibility.Visible;
                 grdImageThumbnailsButtons.Visibility = Visibility.Collapsed;
-                DisplayMessage( "Warning", "labelStyleBannerTitle", "Load check and click next" );
                 lvAccounts.IsEnabled = false;
                 return;
             }
@@ -1163,7 +1167,6 @@ namespace Rock.Apps.CheckScannerUtility
             {
                 grdImageThumbnailsButtons.Visibility = Visibility.Collapsed;
                 this.lblAlertCaptionMessage.Visibility = Visibility.Visible;
-                DisplayMessage( "Warning", "labelStyleBannerTitle", "Load check and click next" );
                 lvAccounts.IsEnabled = false;
                 btnNext.IsEnabled = true;
                 return;
