@@ -34,6 +34,7 @@ namespace Rock.Apps.CheckScannerUtility
     {
         private bool _isDoubleSided = false;
         private RockConfig.InterfaceType _interfaceType;
+        private bool _isBackScan;
 
         public BatchPage batchPage => ScanningPageUtility.batchPage;
 
@@ -135,11 +136,7 @@ namespace Rock.Apps.CheckScannerUtility
             {
                 var uploaded= ScanningPageUtility.UploadScannedItem( scannedDocInfo, ( x ) => { lblScanItemUploadSuccess.Visibility = Visibility.Visible; } );
                 if ( uploaded )
-                {
-                    if ( _interfaceType == RockConfig.InterfaceType.MICRImageRS232 )
-                    {
-                        DisplayMessage( "Warning", "labelStyleBannerTitle", "Ready to scan next check" );
-                    }
+                { 
                     this.ShowUploadSuccess();
                 }
                 if ( ScanningPageUtility.KeepScanning )
@@ -607,6 +604,7 @@ namespace Rock.Apps.CheckScannerUtility
             {
                 //// if we didn't get a routingnumber, and we are expecting a back scan, use the scan as the back image
                 //// However, if we got a routing number, assuming we are scanning a new check regardless
+            
                 if ( string.IsNullOrWhiteSpace( routingNumber ) )
                 {
                     scanningMagTekBackImage = true;
@@ -651,6 +649,7 @@ namespace Rock.Apps.CheckScannerUtility
             try
             {
                 string statusMsg = string.Empty;
+                //Writing To File 
                 ScanningPageUtility.batchPage.micrImage.TransmitCurrentImage( docImageFileName, ref statusMsg );
                 if ( !File.Exists( docImageFileName ) )
                 {
@@ -676,21 +675,19 @@ namespace Rock.Apps.CheckScannerUtility
                     }
                 }
 
+                bool scanningChecks = RockConfig.Load().TenderTypeValueGuid.AsGuid() == Rock.Client.SystemGuid.DefinedValue.CURRENCY_TYPE_CHECK.AsGuid();
                 if ( scannedDoc.BackImageData == null && rockConfig.PromptToScanRearImage )
                 {
                     // scanning the front image, but still need to scan the back
-                    bool scanningChecks = RockConfig.Load().TenderTypeValueGuid.AsGuid() == Rock.Client.SystemGuid.DefinedValue.CURRENCY_TYPE_CHECK.AsGuid();
-                    var promptToScanRearImage = string.Format( "No {0} detected in scanner. Make sure {0} are properly in the feed tray.", scanningChecks ? "checks" : "items" );
-
-                    this.DisplayMessage( "Warning", mainMessageStyleKey: "labelStyleAlert", mainMessage: promptToScanRearImage );
-                    HideUploadWarningPrompts( true );
-                    HideUploadSuccess();
-                    DisplayScannedDocInfo( scannedDoc );
+                    HideUploadWarningPrompts(true);
+                    // scanning the front image, but still need to scan the back
+                    var message = string.Format("Insert the {0} again facing the other direction to get an image of the back.", scanningChecks ? "checks" : "items");
+                    this.DisplayMessage("Info", mainMessage: message);
+                    DisplayScannedDocInfo(scannedDoc);
                 }
                 else
                 {
                     // scanned both sides (or just the front if they don't want to scan both sides )
-                    this.HideDisplayMessage();
                     scannedDoc.Upload = !scannedDoc.IsCheck || !( scannedDoc.BadMicr || scannedDoc.Duplicate );
                     this.ShowScannedDocStatusAndUpload( scannedDoc );
                 }
@@ -721,8 +718,6 @@ namespace Rock.Apps.CheckScannerUtility
         private void imageSafeCallback(CheckData e)
         {
             System.Diagnostics.Debug.WriteLine(string.Format("{0} : ImageSafe_CheckData", DateTime.Now.ToString("o")));
-            ScannedDocInfo scannedDoc = new ScannedDocInfo();
-
             var currentPage = Application.Current.MainWindow.Content;
 
             if (currentPage != this)
@@ -731,49 +726,129 @@ namespace Rock.Apps.CheckScannerUtility
                 ScanningPageUtility.batchPage.micrImage.ClearBuffer();
                 return;
             }
+
+            ScannedDocInfo scannedDoc = _currentMagtekScannedDoc;
+            var rockConfig = RockConfig.Load();
+            bool scanningImageSafeBackImage = false;
+            if (_currentMagtekScannedDoc != null && _currentMagtekScannedDoc.BackImageData == null && rockConfig.PromptToScanRearImage)
+            {
+                //// if we didn't get a routingnumber, and we are expecting a back scan, use the scan as the back image
+                //// However, if we got a routing number, assuming we are scanning a new check regardless
+
+                if (string.IsNullOrWhiteSpace(e.RoutingNumber))
+                {
+                    scanningImageSafeBackImage = true;
+                }
+                else
+                {
+                    scanningImageSafeBackImage = false;
+                }
+
+            }
+            if (scanningImageSafeBackImage)
+            {
+                scannedDoc = _currentMagtekScannedDoc;
+            }
+            else
+            {
+                scannedDoc = new ScannedDocInfo();
+                scannedDoc.CurrencyTypeValue = ScanningPageUtility.batchPage.SelectedCurrencyValue;
+                scannedDoc.SourceTypeValue = ScanningPageUtility.batchPage.SelectedSourceTypeValue;
+
+                if (scannedDoc.IsCheck && !e.HasError)
+                {
+                    scannedDoc.ScannedCheckMicrData = e.ScannedCheckMicrData;
+                    scannedDoc.RoutingNumber = e.RoutingNumber;
+                    scannedDoc.AccountNumber = e.AccountNumber;
+                    scannedDoc.CheckNumber = e.CheckNumber;
+                    scannedDoc.ScannedCheckMicrData = e.ScannedCheckMicrData;
+                    scannedDoc.OtherData = ImageSafeHelper.GetOtherDataFromMicrData(e);
+
+                    ScanningPageUtility.WriteToDebugLog(string.Format("[{0}] - '{1}'", DateTime.Now.ToString("o"), scannedDoc.ScannedCheckMicrData));
+                }
+
+
+            }
+            // set the _currentMagtekScannedDoc in case we are going to scan the back of the image
+            _currentMagtekScannedDoc = scannedDoc;
+
             try
             {
+                bool scanningChecks = RockConfig.Load().TenderTypeValueGuid.AsGuid() == Rock.Client.SystemGuid.DefinedValue.CURRENCY_TYPE_CHECK.AsGuid();
                 if (e.HasError)
                 {
                     StringBuilder sb = e.Errors;
                     var timeoutError = sb.ToString().Contains("Timeout");
                     if (timeoutError)
                     {
-                        bool scanningChecks = RockConfig.Load().TenderTypeValueGuid.AsGuid() == Rock.Client.SystemGuid.DefinedValue.CURRENCY_TYPE_CHECK.AsGuid();
                         var noItemfound = string.Format("No {0} detected in scanner. Make sure {0} are properly in the feed tray.", scanningChecks ? "checks" : "items");
-                        DisplayMessage("Warning", "labelStyleBannerTitle", "Click Start to begin", "labelStyleAlert", noItemfound);
-                        btnStart.IsEnabled = true;
-
+                        DisplayMessage("Warning", "labelStyleBannerTitle", mainMessage: noItemfound);
                     }
                     return;
                 }
 
+
                 //Bad Read
-                if (e.ScannedCheckMicrData.Contains("?"))
+                //Bad Read
+                // We set is back scan when we scan front after prompt and are scanning the back
+                if (!_isBackScan && (e.ScannedCheckMicrData == null || e.ScannedCheckMicrData.Contains("?")))
                 {
                     scannedDoc.BadMicr = true;
                 }
-
-
-                // mark it as Upload, but we'll set it to false if anything bad happens before we actually upload
-                scannedDoc.Upload = true;
-                scannedDoc.CurrencyTypeValue = ScanningPageUtility.batchPage.SelectedCurrencyValue;
-                scannedDoc.SourceTypeValue = ScanningPageUtility.batchPage.SelectedSourceTypeValue;
-                if (scannedDoc.IsCheck)
+                if (_currentMagtekScannedDoc != null && _currentMagtekScannedDoc.FrontImageData != null)
                 {
-                    scannedDoc.AccountNumber = e.AccountNumber;
-                    scannedDoc.RoutingNumber = e.RoutingNumber;
-                    scannedDoc.CheckNumber = e.CheckNumber;
-                    scannedDoc.FrontImageData = e.ImageData;
-                    scannedDoc.ScannedCheckMicrData = e.ScannedCheckMicrData;
-                    if (!scannedDoc.BadMicr)
-                    {
-                        scannedDoc.OtherData = ImageSafeHelper.GetOtherDataFromMicrData(e);
-                    }
+                    _currentMagtekScannedDoc.BackImageData = e.ImageData;
                 }
+                else
+                {
+                    _currentMagtekScannedDoc.FrontImageData = scannedDoc.FrontImageData;
+                }
+                if (_currentMagtekScannedDoc.BackImageData == null && rockConfig.PromptToScanRearImage)
+                {
+                    // scanning the front image, but still need to scan the back
+                    HideUploadWarningPrompts(true);
+                    // scanning the front image, but still need to scan the back
+                    var message = string.Format("Insert the {0} again facing the other direction to get an image of the back.", scanningChecks ? "checks" : "items");
+                    this.DisplayMessage("Info", mainMessage: message);
 
-                ShowScannedDocStatusAndUpload(scannedDoc);
+                    _currentMagtekScannedDoc.FrontImageData = e.ImageData;
+                    _isBackScan = true;
+                    DisplayScannedDocInfo(_currentMagtekScannedDoc);
+                }
+                else
+                {
+
+
+                    //// Non Prompt 
+                    // mark it as Upload, but we'll set it to false if anything bad happens before we actually upload
+                    scannedDoc.Upload = true;
+                    scannedDoc.CurrencyTypeValue = ScanningPageUtility.batchPage.SelectedCurrencyValue;
+                    scannedDoc.SourceTypeValue = ScanningPageUtility.batchPage.SelectedSourceTypeValue;
+                    if (scannedDoc.IsCheck)
+                    {
+
+                        if (_isBackScan)
+                        {
+                            scannedDoc = _currentMagtekScannedDoc;
+                            scannedDoc.BackImageData = e.ImageData;
+                        }
+                        else
+                        {
+                            scannedDoc.FrontImageData = e.ImageData;
+                        }
+
+                        if (!scannedDoc.BadMicr && !_isBackScan)
+                        {
+                            scannedDoc.OtherData = ImageSafeHelper.GetOtherDataFromMicrData(e);
+                        }
+                    }
+
+                    _isBackScan = false;
+
+                    ShowScannedDocStatusAndUpload(scannedDoc);
+                }
             }
+
             catch (Exception ex)
             {
 
@@ -978,6 +1053,7 @@ namespace Rock.Apps.CheckScannerUtility
         }
         private void DisplayMessage( string messageType, string captionstyleKey = "", string captionMessage = "", string mainMessageStyleKey = "", string mainMessage = "" )
         {
+            borderAlertBorder.Visibility = Visibility.Visible;
             this.spAlert.Visibility = Visibility.Visible;
             lblAlertSubMessage.Visibility = Visibility.Visible;
 
@@ -997,6 +1073,13 @@ namespace Rock.Apps.CheckScannerUtility
                     lblAlertCaption.Content = "Alert!";
                     borderAlertBorder.Style = Application.Current.Resources["borderAlertgStyle"] as Style;
                     lblAlertSubMessage.Style = Application.Current.Resources["AlertTextStyle"] as Style;
+                    break;
+                case "Info":
+                    spAlert.Style = Application.Current.Resources["stackPanelInfotStyle"] as Style;
+                    lblAlertCaption.Style = Application.Current.Resources["InfoCaptionSytle"] as Style;
+                    lblAlertCaption.Content = "Info!";
+                    borderAlertBorder.Style = Application.Current.Resources["borderInfoStyle"] as Style;
+                    lblAlertSubMessage.Style = Application.Current.Resources["labelStyleAlertInfo"] as Style;
                     break;
                 default:
                     break;

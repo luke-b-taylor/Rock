@@ -99,8 +99,10 @@
                         <Label x:Name="lblDefaultBatchCampus"
                                  Style="{StaticResource labelStyle}" Content="Default Batch Campus"/>
                         <ComboBox
-                            x:Name="cbDefaultCampus"    
-                                      Style="{StaticResource ComboBoxCustomStyle}"    Background="White" />
+                            x:Name="cbDefaultCampus"
+                            SelectionChanged="CbDefaultCampus_SelectionChanged"
+                            Style="{StaticResource ComboBoxCustomStyle}"
+                            Background="White" />
                         <Label x:Name="lblBatchOptions"
                                  Style="{StaticResource labelStyle}" Content="Batch Options"/>
                         <CheckBox x:Name="chkRequireConrolAmount"

@@ -468,6 +468,21 @@ namespace Rock.Apps.CheckScannerUtility
             }
         }
 
+        [UserScopedSetting]
+        public int DefaultCampusId
+        {
+            get
+            {
+                return (int) this["DefaultCampusId"];
+            }
+
+            set
+            {
+                this["DefaultCampusId"] = value;
+            }
+
+        }
+
         /// <summary>
         /// Loads this instance.
         /// </summary>

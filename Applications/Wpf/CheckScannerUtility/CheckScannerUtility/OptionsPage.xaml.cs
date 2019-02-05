@@ -38,6 +38,7 @@ namespace Rock.Apps.CheckScannerUtility
     public partial class OptionsPage : System.Windows.Controls.Page
     {
         private RockRestClient _Client;
+        private bool _campusChanged = false;
         private List<FinancialAccount> _allAccounts;
         private RockConfig _rockConfig;
         private ObservableCollection<DisplayAccountModel> _displayAccounts = new ObservableCollection<DisplayAccountModel>();
@@ -405,9 +406,14 @@ namespace Rock.Apps.CheckScannerUtility
                 _rockConfig.MICRImageComPort = short.Parse( comPortName.Replace( "COM", string.Empty ) );
             }
 
-
+            var defaultCampus = cbDefaultCampus.SelectedValue as Campus;
+            if (defaultCampus != null)
+            {
+                _rockConfig.DefaultCampusId = defaultCampus.Id;
+            }
 
             _rockConfig.Save();
+            BatchPage.LoadLookups(_campusChanged);
 
             // shutdown the scanner so that options will be reloaded when the batch page loads
             if ( BatchPage.rangerScanner != null )
@@ -560,6 +566,11 @@ namespace Rock.Apps.CheckScannerUtility
         {
 
             this.icAccountsForBatches.Height = sp_ScannerSettings.Height - 60;
+        }
+
+        private void CbDefaultCampus_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            this._campusChanged = true;
         }
     }
 }

@@ -142,6 +142,7 @@
                            Grid.Column="1"
                            Name="imgFront"
                            Stretch="Uniform"
+                           MaxWidth="375"
                            HorizontalAlignment="Left"
                            VerticalAlignment="Top"
                            Source="images/check-image.png" />
@@ -154,6 +155,7 @@
                             <Image Grid.Column="1"
                        Grid.Row="3"
                            Name="imgBack"
+                           MaxWidth="370"     
                            Stretch="Uniform"
                            HorizontalAlignment="Left"
                            VerticalAlignment="Top"

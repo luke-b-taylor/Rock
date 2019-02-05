@@ -57,16 +57,7 @@ namespace Rock.Apps.CheckScannerUtility
             try
             {
                 var micrImageHostPage = new MicrImageHostPage();
-                this.micrImage = micrImageHostPage.micrImage;
-                if ( rockConfig.CaptureAmountOnScan )
-                {
-                    this.micrImage.MicrDataReceived += CaptureAmountScanningPage.micrImage_MicrDataReceived;
-                }
-                else
-                {
-                    this.micrImage.MicrDataReceived += ScanningPage.micrImage_MicrDataReceived;
-                }
-                
+                this.micrImage = micrImageHostPage.micrImage;   
             }
             catch
             {
@@ -474,7 +465,7 @@ namespace Rock.Apps.CheckScannerUtility
         /// <summary>
         /// Loads the combo boxes.
         /// </summary>
-        public void LoadLookups()
+        public void LoadLookups(bool defaultCampusChanged=false)
         {
             RockConfig rockConfig = RockConfig.Load();
             RockRestClient client = new RockRestClient( rockConfig.RockBaseUrl );
@@ -490,7 +481,19 @@ namespace Rock.Apps.CheckScannerUtility
                 cbCampus.Items.Add( campus );
             }
 
-            cbCampus.SelectedIndex = 0;
+            // If the user changes the Default Campus from the Options Screen
+            // Then update the Selected Campus
+            if (defaultCampusChanged && rockConfig.DefaultCampusId > 0)
+            {
+                cbCampus.SelectedValue = rockConfig.DefaultCampusId;
+                var selectedCampus = cbCampus.SelectedItem as Campus;
+
+                if (this.SelectedFinancialBatch != null)
+                {
+                    this.SelectedFinancialBatch.Campus = selectedCampus;
+                }
+  
+            }
 
             var currencyTypeDefinedType = client.GetDataByGuid<DefinedType>( "api/DefinedTypes", Rock.Client.SystemGuid.DefinedType.FINANCIAL_CURRENCY_TYPE.AsGuid() );
             this.CurrencyValueList = client.GetData<List<DefinedValue>>( "api/DefinedValues", "DefinedTypeId eq " + currencyTypeDefinedType.Id.ToString() );
@@ -814,6 +817,7 @@ namespace Rock.Apps.CheckScannerUtility
         /// </summary>
         private void ShowBatch( bool showInEditMode )
         {
+            grdBatchDetailOuterGrid.Visibility = Visibility.Visible;
             gBatchDetailList.Visibility = Visibility.Visible;
             if ( showInEditMode )
             {
@@ -836,6 +840,7 @@ namespace Rock.Apps.CheckScannerUtility
         private void HideBatch()
         {
             gBatchDetailList.Visibility = Visibility.Hidden;
+            grdBatchDetailOuterGrid.Visibility = Visibility.Hidden;
         }
 
         /// <summary>
@@ -939,18 +944,39 @@ namespace Rock.Apps.CheckScannerUtility
         private bool IsValid( RockConfig rockConfig )
         {
             bool result = false;
+
             //Batch Name Required
             txtBatchName.Text = txtBatchName.Text.Trim();
             if ( string.IsNullOrWhiteSpace( txtBatchName.Text ) )
             {
                 txtBatchName.Style = this.FindResource( "textboxStyleError" ) as Style;
-                result = false;
-                return result;
+                result = false;    
             }
             else
             {
                 txtBatchName.Style = this.FindResource( "textboxStyle" ) as Style;
                 result = true;
+            }
+
+            if (string.IsNullOrWhiteSpace(dpBatchDate.Text))
+            {
+                dpBatchDate.Style = this.FindResource("datePickerErrorStyle") as Style;
+                result = false;
+            }
+            else
+            {
+                dpBatchDate.Style = this.FindResource("datePickerStyle") as Style;
+                result = result != false;
+            }
+            if (cbCampus.SelectedIndex == 0)
+            {
+                lblCampus.Foreground = Brushes.Red;
+                result = false;
+            }
+            else
+            {
+                lblCampus.Foreground = new BrushConverter().ConvertFromString("#FF2B2B2B") as SolidColorBrush;
+                result = result != false;
             }
 
             //Capture Amount Required Validation
@@ -1031,6 +1057,7 @@ namespace Rock.Apps.CheckScannerUtility
                 }
 
                 LoadFinancialBatchesGrid();
+             
             }
         }
 

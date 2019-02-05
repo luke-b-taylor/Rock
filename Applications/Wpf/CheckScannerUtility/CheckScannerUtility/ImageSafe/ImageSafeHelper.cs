@@ -340,6 +340,7 @@ namespace ImageSafeInterop
                         }
                         else
                         {
+                            checkData.HasError = true;
                             ErrorLog.AppendLine(strLog);
                             checkData.Errors = ErrorLog;
                             callback.DynamicInvoke(checkData);
@@ -351,13 +352,16 @@ namespace ImageSafeInterop
                     else if (nReturnCode == 250)
                     {
                         ErrorLog.AppendLine(strLog);
+                        ErrorLog.AppendLine("Check Waiting Timeout!");
+                        checkData.HasError = true;
                         checkData.Errors = ErrorLog;
                         callback.DynamicInvoke(checkData);
-                        //   this.HandleError(handler, "Check Waiting Timeout!", checkData);
+                                         
                         return;
                     }
                     else
                     {
+                        checkData.HasError = true;
                         checkData.Errors = ErrorLog;
                         ErrorLog.AppendLine("Process Check FAILED!");
                         callback.DynamicInvoke(checkData);
@@ -368,6 +372,7 @@ namespace ImageSafeInterop
                 else
                 {
                     strLog = "MTMICRProcessCheck return code " + nRet;
+
                     //this.HandleError(handler, strLog, checkData);
                     return;
                 }

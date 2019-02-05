@@ -100,10 +100,11 @@
                                     Click="btnIgnoreAndUpload_Click" />
                                     </StackPanel>
                                 </StackPanel>
-                               
+
                             </StackPanel>
                         </Border>
                     </StackPanel>
+                    
                     <StackPanel>
                         <Label Name="lblScanItemUploadSuccess"
                        Style="{StaticResource labelStyleAlertSuccess}"
