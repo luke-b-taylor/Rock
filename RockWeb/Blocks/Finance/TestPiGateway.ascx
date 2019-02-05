@@ -18,10 +18,11 @@
                 <div class="row">
                     <div class="col-md-8">
                         <h1>Configure ACH/CC</h1>
-                        <Rock:RockTextBox ID="tbApiKey" runat="server" Label="Private API Key" />
-                        
+                        <label>Gateway Config Attributes</label>
+                        <Rock:RockTextBox ID="tbApiKey" runat="server" Label="Private API Key" Text="" Help="This would be a Gateway Config Attribute" />
+
                         <Rock:RockCheckBox ID="cbCreditCard" runat="server" Label="Credit Card" Checked="true" AutoPostBack="true" OnCheckedChanged="cbCreditCard_CheckedChanged" />
-                        <Rock:RockCheckBox ID="cbAch" runat="server" Label="ACH" Checked="true" AutoPostBack="true" OnCheckedChanged="cbCreditCard_CheckedChanged" />
+                        <Rock:RockCheckBox ID="cbAch" runat="server" Label="ACH" Checked="false" AutoPostBack="true" OnCheckedChanged="cbCreditCard_CheckedChanged" />
 
                         <h1>Get Amount</h1>
                         <Rock:CurrencyBox ID="cbAmount" runat="server" />
@@ -29,21 +30,42 @@
                         <hr />
 
                         <h1>Get Token</h1>
+
                         <input type="text" class="js-input-style-hook" style="display: none" />
                         <div id="gatewayIFrameContainer" class="margin-b-md" runat="server" style="border-color: red; border-style: solid; border-width: 1px"></div>
 
                         <span class="btn btn-primary btn-sm" onclick='submitTokenizer()'>Get Token</span>
                         <div class="">
+
                             <span class="control-label">Token Response</span>
                             <textarea class='js-response code' rows="5" cols="80" style="font-family: Courier New, Courier, monospace"></textarea>
                         </div>
+
                         <hr />
+                        <Rock:NotificationBox ID="wbToken" runat="server" NotificationBoxType="Warning" Text="Note that Tokens can only be used once. (You'll get an 'Internal Server Error' if you use it more than once)." />
+                        <h1>Create Customer</h1>
+
+                        <Rock:RockLiteral ID="txtCurrentName" runat="server" Label="Name" Visible="false" />
+                        <Rock:RockTextBox ID="tbFirstName" runat="server" Label="First Name" />
+                        <Rock:RockTextBox ID="tbLastName" runat="server" Label="Last Name" />
+                        <Rock:AddressControl ID="acAddress" runat="server" UseStateAbbreviation="true" UseCountryAbbreviation="false" Label="Address" />
+                        <Rock:PhoneNumberBox ID="pnbPhone" runat="server" Label="Phone" />
+                        <Rock:EmailBox ID="tbEmail" runat="server" Label="Email" />
+
+                        <asp:LinkButton ID="btnCreateCustomer" runat="server" CssClass="btn btn-primary" Text="Create Customer" OnClick="btnCreateCustomer_Click" />
+                        <Rock:CodeEditor ID="ceCreateCustomerResponse" runat="server" EditorMode="JavaScript" Label="Create Customer Response" EditorHeight="100" />
+                        <Rock:RockTextBox ID="tbCustomerId" runat="server" Label="Customer Id" />
+
                         <h1>Process Sale</h1>
                         <asp:LinkButton ID="btnProcessSale" runat="server" CssClass="btn btn-primary" Text="Process Sale" OnClick="btnProcessSale_Click" />
-                        <Rock:CodeEditor ID="ceSaleResponse" runat="server" EditorMode="JavaScript"  Label="Sale Response" EditorHeight="400" />
+                        <Rock:CodeEditor ID="ceSaleResponse" runat="server" EditorMode="JavaScript" Label="Sale Response" EditorHeight="400" />
                     </div>
                     <div class="col-md-4">
-                        <h1>Test Cards</h1>
+                        <h2>Developer API</h2>
+                        <p>
+                            <a href="https://sandbox.gotnpgateway.com/docs/api">Pi Developer Docs (api)</a>
+                        </p>
+                        <h2>Test Cards</h2>
                         <table class="grid-table table table-bordered table-striped table-hover">
                             <thead>
                                 <tr>
@@ -125,13 +147,11 @@
 
             var gatewayTokenizer;
 
-            //initalizeTokenizer();
-
             Sys.Application.add_load(function () {
-                initalizeTokenizer();
+                initializeTokenizer();
             });
 
-            function initalizeTokenizer() {
+            function initializeTokenizer() {
 
                 var enabledPaymentTypes = JSON.parse($('.js-enabled-payment-types').val());;
 
@@ -184,8 +204,6 @@
 
                 // Initiate creation on container element
                 gatewayTokenizer.create();
-
-                debugger
             }
 
             // Tells the gatewayTokenizer to submit the entered info so that we can get a token (or error, etc) in the response

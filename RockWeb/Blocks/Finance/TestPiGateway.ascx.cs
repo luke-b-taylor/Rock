@@ -17,10 +17,14 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Configuration;
+using System.Net.Configuration;
+using System.Reflection;
 using System.Web.UI;
 using Newtonsoft.Json;
 using RestSharp;
 using Rock;
+using Rock.Financial;
 using Rock.Model;
 using Rock.Web.UI;
 
@@ -56,9 +60,8 @@ namespace RockWeb.Blocks.Finance
             this.BlockUpdated += Block_BlockUpdated;
             this.AddConfigurationUpdateTrigger( upnlContent );
 
-            Response.AppendHeader( "Access-Control-Allow-Origin", "*" );
-
-            RockPage.AddScriptSrcToHead( this.Page, "gotnpgatewayTokenizer", "https://sandbox.gotnpgateway.com/tokenizer/tokenizer.js" );
+            var gateway = new Rock.TransNational.Pi.PiGateway();
+            gateway.InitializeBlock( this, this.gatewayIFrameContainer );
         }
 
         /// <summary>
@@ -127,29 +130,40 @@ namespace RockWeb.Blocks.Finance
         /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
         protected void btnProcessSale_Click( object sender, EventArgs e )
         {
-            var restClient = new RestClient( "https://sandbox.gotnpgateway.com" );
-            RestRequest restRequest = new RestRequest( "api/transaction", Method.POST );
-            restRequest.AddHeader( "Authorization", tbApiKey.Text );
+            var gateway = new Rock.TransNational.Pi.PiGateway();
+            var apiKey = tbApiKey.Text;
+            var amount = cbAmount.Text.AsDecimalOrNull();
+            var customerId = tbCustomerId.Text;
+            var transactionResponse = gateway.ProcessSale( apiKey, amount, customerId );
+            ceSaleResponse.Text = transactionResponse.ToJson( Formatting.Indented );
+        }
 
-            var transaction = new
+        /// <summary>
+        /// Handles the Click event of the btnCreateCustomer control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
+        protected void btnCreateCustomer_Click( object sender, EventArgs e )
+        {
+            var gateway = new Rock.TransNational.Pi.PiGateway();
+            PaymentInfo paymentInfo = new PaymentInfo
             {
-                type = "sale",
-                amount = ( int ) ( cbAmount.Text.AsDecimal() * 100 ),
-                payment_method = new
-                {
-                    token = hfResponseToken.Value
-                }
+                FirstName = tbFirstName.Text,
+                LastName = tbLastName.Text,
+                Street1 = acAddress.Street1,
+                Street2 = acAddress.Street2,
+                City = acAddress.City,
+                State = acAddress.State,
+                PostalCode = acAddress.PostalCode,
+                Country = acAddress.Country,
+                Email = tbEmail.Text,
+                Phone = pnbPhone.Text
             };
 
-            restRequest.AddJsonBody( transaction );
+            Rock.TransNational.Pi.CreateCustomerResponse customerResponse = gateway.CreateCustomer( tbApiKey.Text, hfResponseToken.Value, paymentInfo );
+            ceCreateCustomerResponse.Text = customerResponse.ToJson( Formatting.Indented );
 
-            //HttpWebRequestElement httpWebRequestElement = new HttpWebRequestElement();
-            //httpWebRequestElement.UseUnsafeHeaderParsing = false;
-
-            var response = restClient.Execute( restRequest );
-
-            var responseObject = JsonConvert.DeserializeObject( response.Content );
-            ceSaleResponse.Text = responseObject.ToJson( Formatting.Indented );
+            tbCustomerId.Text = customerResponse.Data.id;
         }
     }
 }

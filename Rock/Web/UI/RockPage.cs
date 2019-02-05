@@ -1299,6 +1299,7 @@ namespace Rock.Web.UI
                             buttonBar.Controls.Add( aBlockConfig );
                             aBlockConfig.Attributes.Add( "class", "btn block-config" );
                             aBlockConfig.Attributes.Add( "href", "javascript: Rock.admin.pageAdmin.showBlockConfig();" );
+                            aBlockConfig.Attributes.Add( "accesskey", "b" );
                             aBlockConfig.Attributes.Add( "Title", "Block Configuration" );
                             HtmlGenericControl iBlockConfig = new HtmlGenericControl( "i" );
                             aBlockConfig.Controls.Add( iBlockConfig );
@@ -1339,6 +1340,7 @@ namespace Rock.Web.UI
                             buttonBar.Controls.Add( aPageZones );
                             aPageZones.Attributes.Add( "class", "btn page-zones" );
                             aPageZones.Attributes.Add( "href", "javascript: Rock.admin.pageAdmin.showPageZones();" );
+                            aPageZones.Attributes.Add( "accesskey", "n" );
                             aPageZones.Attributes.Add( "Title", "Page Zones" );
                             HtmlGenericControl iPageZones = new HtmlGenericControl( "i" );
                             aPageZones.Controls.Add( iPageZones );
