@@ -535,6 +535,7 @@
     </Style>
 
 
+    
     <!-- Grid Column Header style -->
     <Style x:Key="gridHeaderStyle"
            TargetType="{x:Type DataGridColumnHeader}">
@@ -560,11 +561,12 @@
                 Value="#dddddd" />
     </Style>
 
+    
     <Style x:Key="gridHeaderStyleWide"
            TargetType="{x:Type DataGridColumnHeader}"
            BasedOn="{StaticResource gridHeaderStyle}">
         <Setter Property="Width"
-                Value="400" />
+                Value="450" />
     </Style>
 
     <Style x:Key="gridHeaderStyleNumber"
@@ -644,6 +646,16 @@
                 Value="Center" />
     </Style>
     <Style x:Key="gridCellStyleDateTime"
+           TargetType="{x:Type DataGridCell}"
+           BasedOn="{StaticResource gridCellStyle}">
+        <Setter Property="HorizontalAlignment"
+                Value="Left" />
+        <Setter Property="ContentStringFormat"
+                Value="g" />
+        <Setter Property="Width" Value="180" />
+    </Style>
+
+    <Style x:Key="gridCellStyleAmount"
            TargetType="{x:Type DataGridCell}"
            BasedOn="{StaticResource gridCellStyle}">
         <Setter Property="HorizontalAlignment"

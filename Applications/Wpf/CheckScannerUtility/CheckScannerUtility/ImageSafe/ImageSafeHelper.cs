@@ -573,7 +573,7 @@ namespace ImageSafeInterop
         #region Public Methods
         public static string GetOtherDataFromMicrData(CheckData e)
         {
-            var otherData = e.ScannedCheckMicrData.ToString().Replace(e.AccountNumber, "").Replace(e.CheckNumber, "").Replace(e.RoutingNumber, "").Replace("TTU", "");
+            var  otherData = e.ScannedCheckMicrData.ToString().Replace(e.AccountNumber, "").Replace(e.CheckNumber, "").Replace(e.RoutingNumber, "").Replace("TTU", "");
             return otherData;
         }
         #endregion

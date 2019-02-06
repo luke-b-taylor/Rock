@@ -65,81 +65,80 @@
                 </Border>
             </StackPanel>
             <!-- Check Display Section  -->
-            <ScrollViewer Grid.Row="1" Name="scrollViewerCheckImage" VerticalScrollBarVisibility="Hidden" HorizontalScrollBarVisibility="Disabled">
-                <StackPanel  Name="spCheckView"  Grid.Column="0" Margin="0,20,0,0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" >
-                    <Label Content="Uploaded 12, Skipped 4"
-                                       Visibility="Hidden"
-                                       Margin="0,-20,5,0"
+            <StackPanel Grid.Row="1" Name="spCheckView"  Grid.Column="0" Margin="0,20,0,0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" >
+                <Label Content="Uploaded 12, Skipped 4"
+                                       Visibility="Collapsed"
+                                       Margin="0,-80,5,0"
                                VerticalAlignment="Center"
                                         Name="lblScanItemCountInfo"
                                         Style="{StaticResource labelStyleHighlightInfo}"
                                         HorizontalAlignment="Right" />
-                    <StackPanel Name="spAlertMessage" HorizontalAlignment="Stretch" Visibility="Collapsed"  VerticalAlignment="Top" >
-                        <Label Name="lblAlertCaptionMessage" />
-                        <Border Name="borderAlertBorder"  Visibility="Collapsed" Margin="10,0,0,10">
-                            <StackPanel>
-                                <StackPanel Name="spAlert" >
-                                    <Label Name="lblAlertCaption" HorizontalAlignment="Left" />
-                                    <Label Name="lblAlertSubMessage" Visibility="Visible" BorderThickness="0" MinHeight="30"  Background="Transparent"/>
-                                </StackPanel>
-                                <StackPanel Name="pnlPromptForUpload" Margin="5" Visibility="Collapsed">
-                                    <StackPanel Orientation="Horizontal"
+                <StackPanel Name="spAlertMessage" HorizontalAlignment="Stretch" Visibility="Collapsed"  VerticalAlignment="Top" >
+                    <Label Name="lblAlertCaptionMessage" />
+                    <Border Name="borderAlertBorder"  Visibility="Collapsed" Margin="10,0,0,10">
+                        <StackPanel>
+                            <StackPanel Name="spAlert" >
+                                <Label Name="lblAlertCaption" HorizontalAlignment="Left" />
+                                <Label Name="lblAlertSubMessage" Visibility="Visible" BorderThickness="0" MinHeight="30"  Background="Transparent"/>
+                            </StackPanel>
+                            <StackPanel Name="pnlPromptForUpload" Margin="5" Visibility="Collapsed">
+                                <StackPanel Orientation="Horizontal"
                                     HorizontalAlignment="Center">
-                                        <Button Margin="8"
+                                    <Button Margin="8"
                                     x:Name="btnSkipAndContinue"
                                     Style="{StaticResource buttonStylePrimary}"
                                     Content="Skip"
                                     HorizontalAlignment="Left"
                                     Click="btnSkipAndContinue_Click" />
-                                        <Button Margin="8"
+                                    <Button Margin="8"
                                     x:Name="btnIgnoreAndUpload"
                                     Style="{StaticResource buttonStyle}"
                                     ToolTip="Upload and continue scanning"
                                     Content="Upload"
                                     HorizontalAlignment="Left"
                                     Click="btnIgnoreAndUpload_Click" />
-                                    </StackPanel>
                                 </StackPanel>
-
                             </StackPanel>
-                        </Border>
-                    </StackPanel>
-                    
-                    <StackPanel>
-                        <Label Name="lblScanItemUploadSuccess"
+
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <StackPanel>
+                    <Label Name="lblScanItemUploadSuccess"
                        Style="{StaticResource labelStyleAlertSuccess}"
                        Content="Uploaded Successfully">
-                        </Label>
-                    </StackPanel>
-                    <StackPanel Name="spException" Visibility="Collapsed">
-                        <Label  Name="lblExceptions"
+                    </Label>
+                </StackPanel>
+                <StackPanel Name="spException" Visibility="Collapsed">
+                    <Label  Name="lblExceptions"
                        Style="{StaticResource labelStyleAlertError}"
                        Content="ERROR: --"
                        Grid.Row="0"
                        Panel.ZIndex="1"
                        Grid.Column="0"
                        Visibility="Visible">
-                        </Label>
-                    </StackPanel>
-                    <Grid>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Name="rowCheckImages" Height="Auto"/>
-                        </Grid.RowDefinitions>
-                        <!-- Check Display-->
-                        <StackPanel  Grid.Row="0" Name="spCheckDisplay" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
-                            <Grid Name="CheckImages" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" >
-                                <Grid >
-                                    <Grid.RowDefinitions>
-                                        <RowDefinition />
-                                        <RowDefinition />
-                                        <RowDefinition />
-                                    </Grid.RowDefinitions>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="1*" />
-                                        <ColumnDefinition  Width="Auto"/>
-                                        <ColumnDefinition  Width="1*"/>
-                                    </Grid.ColumnDefinitions>
-                                    <Image Grid.Row="0"
+                    </Label>
+                </StackPanel>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Name="rowCheckImages" Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <!-- Check Display-->
+                    <StackPanel  Grid.Row="0" Name="spCheckDisplay" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+                        <Grid Name="CheckImages" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" >
+                            <Grid >
+                                <Grid.RowDefinitions>
+                                    <RowDefinition />
+                                    <RowDefinition />
+                                    <RowDefinition />
+                                </Grid.RowDefinitions>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="1*" />
+                                    <ColumnDefinition  Width="Auto"/>
+                                    <ColumnDefinition  Width="1*"/>
+                                </Grid.ColumnDefinitions>
+                                <Image Grid.Row="0"
                                            Grid.Column="1"
                                             Name="imgCheckFront"
                                             Visibility="Visible"
@@ -148,7 +147,7 @@
                                             Margin="8,0"
                                             HorizontalAlignment="Center"
                                            Source="images/check-image.png" />
-                                    <Image Grid.Row="0"
+                                <Image Grid.Row="0"
                                            Grid.Column="1"
                                             Name="imgCheckBack"
                                             Visibility="Collapsed"
@@ -157,53 +156,52 @@
                                             MaxWidth="700"
                                             HorizontalAlignment="Center"
                                            Source="images/check-image.png" />
-                                    <Grid Grid.Column="1"  Grid.Row="1">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition  />
-                                            <ColumnDefinition />
-                                        </Grid.ColumnDefinitions>
-                                        <StackPanel Name="spRoutingInfo" Orientation="Horizontal" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
-                                            <Label x:Name="lblRoutingAccountCaption" Content="Routing / Account #" Style="{StaticResource labelStyleCaption}" />
-                                            <Label x:Name="lblRoutingAccountValue" Content="063453535 / 46565656565"  />
-                                        </StackPanel>
-                                        <StackPanel Margin="0,15,0,0" Grid.Column="0" Orientation="Horizontal"  Name="spOtherData" HorizontalAlignment="Stretch" Visibility="Collapsed" >
-                                            <Label x:Name="lblOtherDataCaption" VerticalAlignment="Center" Content="OtherData" Style="{StaticResource labelStyleCaption}" />
-                                            <Label x:Name="lblOtherData" VerticalAlignment="Center"  />
-                                        </StackPanel>
-                                        <StackPanel Grid.Column="1" HorizontalAlignment="Right" Margin="0,0,20,0"  Orientation="Horizontal" VerticalAlignment="Center">
-                                            <Label x:Name="lblCheckNumberCaption" VerticalAlignment="Center"   HorizontalAlignment="Right" Content="Check #" Style="{StaticResource labelStyleCaption}" />
-                                            <Label Name="lblCheckNumber" VerticalAlignment="Center" Content="1234"/>
-                                        </StackPanel>
-                                    </Grid>
-                                    <Grid Name="grdImageThumbnailsButtons" Grid.Row="2" Grid.Column="1" HorizontalAlignment="Stretch" Margin="0,20,0,0" VerticalAlignment="Stretch"  >
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition />
-                                            <ColumnDefinition />
-                                        </Grid.ColumnDefinitions>
-                                        <Button Grid.Column="0" ToolTip="Front" Background="Transparent" BorderThickness="0"  Name="btnImageFront" Style="{StaticResource ImageButton}" CommandParameter="Front" Click="BtnImageToggle_FrontBack_Click">
-                                            <Image 
+                                <Grid Grid.Column="1"  Grid.Row="1">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition  />
+                                        <ColumnDefinition />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Name="spRoutingInfo" Orientation="Horizontal" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+                                        <Label x:Name="lblRoutingAccountCaption" Content="Routing / Account #" Style="{StaticResource labelStyleCaption}" />
+                                        <Label x:Name="lblRoutingAccountValue" Content="063453535 / 46565656565"  />
+                                    </StackPanel>
+                                    <StackPanel Margin="0,15,0,0" Grid.Column="0" Orientation="Horizontal"  Name="spOtherData" HorizontalAlignment="Stretch" Visibility="Collapsed" >
+                                        <Label x:Name="lblOtherDataCaption" VerticalAlignment="Center" Content="OtherData" Style="{StaticResource labelStyleCaption}" />
+                                        <Label x:Name="lblOtherData" VerticalAlignment="Center"  />
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1" HorizontalAlignment="Right" Margin="0,0,20,0"  Orientation="Horizontal" VerticalAlignment="Center">
+                                        <Label x:Name="lblCheckNumberCaption" VerticalAlignment="Center"   HorizontalAlignment="Right" Content="Check #" Style="{StaticResource labelStyleCaption}" />
+                                        <Label Name="lblCheckNumber" VerticalAlignment="Center" Content="1234"/>
+                                    </StackPanel>
+                                </Grid>
+                                <Grid Name="grdImageThumbnailsButtons" Grid.Row="2" Grid.Column="1" HorizontalAlignment="Stretch" Margin="0,20,0,0" VerticalAlignment="Stretch"  >
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition />
+                                        <ColumnDefinition />
+                                    </Grid.ColumnDefinitions>
+                                    <Button Grid.Column="0" ToolTip="Front" Background="Transparent" BorderThickness="0"  Name="btnImageFront" Style="{StaticResource ImageButton}" CommandParameter="Front" Click="BtnImageToggle_FrontBack_Click">
+                                        <Image 
                                                 Name="imgFrontThumb"
                                                 Stretch="Uniform"
                                                 Margin="8,0"
                                                 Width="200"  
                                                 HorizontalAlignment="Right"
                                                Source="images/check-image.png" />
-                                        </Button>
-                                        <Button Grid.Column="1" ToolTip="Back" Background="Transparent" BorderThickness="0"  Name="btnImageBack" Style="{StaticResource ImageButton}" CommandParameter="Back" Click="BtnImageToggle_FrontBack_Click">
-                                            <Image  Name="imgBackThumb"
+                                    </Button>
+                                    <Button Grid.Column="1" ToolTip="Back" Background="Transparent" BorderThickness="0"  Name="btnImageBack" Style="{StaticResource ImageButton}" CommandParameter="Back" Click="BtnImageToggle_FrontBack_Click">
+                                        <Image  Name="imgBackThumb"
                                                Stretch="Uniform"
                                                HorizontalAlignment="Left"
                                                Width="200"
                                                VerticalAlignment="Top"
                                                Source="images/check-image-back.png" />
-                                        </Button>
-                                    </Grid>
+                                    </Button>
                                 </Grid>
                             </Grid>
-                        </StackPanel>
-                    </Grid>
-                </StackPanel>
-            </ScrollViewer>
+                        </Grid>
+                    </StackPanel>
+                </Grid>
+            </StackPanel>
             <!-- Buttons  -->
             <StackPanel Grid.Row="2"  HorizontalAlignment="Stretch" VerticalAlignment="Bottom"  >
                 <Grid>

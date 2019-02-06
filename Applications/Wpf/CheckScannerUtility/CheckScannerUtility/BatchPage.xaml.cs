@@ -302,6 +302,11 @@ namespace Rock.Apps.CheckScannerUtility
             }
         }
 
+        public NavigationService BatchNavigationService
+        {
+            get { return _navigationService; }
+        }
+
    
 
         #region Ranger (Canon CR50/80) Scanner Events
@@ -527,7 +532,8 @@ namespace Rock.Apps.CheckScannerUtility
                     // try to set the selected batch in the grid to our current batch (if it still exists in the database)
                     grdBatches.SelectedValue = pendingBatches.FirstOrDefault( a => a.Id.Equals( SelectedFinancialBatch.Id ) );
                     FinancialBatch selectedBatch = grdBatches.SelectedValue as FinancialBatch;
-                    ScanningPageUtility.ItemsToProcess = selectedBatch.ControlItemCount;
+
+                    ScanningPageUtility.ItemsToProcess = selectedBatch == null? 0: selectedBatch.ControlItemCount;
 
                 }
 
@@ -895,8 +901,6 @@ namespace Rock.Apps.CheckScannerUtility
                 if ( !string.IsNullOrWhiteSpace( txtControlItemCount.Text ) )
                 {
                     financialBatch.ControlItemCount = int.Parse( txtControlItemCount.Text );
-
-
                 }
                 else
                 {
@@ -1134,7 +1138,15 @@ namespace Rock.Apps.CheckScannerUtility
             }
             else
             {
-                cbCampus.SelectedValue = 0;
+                // pull campus from default
+                cbCampus.SelectedValue = rockConfig.DefaultCampusId;
+                var selectedCampus = cbCampus.SelectedItem as Campus;
+
+                if (this.SelectedFinancialBatch != null)
+                {
+                    this.SelectedFinancialBatch.Campus = selectedCampus;
+                }
+
             }
 
             dpBatchDate.SelectedDate = selectedBatch.BatchStartDateTime;

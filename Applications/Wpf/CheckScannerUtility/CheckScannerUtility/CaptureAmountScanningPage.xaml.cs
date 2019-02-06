@@ -92,6 +92,7 @@ namespace Rock.Apps.CheckScannerUtility
         {
 
             this.lblScanItemUploadSuccess.Visibility = Visibility.Collapsed;
+
             var rockConfig = RockConfig.Load();
             this._interfaceType = rockConfig.ScannerInterfaceType;
             btnNext.IsEnabled = false;
@@ -121,15 +122,15 @@ namespace Rock.Apps.CheckScannerUtility
                 case RockConfig.InterfaceType.MagTekImageSafe:
                     this.ShowStartupPage();
                     break;
+              }
             }
-        }
 
         /// <summary>
         /// Initializes the controls.
         /// </summary>
         private void InitalizeControls()
         {
-
+            HideDisplayMessage();
             this.btnComplete.Visibility = Visibility.Hidden;
             spCheckDisplay.Visibility = Visibility.Collapsed;
             this.btnNext.Visibility = Visibility.Visible;
@@ -236,7 +237,7 @@ namespace Rock.Apps.CheckScannerUtility
         /// <param name="e">The <see cref="System.Windows.RoutedEventArgs"/> instance containing the event data.</param>
         private void BtnComplete_Click(object sender, System.Windows.RoutedEventArgs e)
         {
-            ScanningPageUtility.batchPage.NavigationService.Navigate(ScanningPageUtility.batchPage);
+            ScanningPageUtility.batchPage.BatchNavigationService.Navigate(ScanningPageUtility.batchPage);
 
         }
 
@@ -248,7 +249,7 @@ namespace Rock.Apps.CheckScannerUtility
         private void BtnNext_Click(object sender, System.Windows.RoutedEventArgs e)
         {
 
-            if (!HasAmount() && this.lblAlertCaption.Visibility != Visibility.Visible)
+            if (_currentscannedDocInfo != null && !HasAmount() && this.lblAlertCaption.Visibility != Visibility.Visible)
             {
                 ShowNoAmountMessage();
                 return;
@@ -302,6 +303,7 @@ namespace Rock.Apps.CheckScannerUtility
         }
         private void BtnIgnoreAndUpload_Click(object sender, RoutedEventArgs e)
         {
+            HideDisplayMessage();
             if (!HasAmount())
             {
                 ShowNoAmountMessage();
@@ -309,8 +311,6 @@ namespace Rock.Apps.CheckScannerUtility
             }
 
             HideUploadWarningPrompts();
-
-
 
             var scannedDocInfo = ScanningPageUtility.ConfirmUploadBadScannedDoc;
             scannedDocInfo.Upload = true;
@@ -355,8 +355,8 @@ namespace Rock.Apps.CheckScannerUtility
         private void BtnSkipAndContinue_Click(object sender, RoutedEventArgs e)
         {
             HideUploadWarningPrompts();
-
-            ScanningPageUtility.ConfirmUploadBadScannedDoc = null;
+            HideDisplayMessage();
+           ScanningPageUtility.ConfirmUploadBadScannedDoc = null;
             ScanningPageUtility.ItemsSkipped++;
             ShowUploadStats();
             switch (_interfaceType)
@@ -386,6 +386,7 @@ namespace Rock.Apps.CheckScannerUtility
             {
                 this.ShowStartupPage();
                 this.btnNext.IsEnabled = true;
+                this._currentscannedDocInfo = null;
             }
             if (_interfaceType == RockConfig.InterfaceType.RangerApi)
             {
@@ -404,37 +405,37 @@ namespace Rock.Apps.CheckScannerUtility
         /// <param name="e">The e.</param>
         public void rangerScanner_TransportFeedingStopped(object sender, AxRANGERLib._DRangerEvents_TransportFeedingStoppedEvent e)
         {
+
             RangerFeedingStoppedReasons rangerFeedingStoppedReason = (RangerFeedingStoppedReasons)e.reason;
 
             System.Diagnostics.Debug.WriteLine(string.Format("{0} : rangerScanner_TransportFeedingStopped, reason:", DateTime.Now.ToString("o"), rangerFeedingStoppedReason.ConvertToString()));
 
             btnClose.IsEnabled = true;
 
-            if (rangerFeedingStoppedReason != RangerFeedingStoppedReasons.FeedRequestFinished)
+            bool scanningChecks = RockConfig.Load().TenderTypeValueGuid.AsGuid() == Rock.Client.SystemGuid.DefinedValue.CURRENCY_TYPE_CHECK.AsGuid();
+            var noItemfound = string.Format("No {0} detected in scanner. Make sure {0} are properly in the feed tray.", scanningChecks ? "checks" : "items");
+            if (rangerFeedingStoppedReason != RangerFeedingStoppedReasons.FeedRequestFinished && rangerFeedingStoppedReason != RangerFeedingStoppedReasons.MainHopperEmpty)
             {
-                bool scanningChecks = RockConfig.Load().TenderTypeValueGuid.AsGuid() == Rock.Client.SystemGuid.DefinedValue.CURRENCY_TYPE_CHECK.AsGuid();
-                var noItemfound = string.Format("No {0} detected in scanner. Make sure {0} are properly in the feed tray.", scanningChecks ? "checks" : "items");
-
                 this.spCheckDisplay.Visibility = Visibility.Collapsed;
                 // show the Startup Info "Welcome" message if no check images are shown yet
                 if (spCheckDisplay.Visibility != Visibility.Visible)
                 {
-
-                    DisplayMessage("Warning", "labelStyleBannerTitle", "Click Next to begin", "labelStyleAlert", noItemfound);
                     lvAccounts.IsEnabled = false;
                     btnNext.IsEnabled = true;
-                    return;
                 }
 
-                // show a "No Items" warning if they clicked Start but it stopped because of MainHopperEmpty
-                if (rangerFeedingStoppedReason == RangerFeedingStoppedReasons.MainHopperEmpty)
-                {
-                    DisplayMessage("Warning", mainMessage: noItemfound);
+            }
 
-                    imgCheckFront.Source = null;
-                    this.imgCheckBack.Visibility = Visibility.Collapsed;
-                    this.imgCheckFront.Visibility = Visibility.Collapsed;
-                }
+            // show a "No Items" warning if they clicked Start but it stopped because of MainHopperEmpty
+            if (rangerFeedingStoppedReason == RangerFeedingStoppedReasons.MainHopperEmpty)
+            {
+                lblScanItemUploadSuccess.Visibility = Visibility.Collapsed;
+                lvAccounts.IsEnabled = false;
+                DisplayMessage("Warning", mainMessage: noItemfound);
+                imgCheckFront.Source = null;
+                this.imgCheckBack.Visibility = Visibility.Collapsed;
+                this.imgCheckFront.Visibility = Visibility.Collapsed;
+                btnNext.IsEnabled = true;
             }
 
         }
@@ -600,7 +601,7 @@ namespace Rock.Apps.CheckScannerUtility
         /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
         internal void rangerScanner_TransportIsDead(object sender, EventArgs e)
         {
-            ScanningPageUtility.rangerScanner_TransportIsDead(sender, e, () => { DisplayMessage("Warning", "labelStyleBannerTitle", "Click Next to begin", "labelStyleAlert", "Scanner is not ready. Verify that the scanner is powered on and connected."); });
+            ScanningPageUtility.rangerScanner_TransportIsDead(sender, e, () => { DisplayMessage("Warning", mainMessage: "Scanner is not ready. Verify that the scanner is powered on and connected."); });
         }
 
         #endregion
@@ -614,7 +615,7 @@ namespace Rock.Apps.CheckScannerUtility
         /// <param name="e">The <see cref="System.EventArgs"/> instance containing the event data.</param>
         public void micrImage_MicrDataReceived(object sender, System.EventArgs e)
         {
-            borderAlertBorder.Visibility = Visibility.Collapsed;
+            HideDisplayMessage();
             var currentPage = Application.Current.MainWindow.Content;
             btnNext.IsEnabled = true;
 
@@ -717,6 +718,7 @@ namespace Rock.Apps.CheckScannerUtility
                     HideUploadWarningPrompts(true);
                     // scanning the front image, but still need to scan the back
                     var message = string.Format("Insert the {0} again facing the other direction to get an image of the back.", scanningChecks ? "checks" : "items");
+                    borderAlertBorder.Visibility = Visibility.Visible;
                     this.DisplayMessage("Info", mainMessage: message);
                     DisplayScannedDocInfo(scannedDoc);
                 }
@@ -757,7 +759,7 @@ namespace Rock.Apps.CheckScannerUtility
         private void ImageSafeCallback(CheckData e)
         {
             System.Diagnostics.Debug.WriteLine(string.Format("{0} : ImageSafe_CheckData", DateTime.Now.ToString("o")));
-            borderAlertBorder.Visibility = Visibility.Collapsed;
+            HideDisplayMessage();
 
             var currentPage = Application.Current.MainWindow.Content;
 
@@ -804,12 +806,14 @@ namespace Rock.Apps.CheckScannerUtility
                     scannedDoc.AccountNumber = e.AccountNumber;
                     scannedDoc.CheckNumber = e.CheckNumber;
                     scannedDoc.ScannedCheckMicrData = e.ScannedCheckMicrData;
-                    scannedDoc.OtherData = ImageSafeHelper.GetOtherDataFromMicrData(e);
+
+                    if (!e.ScannedCheckMicrData.Contains("?"))
+                    {
+                        scannedDoc.OtherData = ImageSafeHelper.GetOtherDataFromMicrData(e);
+                    }
 
                     ScanningPageUtility.WriteToDebugLog(string.Format("[{0}] - '{1}'", DateTime.Now.ToString("o"), scannedDoc.ScannedCheckMicrData));
                 }
-
-
             }
             // set the _currentMagtekScannedDoc in case we are going to scan the back of the image
             _currentMagtekScannedDoc = scannedDoc;
@@ -860,8 +864,8 @@ namespace Rock.Apps.CheckScannerUtility
                 }
                 else
                 {
-
                     lvAccounts.IsEnabled = true;
+
                     //// Non Prompt 
                     // mark it as Upload, but we'll set it to false if anything bad happens before we actually upload
                     scannedDoc.Upload = true;
@@ -869,7 +873,7 @@ namespace Rock.Apps.CheckScannerUtility
                     scannedDoc.SourceTypeValue = ScanningPageUtility.batchPage.SelectedSourceTypeValue;
                     if (scannedDoc.IsCheck)
                     {
-                        
+
                         if (_isBackScan)
                         {
                             scannedDoc = _currentMagtekScannedDoc;
@@ -882,7 +886,10 @@ namespace Rock.Apps.CheckScannerUtility
 
                         if (!scannedDoc.BadMicr && !_isBackScan)
                         {
-                            scannedDoc.OtherData = ImageSafeHelper.GetOtherDataFromMicrData(e);
+                            if (!e.ScannedCheckMicrData.Contains("?"))
+                            {
+                                scannedDoc.OtherData = ImageSafeHelper.GetOtherDataFromMicrData(e);
+                            }
                         }
                     }
 
@@ -937,6 +944,11 @@ namespace Rock.Apps.CheckScannerUtility
         /// <param name="scannedDocInfo">The scanned document information.</param>
         private void DisplayScannedDocInfo(ScannedDocInfo scannedDocInfo)
         {
+            var rockConfig = RockConfig.Load();
+            if (!rockConfig.PromptToScanRearImage && scannedDocInfo.BackImageData == null)
+            {
+                HideDisplayMessage();
+            }
             if (scannedDocInfo.FrontImageData != null)
             {
                 spCheckDisplay.Visibility = Visibility.Visible;
@@ -952,6 +964,7 @@ namespace Rock.Apps.CheckScannerUtility
                 imgCheckFront.Source = bitmapImageFront;
                 imgFrontThumb.Source = bitmapImageFront;
                 Rock.Wpf.WpfHelper.FadeIn(imgCheckFront, 100);
+
             }
             else
             {
@@ -985,6 +998,19 @@ namespace Rock.Apps.CheckScannerUtility
                 lblCheckNumber.Content = scannedDocInfo.CheckNumber;
                 lblOtherData.Content = scannedDocInfo.OtherData;
             }
+
+            // when prompting for back we dont want to allow account value entry
+            // till second (back is scanned)
+            if (rockConfig.PromptToScanRearImage && _interfaceType != RockConfig.InterfaceType.RangerApi)
+            {
+                lvAccounts.IsEnabled = _currentMagtekScannedDoc.BackImageData != null;
+            }
+            else
+            {
+                lvAccounts.IsEnabled = true;
+            }
+
+
             lvAccounts.SelectedIndex = 1;
             lvAccounts.SelectedIndex = 0;
         }
@@ -1024,6 +1050,7 @@ namespace Rock.Apps.CheckScannerUtility
             {
                 if (scannedDocInfo.BadMicr)
                 {
+                    borderAlertBorder.Visibility = Visibility.Visible;
                     string message;
                     if (rockConfig.ScannerInterfaceType == RockConfig.InterfaceType.RangerApi)
                     {
@@ -1044,6 +1071,7 @@ namespace Rock.Apps.CheckScannerUtility
                         message = @"Unable to read check information."
                                   + Environment.NewLine
                                   + "Click 'Skip' to reject this check."
+                                  + Environment.NewLine
                                   + "Click 'Upload' to upload the check as-is.";
 
                     }
@@ -1090,7 +1118,7 @@ namespace Rock.Apps.CheckScannerUtility
                 btnNext.IsEnabled = false;
             }
 
-            borderAlertBorder.Visibility = Visibility.Collapsed;
+            //borderAlertBorder.Visibility = Visibility.Collapsed;
             pnlPromptForUpload.Visibility = Visibility.Collapsed;
             this.spCheckDisplay.Visibility = Visibility.Collapsed;
         }
@@ -1172,6 +1200,7 @@ namespace Rock.Apps.CheckScannerUtility
             this.spAlertMessage.Visibility = Visibility.Visible;
             this.lblAlertCaption.Visibility = Visibility.Visible;
             this.lblAlertCaptionMessage.Visibility = Visibility.Visible;
+            this.lblAlertSubMessage.Visibility = Visibility;
             Style captionStyle = null;
             switch (messageType)
             {
@@ -1185,7 +1214,7 @@ namespace Rock.Apps.CheckScannerUtility
                     spAlert.Style = Application.Current.Resources["stackPanelAlertStyle"] as Style;
                     lblAlertCaption.Style = Application.Current.Resources["alertCaptionSytle"] as Style;
                     lblAlertCaption.Content = "Alert!";
-                    borderAlertBorder.Style = Application.Current.Resources["borderInfoStyle"] as Style;
+                    borderAlertBorder.Style = Application.Current.Resources["borderAlertgStyle"] as Style;
                     lblAlertSubMessage.Style = Application.Current.Resources["AlertTextStyle"] as Style;
                     break;
                 case "Info":
@@ -1419,6 +1448,18 @@ namespace Rock.Apps.CheckScannerUtility
             lvAccounts.SelectedIndex = 1;
             lvAccounts.SelectedIndex = 0;
         }
+        private void HideDisplayMessage()
+        {
+            borderAlertBorder.Visibility = Visibility.Collapsed;
+            this.lblAlertCaptionMessage.Content = Visibility.Collapsed;
+            this.lblAlertSubMessage.Content = Visibility.Collapsed;
+            this.spAlert.Visibility = Visibility.Collapsed;
+            this.spAlertMessage.Visibility = Visibility.Collapsed;
+            this.lblAlertCaption.Visibility = Visibility.Collapsed;
+            this.lblAlertCaptionMessage.Visibility = Visibility.Collapsed;
+            this.lblAlertSubMessage.Visibility = Visibility.Collapsed;
+
+        }
 
         /// <summary>
         /// Updates the progress bar legend.
@@ -1454,6 +1495,7 @@ namespace Rock.Apps.CheckScannerUtility
                     SetAmountlegendInvalid(true);
                 }
 
+                this.lvAccounts.IsEnabled = false;
                 this.pbControlAmounts.Value = 100;
                 this.btnComplete.Visibility = Visibility.Visible;
                 this.btnNext.Visibility = Visibility.Hidden;

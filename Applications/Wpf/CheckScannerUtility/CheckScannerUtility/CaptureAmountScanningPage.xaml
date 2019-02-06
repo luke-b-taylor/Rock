@@ -35,7 +35,7 @@
         </Style>
 
     </Page.Resources>
-    <Grid Background="#efefef" MinWidth="900"  HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+    <Grid Background="#efefef" MinWidth="900" Visibility="Visible"  HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
         <Grid Background="{StaticResource PanelBackgroundBrush}" Margin="20,20,20,50" >
             <Border BorderBrush="{StaticResource BorderBrush}" BorderThickness="1,0,1,1" >
                 <Grid>
@@ -53,29 +53,30 @@
                         <Border Grid.ColumnSpan="2" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,1,1" >
                             <StackPanel  Name="spBatchDetailCaption"   Background="{StaticResource PanelHeaderBrush}" HorizontalAlignment="Stretch">
                                 <Label Name="lblBatcheDetailCaption"  Content="Check Scanning" HorizontalAlignment="Left" Margin="10" Style="{StaticResource labelStyleCaption}" />
-                            </StackPanel>
-                        </Border>
-                    </StackPanel>
-                    <StackPanel Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
-                        <Label Name="lblScanItemUploadSuccess" Margin="0,0,0,-30"
-                       Style="{StaticResource labelStyleAlertSuccess}"
-                       Content="Uploaded previous check Successfully">
-                        </Label>
-                        <StackPanel   Name="spCheckView"   Height="{Binding ElementName=lvAccounts,Path=Height}"  Grid.Column="0" Margin="0,0,0,0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" >
-                            <Label Content="Uploaded 12, Skipped 4"
-                                       Visibility="Hidden"
-                                       Margin="0,-20,5,0"
+                                <Label VerticalContentAlignment="Center" Content="Uploaded 12, Skipped 4"
+                                       Visibility="hidden"
+                                       Margin="0,-40,5,0"
                                VerticalAlignment="Center"
                                         Name="lblScanItemCountInfo"
                                         Style="{StaticResource labelStyleHighlightInfo}"
                                         HorizontalAlignment="Right" />
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                    <StackPanel Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+                        <Label Name="lblScanItemUploadSuccess"  Margin="0,0,0,-20"
+                       Style="{StaticResource labelStyleAlertSuccess}"
+                       Content="Uploaded previous check Successfully">
+                        </Label>
+                        <StackPanel   Name="spCheckView"   Height="{Binding ElementName=lvAccounts,Path=Height}"  Grid.Column="0" Margin="0,0,0,0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" >
+                            
                             <StackPanel Name="spAlertMessage" Visibility="Collapsed"  HorizontalAlignment="Stretch"   VerticalAlignment="Top">
                                 <Label Name="lblAlertCaptionMessage"  Visibility="Collapsed" />
-                                <Border Name="borderAlertBorder" Visibility="Collapsed"  Margin="10,10,0,25">
+                                <Border Name="borderAlertBorder" Visibility="Collapsed"  Margin="10,10,0,15">
                                     <StackPanel>
                                         <StackPanel Name="spAlert" Visibility="Visible" >
-                                            <Label Name="lblAlertCaption" Margin="2,0" HorizontalAlignment="Left" Visibility="Visible"/>
-                                            <Label Name="lblAlertSubMessage" TextBlock.TextAlignment="Left" Visibility="Visible" Margin="0,0,0,5" BorderThickness="0" Background="Transparent"/>
+                                            <Label Name="lblAlertCaption" Margin="2,0" HorizontalAlignment="Left" Visibility="Collapsed"/>
+                                            <Label Name="lblAlertSubMessage" TextBlock.TextAlignment="Left" Visibility="Collapsed" Margin="0,0,0,5" BorderThickness="0" Background="Transparent"/>
                                         </StackPanel>
                                         <StackPanel Name="pnlPromptForUpload" Margin="5" Visibility="Collapsed">
                                             <StackPanel Orientation="Horizontal"
@@ -107,9 +108,8 @@
                        Grid.Column="0"
                        Visibility="Visible">
                                 </Label>
-
                             </StackPanel>
-                            <Grid >
+                            <Grid  Visibility="Visible">
                                 <Grid.RowDefinitions>
                                     <RowDefinition Name="rowProgressBars" Height="100" />
                                     <RowDefinition Name="rowCheckImages" Height="Auto"/>
@@ -246,13 +246,14 @@
                                                 <TextBox.Style>
                                                     <Style TargetType="TextBox">
                                                         <Setter Property="HorizontalAlignment" Value="Left"/>
+                                                        <Setter Property="VerticalContentAlignment" Value="Center" />
                                                         <Setter Property="Height" Value="30" />
                                                         <Setter Property="Template">
                                                             <Setter.Value>
                                                                 <ControlTemplate TargetType="{x:Type TextBox}">
-                                                                    <Border x:Name="border" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" Background="{TemplateBinding Background}" SnapsToDevicePixels="True">
+                                                                    <Border x:Name="border"  BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" Background="{TemplateBinding Background}" SnapsToDevicePixels="True">
                                                                         <ScrollViewer x:Name="PART_ContentHost" Focusable="false" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Hidden"/>
-                                                                    </Border>
+                                                                    </Border >
                                                                     <ControlTemplate.Triggers>
                                                                         <Trigger Property="IsEnabled" Value="false">
                                                                             <Setter Property="Opacity" TargetName="border" Value="0.56"/>
@@ -270,13 +271,11 @@
                                                             </Setter.Value>
                                                         </Setter>
                                                         <Style.Triggers>
-
                                                             <DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=ListViewItem}}" Value="True">
                                                                 <Setter Property="local:FocusExtension.IsFocused" Value="True" />
                                                                 <Setter Property="Text" Value="{x:Null}" />
                                                             </DataTrigger>
                                                         </Style.Triggers>
-
                                                     </Style>
                                                 </TextBox.Style>
                                             </TextBox>
@@ -325,7 +324,7 @@
             </Border>
         </Grid>
         <!-- Option Button and Status-->
-        <StackPanel Background="#dfdfdf" HorizontalAlignment="Stretch" VerticalAlignment="Bottom" >
+        <StackPanel Background="#dfdfdf" Height="40"  HorizontalAlignment="Stretch" VerticalAlignment="Bottom" >
             <Grid  HorizontalAlignment="Right"  >
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition />
