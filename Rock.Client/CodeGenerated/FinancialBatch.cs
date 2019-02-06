@@ -118,6 +118,7 @@ namespace Rock.Client
             this.BatchStartDateTime = source.BatchStartDateTime;
             this.CampusId = source.CampusId;
             this.ControlAmount = source.ControlAmount;
+            this.ControlItemCount = source.ControlItemCount;
             this.ForeignGuid = source.ForeignGuid;
             this.ForeignKey = source.ForeignKey;
             this.IsAutomated = source.IsAutomated;

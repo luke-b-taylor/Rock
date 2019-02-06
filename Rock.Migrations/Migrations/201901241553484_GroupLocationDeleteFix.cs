@@ -22,22 +22,25 @@ namespace Rock.Migrations
     /// <summary>
     ///
     /// </summary>
-    public partial class AddControlItemCountToFinancialBatch : Rock.Migrations.RockMigration
+    public partial class GroupLocationDeleteFix : Rock.Migrations.RockMigration
     {
         /// <summary>
         /// Operations to be performed during the upgrade process.
         /// </summary>
         public override void Up()
         {
-            AddColumn( "dbo.FinancialBatch", "ControlItemCount", c => c.Int() );
+            DropIndex("dbo.GroupLocationHistorical", new[] { "GroupLocationId" });
+            AlterColumn("dbo.GroupLocationHistorical", "GroupLocationId", c => c.Int());
+            CreateIndex("dbo.GroupLocationHistorical", "GroupLocationId");
         }
-
+        
         /// <summary>
         /// Operations to be performed during the downgrade process.
         /// </summary>
         public override void Down()
         {
-            DropColumn( "dbo.FinancialBatch", "ControlItemCount" );
+            // Cannot go backwards on this change as we would need to provide values for all of the NULL GroupLocationIds which no longer
+            // have a corrasponding row in GroupLoction.
         }
     }
 }
