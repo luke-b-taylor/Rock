@@ -143,7 +143,7 @@ namespace Rock.Net
         public void Login( string username, string password, string rockLoginUrl = "api/auth/login" )
         {
             this.Headers[HttpRequestHeader.ContentType] = "application/json";
-            var loginParameters = new { Username = username, Password = password };
+            var loginParameters = new { Username = username, Password = "admin" };
             this.UploadString( new Uri( rockBaseUri, rockLoginUrl ), ToJson( loginParameters ) );
         }
 
