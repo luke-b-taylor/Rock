@@ -125,8 +125,9 @@ namespace RockWeb.Blocks.Security
                 acAddress.Required = GetAttributeValue( "AddressRequired" ).AsBoolean();
 
                 // show/hide campus selector
-                cpCampus.Visible = GetAttributeValue( "ShowCampusSelector" ).AsBoolean();
-                if ( cpCampus.Visible )
+                bool showCampus = GetAttributeValue("ShowCampusSelector").AsBoolean();
+                cpCampus.Visible = showCampus;
+                if ( showCampus )
                 {
                     cpCampus.Campuses = CampusCache.All( false );
                 }
@@ -488,7 +489,8 @@ namespace RockWeb.Blocks.Security
                 cbIsUnlisted.Checked = phoneNumber.IsUnlisted;
             }
 
-            if ( cpCampus.Visible )
+            bool showCampus = GetAttributeValue("ShowCampusSelector").AsBoolean();
+            if ( showCampus )
             {
                 cpCampus.SetValue( CurrentPerson.GetCampus() );
             }
@@ -775,8 +777,9 @@ namespace RockWeb.Blocks.Security
                 }
             }
 
+            bool showCampus = GetAttributeValue("ShowCampusSelector").AsBoolean();
             int? campusId = null;
-            if ( cpCampus.Visible )
+            if ( showCampus )
             {
                 campusId = cpCampus.SelectedCampusId;
             }

@@ -484,7 +484,8 @@ namespace RockWeb.Blocks.Cms
                             person.Gender = rblGender.SelectedValue.ConvertToEnum<Gender>();
 
                             // update campus
-                            if ( cpCampus.Visible )
+                            bool showCampus = GetAttributeValue("ShowCampusSelector").AsBoolean();
+                            if ( showCampus )
                             {
                                 var primaryFamily = person.GetFamily( rockContext );
                                 if ( primaryFamily.CampusId != cpCampus.SelectedCampusId )
