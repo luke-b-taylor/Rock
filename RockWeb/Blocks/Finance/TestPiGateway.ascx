@@ -25,7 +25,7 @@
                         <Rock:RockCheckBox ID="cbAch" runat="server" Label="ACH" Checked="false" AutoPostBack="true" OnCheckedChanged="cbCreditCard_CheckedChanged" />
 
                         <h1>Get Amount</h1>
-                        <Rock:CurrencyBox ID="cbAmount" runat="server" />
+                        <Rock:CurrencyBox ID="cbAmount" runat="server" Text="45.55" />
 
                         <hr />
 
@@ -43,8 +43,27 @@
 
                         <hr />
                         <Rock:NotificationBox ID="wbToken" runat="server" NotificationBoxType="Warning" Text="Note that Tokens can only be used once. (You'll get an 'Internal Server Error' if you use it more than once)." />
-                        <h1>Create Customer</h1>
 
+                        <h1>Create Plan</h1>
+                        <Rock:RockTextBox ID="tbPlanName" runat="server" Label="Plan Name" Text="test plan" />
+                        <Rock:RockTextBox ID="tbPlanDescription" runat="server" Label="Plan Description" Text="test plan description" />
+                        <Rock:NumberBox ID="tbPlanAmount" runat="server" Label="Plan Amount" Text="1.00" NumberType="Currency" />
+                        <Rock:NumberBox ID="tbPlanBillingCycleInterval" runat="server" Label="Plan billing_cycle_interval" Help="How often to run the billing cycle. Run every x months" />
+                        <Rock:RockDropDownList ID="ddlPlanBillingFrequency" runat="server" Label="Plan billing_frequency" Help="How often run within a billing cycle. (monthly, twice_monthly, ??)">
+                            <asp:ListItem Text="monthly" />
+                            <asp:ListItem Text="twice_monthly" />
+                        </Rock:RockDropDownList>
+                        <Rock:RockTextBox ID="tbPlanBillingDays" runat="server" Label="Plan billing_days" Help="Which day to bill on. If twice_monthly, then comma separate dates" />
+                        <asp:LinkButton ID="btnCreatePlan" runat="server" CssClass="btn btn-primary" OnClick="btnCreatePlan_Click" Text="Create Plan" />
+                        <Rock:RockTextBox ID="tbCreatePlanResponse_PlanID" runat="server" Label="Plan Id" />
+                        <Rock:CodeEditor ID="ceCreatePlanResponse" runat="server" EditorMode="JavaScript" Label="Plan Response" EditorHeight="200" />
+
+
+                        <h1>Get Plans</h1>
+                        <asp:LinkButton ID="btnGetPlans" runat="server" CssClass="btn btn-primary" OnClick="btnGetPlans_Click" Text="Get Plans" />
+                        <Rock:CodeEditor ID="ceGetPlansResponse" runat="server" EditorMode="JavaScript" Label="Plans Response" EditorHeight="400" />
+
+                        <h1>Create Customer</h1>
                         <Rock:RockLiteral ID="txtCurrentName" runat="server" Label="Name" Visible="false" />
                         <Rock:RockTextBox ID="tbFirstName" runat="server" Label="First Name" />
                         <Rock:RockTextBox ID="tbLastName" runat="server" Label="Last Name" />
@@ -54,7 +73,29 @@
 
                         <asp:LinkButton ID="btnCreateCustomer" runat="server" CssClass="btn btn-primary" Text="Create Customer" OnClick="btnCreateCustomer_Click" />
                         <Rock:CodeEditor ID="ceCreateCustomerResponse" runat="server" EditorMode="JavaScript" Label="Create Customer Response" EditorHeight="100" />
-                        <Rock:RockTextBox ID="tbCustomerId" runat="server" Label="Customer Id" />
+                        <Rock:RockTextBox ID="tbCustomerId" runat="server" Label="Customer Id" Text="bhd11gperttu4lo33m1g" />
+
+                        <h1>Create Subscription</h1>
+                        <Rock:RockTextBox ID="tbSubscriptionCustomerId" runat="server" Label="Customer.Id" Help="Customer ID to bill" />
+                        <Rock:RockTextBox ID="tbSubscriptionDescription" runat="server" Label="Subscription Description" Text="test Subscription description" />
+                        <Rock:RockTextBox ID="tbPlanId" runat="server" Label="Plan Id (Template)" Help="Plan ID to reference as a template" />
+
+                        <Rock:NotificationBox ID="nbSubscriptionPlanOverrides" runat="server" Text="Leave Amount, billing_cycle_interval, billing_frequency and/or billing_days blank to use Plan defaults" />
+                        <Rock:NumberBox ID="tbSubscriptionAmount" runat="server" Label="Subscription Amount" Text="2.00" NumberType="Currency" />
+                        <Rock:NumberBox ID="tbSubscriptionBillingCycleInterval" runat="server" Label="Subscription billing_cycle_interval" Help="How often to run the billing cycle. Run every x months" />
+                        <Rock:RockDropDownList ID="ddlSubscriptionBillingFrequency" runat="server" Label="Subscription billing_frequency" Help="How often run within a billing cycle. (monthly, twice_monthly, ??)">
+                            <asp:ListItem Text="(use plan default)" />
+                            <asp:ListItem Text="monthly" />
+                            <asp:ListItem Text="twice_monthly" />
+                        </Rock:RockDropDownList>
+                        <Rock:RockTextBox ID="tbSubscriptionBillingDays" runat="server" Label="Subscription billing_days" Help="Which day to bill on. If twice_monthly, then comma separate dates" />
+                        <Rock:NumberBox ID="nbSubscriptionDuration" runat="server" Label="Subscription duration" Help="(No Documention)" />
+                        <Rock:RockTextBox ID="tbSubscriptionNextBillDate" runat="server" Label="Subscription next_bill_date" Help="(No Documention). Appears to be first date of the recurring payment and what the recurring schedule it based upon in YYYY-MM-DD format." Text="2019-3-1" />
+                        <asp:LinkButton ID="btnCreateSubscription" runat="server" CssClass="btn btn-primary" OnClick="btnCreateSubscription_Click" Text="Create Subscription" />
+                        <Rock:RockTextBox ID="tbCreateSubscriptionResponse_SubscriptionId" runat="server" Label="Subscription Id" />
+                        <Rock:CodeEditor ID="ceCreateSubscriptionResponse" runat="server" EditorMode="JavaScript" Label="Create Subscription Response" EditorHeight="400" />
+
+                        ##TODO##
 
                         <h1>Process Sale</h1>
                         <asp:LinkButton ID="btnProcessSale" runat="server" CssClass="btn btn-primary" Text="Process Sale" OnClick="btnProcessSale_Click" />

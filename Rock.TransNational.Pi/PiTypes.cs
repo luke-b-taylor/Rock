@@ -1,4 +1,6 @@
 ﻿using System;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 
 /// <summary>
 /// from JSON structures on https://sandbox.gotnpgateway.com/docs/api/
@@ -23,13 +25,13 @@ namespace Rock.TransNational.Pi
     /// </summary>
     public class CreateCustomerResponse
     {
-        [Newtonsoft.Json.JsonProperty( "status" )]
+        [JsonProperty( "status" )]
         public string Status { get; set; }
 
-        [Newtonsoft.Json.JsonProperty( "msg" )]
+        [JsonProperty( "msg" )]
         public string Message { get; set; }
 
-        [Newtonsoft.Json.JsonProperty( "data" )]
+        [JsonProperty( "data" )]
         public CreateCustomerResponseData Data { get; set; }
     }
 
@@ -139,6 +141,71 @@ namespace Rock.TransNational.Pi
     {
     }
 
+    /// <summary>
+    /// 
+    /// </summary>
+    public abstract class BillingPlanParameters
+    {
+        /// <summary>
+        /// "How often to run the billing cycle. Run every x months"
+        /// </summary>
+        /// <value>
+        /// The billing cycle interval.
+        /// </value>
+        [JsonProperty( "billing_cycle_interval" )]
+        public int? BillingCycleInterval { get; set; }
+
+        /// <summary>
+        /// "How often run within a billing cycle. (monthly..."
+        /// </summary>
+        /// <value>
+        /// The billing frequency.
+        /// </value>
+        [JsonProperty( "billing_frequency" )]
+        [JsonConverter( typeof( StringEnumConverter ) )]
+        public BillingFrequency? BillingFrequency { get; set; }
+
+        /// <summary>
+        /// "Which day to bill on. If twice_monthly, then comma separate dates"
+        /// </summary>
+        /// <value>
+        /// The billing days.
+        /// </value>
+        [JsonProperty( "billing_days" )]
+        public string BillingDays { get; set; }
+
+        /// <summary>
+        /// Gets or sets the duration (??)
+        /// </summary>
+        /// <value>
+        /// The duration.
+        /// </value>
+        [JsonProperty( "duration" )]
+        public int? Duration { get; set; }
+
+        /// <summary>
+        /// Gets or sets the amount in Dollars (and sets <seealso cref="AmountCents"/>)
+        /// </summary>
+        /// <value>
+        /// The amount.
+        /// </value>
+        [JsonIgnore]
+        public decimal Amount
+        {
+            get => AmountCents / 100;
+            set => AmountCents = ( int ) ( value * 100 );
+        }
+
+        /// <summary>
+        /// Gets or sets the "amount to be discounted" (Payment Amount) (in cents)
+        /// </summary>
+        /// <value>
+        /// The amount cents.
+        /// </value>
+        [JsonProperty( "amount" )]
+        public int AmountCents { get; set; }
+    }
+
     #endregion shared types
 
     #region Transactions 
@@ -194,7 +261,10 @@ namespace Rock.TransNational.Pi
         public bool email_receipt { get; set; }
         public string email_address { get; set; }
         public string payment_method { get; set; }
-        public TransactionPaymentInfo response { get; set; }
+
+        // NOTE: this is documented as just 'response', but it is actually response_body (when using a token at least)
+        public TransactionPaymentInfo response_body { get; set; }
+
         public string status { get; set; }
         public int response_code { get; set; }
         public string customer_id { get; set; }
@@ -234,5 +304,186 @@ namespace Rock.TransNational.Pi
     {
     }
 
-    #endregion Transactions 
+    #endregion Transactions
+
+    #region Plans
+
+    /// <summary>
+    /// https://sandbox.gotnpgateway.com/docs/api/#create-a-plan
+    /// </summary>
+    public class CreatePlanParameters : BillingPlanParameters
+    {
+        /// <summary>
+        /// Gets or sets the name.
+        /// </summary>
+        /// <value>
+        /// The name.
+        /// </value>
+        [JsonProperty( "name" )]
+        public string Name { get; set; }
+
+        /// <summary>
+        /// Gets or sets the description.
+        /// </summary>
+        /// <value>
+        /// The description.
+        /// </value>
+        [JsonProperty( "description" )]
+        public string Description { get; set; }
+
+
+    }
+
+    public class CreatePlanResponse
+    {
+        public string status { get; set; }
+        public string msg { get; set; }
+
+        [JsonProperty( "data" )]
+        public PlanData Data { get; set; }
+    }
+
+    public class PlanData
+    {
+        /// <summary>
+        /// Gets or sets the Plan Id
+        /// </summary>
+        /// <value>
+        /// The identifier.
+        /// </value>
+        [JsonProperty( "id" )]
+        public string Id { get; set; }
+
+        public string name { get; set; }
+        public string description { get; set; }
+        public int amount { get; set; }
+        public int billing_cycle_interval { get; set; }
+        public string billing_frequency { get; set; }
+        public string billing_days { get; set; }
+        public int duration { get; set; }
+        public DateTime created_at { get; set; }
+        public DateTime updated_at { get; set; }
+    }
+
+    /// <summary>
+    /// Result from GetPlans
+    /// https://sandbox.gotnpgateway.com/docs/api/#get-all-plans
+    /// </summary>
+    public class GetPlansResult
+    {
+        public string status { get; set; }
+        public string msg { get; set; }
+        public int total_count { get; set; }
+
+        [JsonProperty( "data" )]
+        public PlanData[] Data;
+    }
+
+    #endregion Plan
+
+    #region Subscriptions
+
+
+    /// <summary>
+    /// https://sandbox.gotnpgateway.com/docs/api/#create-a-subscription
+    /// </summary>
+    public class CreateSubscriptionParameters : BillingPlanParameters
+    {
+        [JsonProperty( "plan_id" )]
+        public string PlanId { get; set; }
+
+        [JsonProperty( "description" )]
+        public string Description { get; set; }
+
+        [JsonProperty( "customer" )]
+        public SubscriptionCustomer Customer { get; set; }
+
+        [JsonProperty( "next_bill_date" )]
+        [JsonConverter( typeof( RockJsonIsoDateConverter ) )]
+        public DateTime NextBillDate { get; set; }
+
+        //public object[] add_ons { get; set; }
+        //public Discount[] discounts { get; set; }
+    }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    public class SubscriptionCustomer
+    {
+        /// <summary>
+        /// Gets or sets the customer id
+        /// </summary>
+        /// <value>
+        /// The identifier.
+        /// </value>
+        [JsonProperty( "id" )]
+        public string Id { get; set; }
+    }
+
+    /// <summary>
+    /// /// https://sandbox.gotnpgateway.com/docs/api/#create-a-subscription
+    /// </summary>
+    public class CreateSubscriptionResponse
+    {
+        public string status { get; set; }
+        public string msg { get; set; }
+
+        [JsonProperty( "data" )]
+        public SubscriptionData Data { get; set; }
+    }
+
+    /// <summary>
+    /// /// https://sandbox.gotnpgateway.com/docs/api/#create-a-subscription
+    /// </summary>
+    public class SubscriptionData
+    {
+
+        /// <summary>
+        /// Gets or sets the Subscription Id
+        /// </summary>
+        /// <value>
+        /// The identifier.
+        /// </value>
+        [JsonProperty( "id" )]
+        public string Id { get; set; }
+
+        public string name { get; set; }
+        public string description { get; set; }
+        public int amount { get; set; }
+        public int billing_cycle_interval { get; set; }
+        public string billing_frequency { get; set; }
+        public string billing_days { get; set; }
+        public int duration { get; set; }
+        public DateTime created_at { get; set; }
+        public DateTime updated_at { get; set; }
+    }
+
+    #endregion Subscriptions
+
+    #region Rock Wrapper Types
+
+    /// <summary>
+    /// ToDo: Move this to Rock.Utility
+    /// </summary>
+    /// <seealso cref="Newtonsoft.Json.Converters.IsoDateTimeConverter" />
+    public class RockJsonIsoDateConverter : Newtonsoft.Json.Converters.IsoDateTimeConverter
+    {
+        public RockJsonIsoDateConverter()
+        {
+            this.DateTimeFormat = "yyyy-MM-dd";
+        }
+
+    }
+
+    /// <summary>
+    /// ToDo: This list might not be complete
+    /// </summary>
+    public enum BillingFrequency
+    {
+        monthly,
+        twice_monthly
+    }
+
+    #endregion Rock Wrapper Types
 }

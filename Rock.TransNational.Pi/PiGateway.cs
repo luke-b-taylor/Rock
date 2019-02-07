@@ -1,17 +1,17 @@
-﻿using System;
-using System.ComponentModel;
-using System.ComponentModel.Composition;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 using RestSharp;
 using Rock.Financial;
 using Rock.Web.UI;
 
+// Use Newtonsoft RestRequest which is the same as RestSharp.RestRequest but uses the JSON.NET serializer
+using RestRequest = RestSharp.Newtonsoft.Json.RestRequest;
+
 namespace Rock.TransNational.Pi
 {
-    [Description( "TransNational Pi Gateway" )]
-    [Export( typeof( GatewayComponent ) )]
-    [ExportMetadata( "ComponentName", "TransNational Pi Gateway" )]
-    public class PiGateway
+    //[Description( "TransNational Pi Gateway" )]
+    ///[Export( typeof( GatewayComponent ) )]
+    //[ExportMetadata( "ComponentName", "TransNational Pi Gateway" )]
+    public class PiGateway //: GatewayComponent
     {
         /// <summary>
         /// Initializes the block.
@@ -24,8 +24,11 @@ namespace Rock.TransNational.Pi
             System.Web.UI.ScriptManager.RegisterStartupScript( rockBlock, rockBlock.GetType(), "piGatewayTokenizer", Scripts.gatewayTokenizer, true );
         }
 
+        #region Customers
+
         /// <summary>
         /// Creates the customer.
+        /// https://sandbox.gotnpgateway.com/docs/api/#create-a-new-customer
         /// </summary>
         /// <param name="apiKey">The API key.</param>
         /// <param name="tokenizerToken">The tokenizer token.</param>
@@ -68,24 +71,19 @@ namespace Rock.TransNational.Pi
             return createCustomerResponse;
         }
 
-        // Enable/disable useUnsafeHeaderParsing.
-        // Derived from http://o2platform.wordpress.com/2010/10/20/dealing-with-the-server-committed-a-protocol-violation-sectionresponsestatusline/
-        private void ToggleAllowUnsafeHeaderParsing( bool enable )
-        {
-            //Get the assembly that contains the internal class
-            var webConfigSettings = System.Web.Configuration.WebConfigurationManager.OpenWebConfiguration( "~" );
-            var systemNetConfiguration = webConfigSettings.GetSection( "system.net/settings" ) as System.Net.Configuration.SettingsSection;
-            //systemNetConfiguration.HttpWebRequest.UseUnsafeHeaderParsing = enable;
-        }
+        #endregion Customers
+
+        #region Transactions
 
         /// <summary>
-        /// Processes the sale.
+        /// Posts a transaction.
+        /// https://sandbox.gotnpgateway.com/docs/api/#processing-a-transaction
         /// </summary>
         /// <param name="apiKey">The API key.</param>
         /// <param name="amount">The amount.</param>
         /// <param name="customerId">The customer identifier.</param>
         /// <returns></returns>
-        public CreateTransactionResponse ProcessSale( string apiKey, decimal? amount, string customerId )
+        public CreateTransactionResponse PostTransaction( string apiKey, decimal? amount, string customerId )
         {
             var restClient = new RestClient( "https://sandbox.gotnpgateway.com" );
             RestRequest restRequest = new RestRequest( "api/transaction", Method.POST );
@@ -109,7 +107,102 @@ namespace Rock.TransNational.Pi
 
             var response = restClient.Execute( restRequest );
 
-            return JsonConvert.DeserializeObject<CreateTransactionResponse>( response.Content, new JsonSerializerSettings { MissingMemberHandling = MissingMemberHandling.Ignore } );
+            return response.Content.FromJsonOrNull<CreateTransactionResponse>();
         }
+
+        #endregion Transactions
+
+        #region Plans
+
+        /// <summary>
+        /// Creates the plan.
+        /// https://sandbox.gotnpgateway.com/docs/api/#create-a-plan
+        /// </summary>
+        /// <param name="apiKey">The API key.</param>
+        /// <param name="planParameters">The plan parameters.</param>
+        /// <returns></returns>
+        public CreatePlanResponse CreatePlan( string apiKey, CreatePlanParameters planParameters )
+        {
+            var restClient = new RestClient( "https://sandbox.gotnpgateway.com" );
+            RestRequest restRequest = new RestRequest( "api/recurring/plan", Method.POST );
+            restRequest.AddHeader( "Authorization", apiKey );
+
+            restRequest.AddJsonBody( planParameters );
+            var response = restClient.Execute( restRequest );
+
+            return response.Content.FromJsonOrNull<CreatePlanResponse>();
+        }
+
+        /// <summary>
+        /// Deletes the plan.
+        /// </summary>
+        /// <param name="apiKey">The API key.</param>
+        /// <param name="planId">The plan identifier.</param>
+        /// <returns></returns>
+        public string DeletePlan( string apiKey, string planId )
+        {
+            var restClient = new RestClient( "https://sandbox.gotnpgateway.com" );
+            RestRequest restRequest = new RestRequest( $"api/recurring/plan/{planId}", Method.GET );
+            restRequest.AddHeader( "Authorization", apiKey );
+            var response = restClient.Execute( restRequest );
+
+            return response.Content;
+        }
+
+        /// <summary>
+        /// Gets the plans.
+        /// https://sandbox.gotnpgateway.com/docs/api/#get-all-plans
+        /// </summary>
+        /// <param name="apiKey">The API key.</param>
+        /// <returns></returns>
+        public GetPlansResult GetPlans( string apiKey )
+        {
+            var restClient = new RestClient( "https://sandbox.gotnpgateway.com" );
+            RestRequest restRequest = new RestRequest( "api/recurring/plans", Method.GET );
+            restRequest.AddHeader( "Authorization", apiKey );
+
+            var response = restClient.Execute( restRequest );
+
+            return response.Content.FromJsonOrNull<GetPlansResult>();
+        }
+
+        #endregion Plans
+
+        #region Subscriptions
+
+        /// <summary>
+        /// Creates the subscription.
+        /// https://sandbox.gotnpgateway.com/docs/api/#create-a-subscription
+        /// </summary>
+        /// <param name="apiKey">The API key.</param>
+        /// <param name="subscriptionParameters">The subscription parameters.</param>
+        /// <returns></returns>
+        public CreateSubscriptionResponse CreateSubscription( string apiKey, CreateSubscriptionParameters subscriptionParameters )
+        {
+            var restClient = new RestClient( "https://sandbox.gotnpgateway.com" );
+            RestRequest restRequest = new RestRequest( "api/recurring/subscription", Method.POST );
+            restRequest.AddHeader( "Authorization", apiKey );
+
+            restRequest.AddJsonBody( subscriptionParameters );
+            var response = restClient.Execute( restRequest );
+
+            return response.Content.FromJsonOrNull<CreateSubscriptionResponse>();
+        }
+
+        #endregion Subscriptions
+
+        #region utility
+
+        // Enable/disable useUnsafeHeaderParsing. Hopefully this isn't needed
+        // Derived from http://o2platform.wordpress.com/2010/10/20/dealing-with-the-server-committed-a-protocol-violation-sectionresponsestatusline/
+        private void ToggleAllowUnsafeHeaderParsing( bool enable )
+        {
+            //Get the assembly that contains the internal class
+            var webConfigSettings = System.Web.Configuration.WebConfigurationManager.OpenWebConfiguration( "~" );
+            var systemNetConfiguration = webConfigSettings.GetSection( "system.net/settings" ) as System.Net.Configuration.SettingsSection;
+            //systemNetConfiguration.HttpWebRequest.UseUnsafeHeaderParsing = enable;
+        }
+
+        #endregion utility
     }
 }

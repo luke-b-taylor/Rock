@@ -17,12 +17,8 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Configuration;
-using System.Net.Configuration;
-using System.Reflection;
 using System.Web.UI;
 using Newtonsoft.Json;
-using RestSharp;
 using Rock;
 using Rock.Financial;
 using Rock.Model;
@@ -74,6 +70,7 @@ namespace RockWeb.Blocks.Finance
 
             if ( !Page.IsPostBack )
             {
+                tbApiKey.Text = this.GetBlockUserPreference( "APIKey" );
                 SetEnabledPaymentTypes();
             }
         }
@@ -81,8 +78,6 @@ namespace RockWeb.Blocks.Finance
         #endregion
 
         #region Events
-
-        // handlers called by the controls on your block
 
         /// <summary>
         /// Handles the BlockUpdated event of the control.
@@ -97,8 +92,6 @@ namespace RockWeb.Blocks.Finance
         #endregion
 
         #region Methods
-
-        // helper functional methods (like BindGrid(), etc.)
 
         #endregion
 
@@ -134,7 +127,7 @@ namespace RockWeb.Blocks.Finance
             var apiKey = tbApiKey.Text;
             var amount = cbAmount.Text.AsDecimalOrNull();
             var customerId = tbCustomerId.Text;
-            var transactionResponse = gateway.ProcessSale( apiKey, amount, customerId );
+            var transactionResponse = gateway.PostTransaction( apiKey, amount, customerId );
             ceSaleResponse.Text = transactionResponse.ToJson( Formatting.Indented );
         }
 
@@ -163,7 +156,99 @@ namespace RockWeb.Blocks.Finance
             Rock.TransNational.Pi.CreateCustomerResponse customerResponse = gateway.CreateCustomer( tbApiKey.Text, hfResponseToken.Value, paymentInfo );
             ceCreateCustomerResponse.Text = customerResponse.ToJson( Formatting.Indented );
 
-            tbCustomerId.Text = customerResponse.Data.id;
+            if ( customerResponse.Data == null )
+            {
+                tbCustomerId.Text = "";
+            }
+            else
+            {
+                tbCustomerId.Text = customerResponse.Data.id;
+            }
+        }
+
+        /// <summary>
+        /// Handles the Click event of the btnGetPlans control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
+        protected void btnGetPlans_Click( object sender, EventArgs e )
+        {
+            var gateway = new Rock.TransNational.Pi.PiGateway();
+            var getPlansResponse = gateway.GetPlans( tbApiKey.Text );
+            ceGetPlansResponse.Text = getPlansResponse.ToJson( Formatting.Indented );
+        }
+
+        /// <summary>
+        /// Handles the Click event of the btnCreatePlan control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
+        protected void btnCreatePlan_Click( object sender, EventArgs e )
+        {
+            var gateway = new Rock.TransNational.Pi.PiGateway();
+            Rock.TransNational.Pi.CreatePlanParameters planParameters = new Rock.TransNational.Pi.CreatePlanParameters
+            {
+                Name = tbPlanName.Text,
+                Description = tbPlanDescription.Text,
+                Amount = tbPlanAmount.Text.AsDecimal(),
+                BillingCycleInterval = tbPlanBillingCycleInterval.Text.AsInteger(),
+                BillingFrequency = ddlPlanBillingFrequency.SelectedValueAsEnum<Rock.TransNational.Pi.BillingFrequency>(),
+                BillingDays = tbPlanBillingDays.Text,
+                Duration = 0
+            };
+
+            var test = planParameters.ToJson( Formatting.Indented );
+
+            var createPlanResponse = gateway.CreatePlan( tbApiKey.Text, planParameters );
+            if ( createPlanResponse.Data != null )
+            {
+                tbPlanId.Text = createPlanResponse.Data.Id;
+            }
+            else
+            {
+                tbPlanId.Text = null;
+            }
+
+            ceCreatePlanResponse.Text = createPlanResponse.ToJson( Formatting.Indented );
+        }
+
+        /// <summary>
+        /// Handles the Click event of the btnCreateSubscription control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
+        protected void btnCreateSubscription_Click( object sender, EventArgs e )
+        {
+            var gateway = new Rock.TransNational.Pi.PiGateway();
+            Rock.TransNational.Pi.CreateSubscriptionParameters subscriptionParameters = new Rock.TransNational.Pi.CreateSubscriptionParameters
+            {
+                Customer = new Rock.TransNational.Pi.SubscriptionCustomer
+                {
+                    Id = tbCustomerId.Text
+                },
+                NextBillDate = tbSubscriptionNextBillDate.Text.AsDateTime().Value,
+                PlanId = tbPlanId.Text,
+                Description = tbSubscriptionDescription.Text,
+                Amount = tbSubscriptionAmount.Text.AsDecimal(),
+                BillingCycleInterval = tbSubscriptionBillingCycleInterval.Text.AsIntegerOrNull(),
+                BillingFrequency = ddlSubscriptionBillingFrequency.SelectedValueAsEnumOrNull<Rock.TransNational.Pi.BillingFrequency>(),
+                BillingDays = tbSubscriptionBillingDays.Text,
+                Duration = 0
+            };
+
+            var test = subscriptionParameters.ToJson( Formatting.Indented );
+
+            var createSubscriptionResponse = gateway.CreateSubscription( tbApiKey.Text, subscriptionParameters );
+            if ( createSubscriptionResponse.Data != null )
+            {
+                tbCreateSubscriptionResponse_SubscriptionId.Text = createSubscriptionResponse.Data.Id;
+            }
+            else
+            {
+                tbCreateSubscriptionResponse_SubscriptionId.Text = null;
+            }
+
+            ceCreateSubscriptionResponse.Text = createSubscriptionResponse.ToJson( Formatting.Indented );
         }
     }
 }
