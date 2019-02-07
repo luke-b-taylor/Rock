@@ -942,7 +942,6 @@ namespace RockWeb.Blocks.Cms
                             if ( group.Members.Where( gm => gm.PersonId == person.Id && gm.GroupRole.Guid == childGuid ).Any() )
                             {
                                 // don't display campus selector to children.
-                                pnlCampus.Visible = false;
                                 cpCampus.Visible = false;
 
                                 if ( person.GraduationYear.HasValue )
@@ -978,7 +977,6 @@ namespace RockWeb.Blocks.Cms
                                 ddlGradePicker.Visible = false;
                                 // show/hide campus selector
                                 bool showCampus = GetAttributeValue( "ShowCampusSelector" ).AsBoolean();
-                                pnlCampus.Visible = showCampus;
                                 cpCampus.Visible = showCampus;
                                 if ( showCampus )
                                 {

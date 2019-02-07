@@ -180,9 +180,7 @@
                                 </div>
                             </div>
 
-                            <asp:Panel ID="pnlCampus" runat="server">
-                                <Rock:CampusPicker ID="cpCampus" runat="server" Label="Campus" />
-                            </asp:Panel>
+                            <Rock:CampusPicker ID="cpCampus" runat="server" Label="Campus" />
                         </div>
                     </div>
                     <hr />
