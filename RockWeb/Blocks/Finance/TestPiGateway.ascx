@@ -64,7 +64,6 @@
                         <Rock:CodeEditor ID="ceGetPlansResponse" runat="server" EditorMode="JavaScript" Label="Plans Response" EditorHeight="400" />
 
                         <h1>Create Customer</h1>
-                        <Rock:RockLiteral ID="txtCurrentName" runat="server" Label="Name" Visible="false" />
                         <Rock:RockTextBox ID="tbFirstName" runat="server" Label="First Name" />
                         <Rock:RockTextBox ID="tbLastName" runat="server" Label="Last Name" />
                         <Rock:AddressControl ID="acAddress" runat="server" UseStateAbbreviation="true" UseCountryAbbreviation="false" Label="Address" />
@@ -95,9 +94,7 @@
                         <Rock:RockTextBox ID="tbCreateSubscriptionResponse_SubscriptionId" runat="server" Label="Subscription Id" />
                         <Rock:CodeEditor ID="ceCreateSubscriptionResponse" runat="server" EditorMode="JavaScript" Label="Create Subscription Response" EditorHeight="400" />
 
-                        ##TODO##
-
-                        <h1>Process Sale</h1>
+                        <h1>Process One-Time Sale</h1>
                         <asp:LinkButton ID="btnProcessSale" runat="server" CssClass="btn btn-primary" Text="Process Sale" OnClick="btnProcessSale_Click" />
                         <Rock:CodeEditor ID="ceSaleResponse" runat="server" EditorMode="JavaScript" Label="Sale Response" EditorHeight="400" />
                     </div>

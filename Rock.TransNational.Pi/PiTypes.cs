@@ -422,7 +422,7 @@ namespace Rock.TransNational.Pi
     }
 
     /// <summary>
-    /// /// https://sandbox.gotnpgateway.com/docs/api/#create-a-subscription
+    /// https://sandbox.gotnpgateway.com/docs/api/#create-a-subscription
     /// </summary>
     public class CreateSubscriptionResponse
     {
@@ -434,7 +434,7 @@ namespace Rock.TransNational.Pi
     }
 
     /// <summary>
-    /// /// https://sandbox.gotnpgateway.com/docs/api/#create-a-subscription
+    /// https://sandbox.gotnpgateway.com/docs/api/#create-a-subscription
     /// </summary>
     public class SubscriptionData
     {

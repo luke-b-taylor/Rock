@@ -29,6 +29,7 @@ namespace Rock.TransNational.Pi
         /// <summary>
         /// Creates the customer.
         /// https://sandbox.gotnpgateway.com/docs/api/#create-a-new-customer
+        /// NOTE: Pi Gateway supports multiple paymentment tokens per customer, but Rock will implement it as one Payment Method per Customer, and 0 or more Pi Customers per Rock Person.
         /// </summary>
         /// <param name="apiKey">The API key.</param>
         /// <param name="tokenizerToken">The tokenizer token.</param>
