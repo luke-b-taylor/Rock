@@ -68,9 +68,8 @@
   </PropertyGroup>
   <PropertyGroup />
   <ItemGroup>
-    <Reference Include="AxInterop.RANGERLib, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>bin\Release\AxInterop.RANGERLib.dll</HintPath>
+    <Reference Include="AxInterop.RANGERLib">
+      <HintPath>..\Libs\Ranger\AxInterop.RANGERLib.dll</HintPath>
     </Reference>
     <Reference Include="AxMTMicrImage, Version=1.1.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
