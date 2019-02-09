@@ -1,27 +1,49 @@
-﻿using System;
-using System.Collections.Specialized;
-using System.ComponentModel;
+﻿// <copyright>
+// Copyright by the Spark Development Network
+//
+// Licensed under the Rock Community License (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.rockrms.com/license
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// </copyright>
+//
+using System;
+using System.Collections.Generic;
 using System.Data.Entity;
-using System.Diagnostics;
-using System.Globalization;
 using System.Linq;
 using System.Web.UI;
 using System.Web.UI.WebControls;
+
 using Rock.Data;
 using Rock.Model;
 using Rock.Web.Cache;
 
 namespace Rock.Web.UI.Controls
 {
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <seealso cref="System.Web.UI.WebControls.CompositeControl" />
+    /// <seealso cref="System.Web.UI.INamingContainer" />
     [ToolboxData( "<Rock:CampusAccountAmountPicker runat=\"server\" />" )]
-    public class CampusAccountAmountPicker : CompositeControl
+    public class CampusAccountAmountPicker : CompositeControl, INamingContainer
     {
         #region Controls
 
         #region Controls for SingleAccount Mode
 
         private Panel _pnlAccountAmountEntrySingle;
-        private NumberBox _nbAmountAccountSingle;
+
+        // NOTE: we want a stock asp.net TextBox because this will have special styling
+        private TextBox _nbAmountAccountSingle;
+
         private ButtonDropDownList _ddlSingleAccountCampus;
         private ButtonDropDownList _ddlAccountSingle;
 
@@ -39,9 +61,19 @@ namespace Rock.Web.UI.Controls
 
         #region Enums
 
+        /// <summary>
+        /// 
+        /// </summary>
         public enum AccountAmountEntryMode
         {
+            /// <summary>
+            /// Single account can be selected
+            /// </summary>
             SingleAccount,
+
+            /// <summary>
+            /// Multiple accounts are displayed with an amount input for each
+            /// </summary>
             MultipleAccounts
         }
 
@@ -51,8 +83,8 @@ namespace Rock.Web.UI.Controls
 
         private static class RepeaterControlIds
         {
-            internal const string hfAccountAmountMultiAccountId = "hfAccountAmountMultiAccountId";
-            internal const string nbAccountAmountMulti = "nbAccountAmountMulti";
+            internal const string ID_hfAccountAmountMultiAccountId = "hfAccountAmountMultiAccountId";
+            internal const string ID_nbAccountAmountMulti = "nbAccountAmountMulti";
         }
 
         #endregion private constants
@@ -72,11 +104,8 @@ namespace Rock.Web.UI.Controls
         }
 
         /// <summary>
-        /// Gets or sets the accountIds of the selectable accounts. This will be the accounts that will displayed.
-        /// Note: This has special logic. The account(s) that the user selects <seealso cref="SelectedAccountIds"/> will be determined as follows:
-        ///   1) If the selected account is not associated with a campus, the Selected Account will be the first matching child account that is associated with the selected campus.
-        ///   2) If the selected account is not associated with a campus, but there are no child accounts for the selected campus, the parent account (the one the user sees) will be returned.
-        ///   3) If the selected account is associated with a campus, that account will be returned regardless of campus selection (and it won't use the child account logic)
+        /// Gets or sets the accountIds of the selectable accounts. This will be the accounts that will displayed. (Required)
+        /// Note: This has special logic. See comments on <seealso cref="SelectedAccountIds"/>
         /// </summary>
         /// <value>
         /// The selectable account ids.
@@ -84,17 +113,218 @@ namespace Rock.Web.UI.Controls
         public int[] SelectableAccountIds
         {
             get => ViewState["SelectableAccountIds"] as int[] ?? new int[0];
-            set => ViewState["SelectableAccountIds"] = value;
+            set
+            {
+                ViewState["SelectableAccountIds"] = value;
+                EnsureChildControls();
+                BindAccounts();
+            }
+        }
+
+        /// <summary>
+        /// Gets the financial accounts lookup.
+        /// </summary>
+        /// <value>
+        /// The financial accounts lookup.
+        /// </value>
+        private Dictionary<int, FinancialAccountInfo> FinancialAccountsLookup
+        {
+            get
+            {
+                if ( _financialAccountsCache == null )
+                {
+                    using ( var rockContext = new RockContext() )
+                    {
+                        _financialAccountsCache = new FinancialAccountService( rockContext ).Queryable().AsNoTracking()
+                            .ToDictionary(
+                                k => k.Id,
+                                v => new FinancialAccountInfo
+                                {
+                                    Id = v.Id,
+                                    ParentAccountId = v.ParentAccountId,
+                                    CampusId = v.CampusId
+                                } );
+
+                        foreach ( var account in _financialAccountsCache.Values )
+                        {
+                            account.ChildAccounts = _financialAccountsCache.Values.Where( a => a.ParentAccountId == account.Id ).ToList();
+                            if ( account.ParentAccountId.HasValue )
+                            {
+                                account.ParentAccount = _financialAccountsCache.GetValueOrNull( account.ParentAccountId.Value );
+                            }
+                        }
+                    }
+                }
+
+                return _financialAccountsCache;
+            }
+        }
+
+        private Dictionary<int, FinancialAccountInfo> _financialAccountsCache;
+
+        private class FinancialAccountInfo
+        {
+            public int Id { get; set; }
+
+            public int? ParentAccountId { get; set; }
+
+            public FinancialAccountInfo ParentAccount { get; set; }
+
+            public int? CampusId { get; set; }
+
+            public List<FinancialAccountInfo> ChildAccounts { get; set; }
+
+            public override string ToString()
+            {
+                return Id.ToString();
+            }
         }
 
         /// <summary>
         /// Gets or sets the selected account ids.
-        /// Note: This has special logic. See comments on <seealso cref="SelectableAccountIds"/>
+        /// Note: This has special logic. The account(s) that the user selects <seealso cref="SelectedAccountIds"/> will be determined as follows:
+        ///   1) If the selected account is not associated with a campus, the Selected Account will be the first matching child account that is associated with the selected campus.
+        ///   2) If the selected account is not associated with a campus, but there are no child accounts for the selected campus, the parent account (the one the user sees) will be returned.
+        ///   3) If the selected account is associated with a campus, that account will be returned regardless of campus selection (and it won't use the child account logic)
         /// </summary>
         /// <value>
         /// The selected account ids.
         /// </value>
-        public int[] SelectedAccountIds { get; set; }
+        public int[] SelectedAccountIds
+        {
+            get
+            {
+                EnsureChildControls();
+                int? campusId = this.CampusId;
+                if ( this.AmountEntryMode == AccountAmountEntryMode.MultipleAccounts )
+                {
+                    if ( campusId.HasValue )
+                    {
+                        HashSet<int> selectedAccountIds = new HashSet<int>();
+                        foreach ( var displayedAccount in this.SelectableAccountIds.Select( a => FinancialAccountsLookup[a] ).ToList() )
+                        {
+                            var returnedAccountId = GetBestMatchingAccountIdForCampusFromDisplayedAccount( campusId.Value, displayedAccount );
+                            selectedAccountIds.Add( returnedAccountId );
+                        }
+
+                        return selectedAccountIds.ToArray();
+                    }
+                    else
+                    {
+                        return SelectableAccountIds;
+                    }
+                }
+                else
+                {
+                    int? displayedAccountId = _ddlAccountSingle.SelectedValueAsId();
+                    if ( displayedAccountId.HasValue )
+                    {
+                        var displayedAccount = FinancialAccountsLookup[displayedAccountId.Value];
+                        int selectedAccountId;
+                        if ( campusId.HasValue )
+                        {
+                            selectedAccountId = GetBestMatchingAccountIdForCampusFromDisplayedAccount( campusId.Value, displayedAccount );
+                        }
+                        else
+                        {
+                            selectedAccountId = displayedAccountId.Value;
+                        }
+
+                        return new int[1] { selectedAccountId };
+                    }
+
+                    return new int[0];
+                }
+            }
+        }
+
+        public int? SelectedAccountId
+        {
+            get
+            {
+                return this.SelectedAccountIds.FirstOrDefault();
+            }
+
+            set
+            {
+                SetCampusAndDisplayedAccountFromSelectedAccount( value );
+            }
+        }
+
+        /// <summary>
+        /// Sets the campus and displayed account from selected account.
+        /// </summary>
+        /// <param name="selectedAccount">The selected account.</param>
+        private void SetCampusAndDisplayedAccountFromSelectedAccount( int? selectedAccountId )
+        {
+            FinancialAccountInfo selectedAccount;
+            FinancialAccountInfo displayedAccount;
+            if ( selectedAccountId.HasValue )
+            {
+                selectedAccount = this.FinancialAccountsLookup.GetValueOrNull( selectedAccountId.Value );
+            }
+            else
+            {
+                selectedAccount = null;
+            }
+    
+            int? campusId = selectedAccount?.CampusId;
+            if ( selectedAccountId.HasValue && this.SelectableAccountIds.Contains( selectedAccountId.Value ) )
+            {
+                // if the selected account is one of the selectable accounts (displayed accounts) set the displayed account to the selected account (instead of displaying the parent account)
+                displayedAccount = selectedAccount;
+            }
+            else if ( selectedAccount?.ParentAccount != null )
+            {
+                // selected account has a parent account, so display the parent account
+                displayedAccount = selectedAccount.ParentAccount;
+            }
+            else
+            {
+                // Selected account doesn't have a parent account and isn't one of the selectable accounts, so just keep the selected account as the displayed account
+                // However, it won't up displaying since it isn't one of the selectable accounts
+                displayedAccount = selectedAccount;
+            }
+
+            this.CampusId = campusId;
+
+            if ( displayedAccount != null )
+            {
+                EnsureChildControls();
+                BindAccounts();
+                _ddlAccountSingle.SetValue( displayedAccount.Id );
+            }
+        }
+
+        /// <summary>
+        /// Gets the best matching AccountId for selected campus from the displayed account (see logic on <seealso cref="SelectedAccountIds"/>
+        /// </summary>
+        /// <param name="campusId">The campus identifier.</param>
+        /// <param name="displayedAccount">The displayed account.</param>
+        /// <returns></returns>
+        private int GetBestMatchingAccountIdForCampusFromDisplayedAccount( int campusId, FinancialAccountInfo displayedAccount )
+        {
+            if ( displayedAccount.CampusId.HasValue && displayedAccount.CampusId == campusId )
+            {
+                // displayed account is directly associated with selected campusId, so return it
+                return displayedAccount.Id;
+            }
+            else
+            {
+                // displayed account doesn't have a campus (or belongs to another campus). Find first matching child account
+                var firstMatchingChildAccount = displayedAccount.ChildAccounts.FirstOrDefault( a => a.CampusId.HasValue && a.CampusId == campusId );
+                if ( firstMatchingChildAccount != null )
+                {
+                    // one of the child accounts is associated with the campus so, return the child account
+                    return firstMatchingChildAccount.Id;
+                }
+                else
+                {
+                    // none of the child accounts is associated with the campus so, return the displayed account
+                    return displayedAccount.Id;
+                }
+            }
+        }
 
         /// <summary>
         /// Set CampusId to set the default Campus that should be used. If this is set, <seealso cref="AskForCampusIfKnown"/> can optionally be set to false to hide the campus selector and to prevent changing the campus.
@@ -104,8 +334,26 @@ namespace Rock.Web.UI.Controls
         /// </value>
         public int? CampusId
         {
-            get => ViewState["CampusId"] as int?;
-            set => ViewState["CampusId"] = value;
+            get
+            {
+                EnsureChildControls();
+                if ( this.AmountEntryMode == AccountAmountEntryMode.MultipleAccounts )
+                {
+                    return _ddlMultiAccountCampus.SelectedValueAsId();
+                }
+                else
+                {
+                    return _ddlSingleAccountCampus.SelectedValueAsId();
+                }
+            }
+
+            set
+            {
+                EnsureChildControls();
+
+                _ddlMultiAccountCampus.SetValue( value );
+                _ddlSingleAccountCampus.SetValue( value );
+            }
         }
 
         /// <summary>
@@ -118,6 +366,29 @@ namespace Rock.Web.UI.Controls
         {
             get => ViewState["AskForCampusIfKnown"] as bool? ?? true;
             set => ViewState["AskForCampusIfKnown"] = value;
+        }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether the Campus and Account dropdowns will fire a postback
+        /// </summary>
+        /// <value>
+        ///   <c>true</c> if [automatic post back]; otherwise, <c>false</c>.
+        /// </value>
+        public bool AutoPostBack
+        {
+            get
+            {
+                EnsureChildControls();
+                return _ddlAccountSingle.AutoPostBack;
+            }
+
+            set
+            {
+                EnsureChildControls();
+                _ddlAccountSingle.AutoPostBack = value;
+                _ddlSingleAccountCampus.AutoPostBack = value;
+                _ddlMultiAccountCampus.AutoPostBack = value;
+            }
         }
 
         /// <summary>
@@ -156,25 +427,6 @@ namespace Rock.Web.UI.Controls
             {
                 _ddlSingleAccountCampus.Items.Add( new ListItem( campus.Name, campus.Id.ToString() ) );
                 _ddlMultiAccountCampus.Items.Add( new ListItem( campus.Name, campus.Id.ToString() ) );
-            }
-
-            CampusCache defaultCampus = CampusCache.All().FirstOrDefault();
-
-            if ( this.CampusId.HasValue )
-            {
-
-                defaultCampus = CampusCache.Get( this.CampusId.Value );
-
-            }
-
-            if ( _ddlSingleAccountCampus.Items.Count > 0 )
-            {
-                _ddlSingleAccountCampus.SetValue( defaultCampus );
-            }
-
-            if ( _ddlMultiAccountCampus.Items.Count > 0 )
-            {
-                _ddlMultiAccountCampus.SetValue( defaultCampus );
             }
         }
 
@@ -244,6 +496,9 @@ namespace Rock.Web.UI.Controls
             }
         }
 
+        // TODO: GetSelectedAccountAmounts
+        // Dictionary...
+
         /// <summary>
         /// Gets the selected amount, specify <paramref name="accountId"/> if <seealso cref="AmountEntryMode"/> = <seealso cref="AccountAmountEntryMode.MultipleAccounts"/>
         /// </summary>
@@ -259,10 +514,10 @@ namespace Rock.Web.UI.Controls
             {
                 foreach ( var item in _rptPromptForAccountAmountsMulti.Items.OfType<RepeaterItem>() )
                 {
-                    var hfAccountAmountMultiAccountId = item.FindControl( RepeaterControlIds.hfAccountAmountMultiAccountId ) as HiddenField;
+                    var hfAccountAmountMultiAccountId = item.FindControl( RepeaterControlIds.ID_hfAccountAmountMultiAccountId ) as HiddenField;
                     if ( hfAccountAmountMultiAccountId.Value.AsDecimal() == accountId.Value )
                     {
-                        var nbAccountAmountMulti = item.FindControl( RepeaterControlIds.nbAccountAmountMulti ) as NumberBox;
+                        var nbAccountAmountMulti = item.FindControl( RepeaterControlIds.ID_nbAccountAmountMulti ) as NumberBox;
                         return nbAccountAmountMulti.Text.AsDecimalOrNull();
                     }
                 }
@@ -276,18 +531,6 @@ namespace Rock.Web.UI.Controls
         }
 
         #endregion
-
-        /// <summary>
-        /// Raises the <see cref="E:System.Web.UI.Control.Load" /> event.
-        /// </summary>
-        /// <param name="e">The <see cref="T:System.EventArgs" /> object that contains the event data.</param>
-        protected override void OnLoad( EventArgs e )
-        {
-            base.OnLoad( e );
-
-            LoadCampuses();
-            BindAccounts();
-        }
 
         /// <summary>
         /// Raises the <see cref="E:System.Web.UI.Control.PreRender" /> event.
@@ -316,26 +559,29 @@ namespace Rock.Web.UI.Controls
             Controls.Add( _pnlAccountAmountEntrySingle );
 
             // Special big entry for entering a single dollar amount
-            _nbAmountAccountSingle = new NumberBox();
+            _nbAmountAccountSingle = new TextBox();
             _nbAmountAccountSingle.ID = "_nbAmountAccountSingle";
-            _nbAmountAccountSingle.Placeholder = "Enter Amount";
-            _nbAmountAccountSingle.NumberType = ValidationDataType.Currency;
+            _nbAmountAccountSingle.Attributes["placeholder"] = "Enter Amount";
+            _nbAmountAccountSingle.Attributes["type"] = "number";
             _nbAmountAccountSingle.CssClass = "amount-input";
-            _nbAmountAccountSingle.MinimumValue = "0";
+            _nbAmountAccountSingle.Attributes["min"] = "0";
             _pnlAccountAmountEntrySingle.Controls.Add( _nbAmountAccountSingle );
 
-            var pnlSingleCampusDiv = new Panel() { CssClass = "" };
+            var pnlSingleCampusDiv = new Panel() { CssClass = "campus-dropdown " };
             _pnlAccountAmountEntrySingle.Controls.Add( pnlSingleCampusDiv );
 
             _ddlSingleAccountCampus = new ButtonDropDownList();
             _ddlSingleAccountCampus.ID = "_ddlSingleAccountCampus";
+            _ddlSingleAccountCampus.SelectedIndexChanged += _ddlCampus_SelectedIndexChanged;
+            _ddlSingleAccountCampus.Title = "Select Campus";
             pnlSingleCampusDiv.Controls.Add( _ddlSingleAccountCampus );
 
-            var pnlAccountSingleDiv = new Panel() { CssClass = "" };
+            var pnlAccountSingleDiv = new Panel() { CssClass = "account-dropdown" };
             _pnlAccountAmountEntrySingle.Controls.Add( pnlAccountSingleDiv );
 
             _ddlAccountSingle = new ButtonDropDownList();
             _ddlAccountSingle.ID = "_ddlAccountSingle";
+            _ddlAccountSingle.SelectedIndexChanged += _ddlAccountSingle_SelectedIndexChanged;
             pnlAccountSingleDiv.Controls.Add( _ddlAccountSingle );
 
             /* Multi Account Mode*/
@@ -348,13 +594,36 @@ namespace Rock.Web.UI.Controls
             _rptPromptForAccountAmountsMulti.ID = "_rptPromptForAccountAmountsMulti";
             _rptPromptForAccountAmountsMulti.ItemDataBound += _rptPromptForAccountAmountsMulti_ItemDataBound;
 
-
             _rptPromptForAccountAmountsMulti.ItemTemplate = new PromptForAccountsMultiTemplate();
             _pnlAccountAmountEntryMulti.Controls.Add( _rptPromptForAccountAmountsMulti );
 
             _ddlMultiAccountCampus = new ButtonDropDownList();
             _ddlMultiAccountCampus.ID = "_ddlMultiAccountCampus";
+            _ddlMultiAccountCampus.SelectedIndexChanged += _ddlCampus_SelectedIndexChanged;
+            _ddlMultiAccountCampus.Title = "Select Campus";
             _pnlAccountAmountEntryMulti.Controls.Add( _ddlMultiAccountCampus );
+
+            LoadCampuses();
+        }
+
+        /// <summary>
+        /// Handles the SelectedIndexChanged event of the _ddlMultiAccountCampus or _ddlSingleAccountCampus control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
+        private void _ddlCampus_SelectedIndexChanged( object sender, EventArgs e )
+        {
+            CampusChanged?.Invoke( this, new EventArgs() );
+        }
+
+        /// <summary>
+        /// Handles the SelectedIndexChanged event of the _ddlAccountSingle control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
+        private void _ddlAccountSingle_SelectedIndexChanged( object sender, EventArgs e )
+        {
+            AccountChanged?.Invoke( this, new EventArgs() );
         }
 
         /// <summary>
@@ -372,13 +641,13 @@ namespace Rock.Web.UI.Controls
                 itemTemplateControl.Controls.Add(
                     new HiddenField
                     {
-                        ID = RepeaterControlIds.hfAccountAmountMultiAccountId
+                        ID = RepeaterControlIds.ID_hfAccountAmountMultiAccountId
                     } );
 
                 itemTemplateControl.Controls.Add(
                     new CurrencyBox
                     {
-                        ID = RepeaterControlIds.nbAccountAmountMulti,
+                        ID = RepeaterControlIds.ID_nbAccountAmountMulti,
                         CssClass = "amount-input",
                         NumberType = ValidationDataType.Currency,
                         MinimumValue = "0"
@@ -390,7 +659,7 @@ namespace Rock.Web.UI.Controls
 
         /// <summary>
         /// Handles the ItemDataBound event of the _rptPromptForAccountAmountsMulti control.
-        /// </summary>
+        /// </summary> 
         /// <param name="sender">The source of the event.</param>
         /// <param name="e">The <see cref="RepeaterItemEventArgs"/> instance containing the event data.</param>
         private void _rptPromptForAccountAmountsMulti_ItemDataBound( object sender, RepeaterItemEventArgs e )
@@ -401,11 +670,25 @@ namespace Rock.Web.UI.Controls
                 return;
             }
 
-            var hfAccountAmountMultiAccountId = e.Item.FindControl( RepeaterControlIds.hfAccountAmountMultiAccountId ) as HiddenField;
-            var nbAccountAmountMulti = e.Item.FindControl( RepeaterControlIds.nbAccountAmountMulti ) as CurrencyBox;
+            var hfAccountAmountMultiAccountId = e.Item.FindControl( RepeaterControlIds.ID_hfAccountAmountMultiAccountId ) as HiddenField;
+            var nbAccountAmountMulti = e.Item.FindControl( RepeaterControlIds.ID_nbAccountAmountMulti ) as CurrencyBox;
 
             hfAccountAmountMultiAccountId.Value = financialAccount.Id.ToString();
             nbAccountAmountMulti.Label = financialAccount.PublicName;
         }
+
+        #region Events
+
+        /// <summary>
+        /// Occurs when [account changed].
+        /// </summary>
+        public event EventHandler AccountChanged;
+
+        /// <summary>
+        /// Occurs when [campus changed].
+        /// </summary>
+        public event EventHandler CampusChanged;
+
+        #endregion Events
     }
 }
