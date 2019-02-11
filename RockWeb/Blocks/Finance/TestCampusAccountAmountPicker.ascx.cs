@@ -101,6 +101,9 @@ namespace RockWeb.Blocks.Finance
         {
             caapTest.AmountEntryMode = rblAmountEntryMode.SelectedValue.ConvertToEnum<CampusAccountAmountPicker.AccountAmountEntryMode>();
             apSelectedAccount.Visible = caapTest.AmountEntryMode == CampusAccountAmountPicker.AccountAmountEntryMode.SingleAccount;
+            kvlAmounts.Visible = caapTest.AmountEntryMode == CampusAccountAmountPicker.AccountAmountEntryMode.MultipleAccounts;
+            btnSetMultiAccountAmounts.Visible = caapTest.AmountEntryMode == CampusAccountAmountPicker.AccountAmountEntryMode.MultipleAccounts;
+            cbInputSingleAmount.Visible = caapTest.AmountEntryMode == CampusAccountAmountPicker.AccountAmountEntryMode.SingleAccount;
             UpdateSelectedCampusAndAccounts();
         }
 
@@ -130,6 +133,7 @@ namespace RockWeb.Blocks.Finance
             lSelectedAccount.Text = selectedAccountsQry.Select( a => a.Name ).ToList().AsDelimited( ", " );
 
             lSelectedCampus.Text = caapTest.CampusId.HasValue ? CampusCache.Get( caapTest.CampusId.Value ).Name : null;
+            cbOutputAmount.Text = caapTest.SelectedAmount.FormatAsCurrency();
         }
 
         /// <summary>
@@ -177,7 +181,26 @@ namespace RockWeb.Blocks.Finance
         protected void apSelectableAccounts_SelectItem( object sender, EventArgs e )
         {
             caapTest.SelectableAccountIds = apSelectableAccounts.SelectedValuesAsInt().ToArray();
+            kvlAmounts.CustomKeys = new FinancialAccountService( new RockContext()).GetByIds( apSelectableAccounts.SelectedValuesAsInt().ToList() ).ToDictionary( k => k.Id.ToString(), v => v.PublicName );
             UpdateSelectedCampusAndAccounts();
+        }
+
+        /// <summary>
+        /// Handles the TextChanged event of the cbInput control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
+        protected void cbInput_TextChanged( object sender, EventArgs e )
+        {
+            caapTest.SelectedAccountId = apSelectedAccount.SelectedValue.AsInteger();
+            caapTest.SelectedAmount = cbInputSingleAmount.Text.AsDecimalOrNull();
+            UpdateSelectedCampusAndAccounts();
+        }
+
+        protected void btnSetMultiAccountAmounts_Click( object sender, EventArgs e )
+        {
+            var values= kvlAmounts.Value.Split( '|' ).Select( v => v.Split( '^' ) );
+            caapTest.AccountAmounts = values.Where(a => a.Length == 2) .Select( a => new CampusAccountAmountPicker.AccountIdAmount( a[0].AsInteger(), a[1].AsDecimalOrNull() ) ).ToArray();
         }
     }
 }

@@ -26,6 +26,11 @@
 
         <Rock:AccountPicker ID="apSelectedAccount" runat="server" Label="Selected Account" AllowMultiSelect="false" OnSelectItem="apSelectedAccount_SelectItem" />
 
+        <Rock:CurrencyBox ID="cbInputSingleAmount" runat="server" Label="Input Amount (Single)" AutoPostBack="true" OnTextChanged="cbInput_TextChanged" />
+
+        <Rock:KeyValueList ID="kvlAmounts" runat="server" Label="Input Amounts (Multi)"  />
+        <asp:LinkButton ID="btnSetMultiAccountAmounts" runat="server" Text="SetMultiAccountAmounts" CssClass="btn btn-xs btn-default" OnClick="btnSetMultiAccountAmounts_Click" />
+
         <hr />
 
         <h1>CampusAccountAmountPicker</h1>
@@ -37,6 +42,7 @@
 
         <Rock:RockLiteral ID="lSelectedAccount" runat="server" Label="Selected Account" />
         <Rock:RockLiteral ID="lSelectedCampus" runat="server" Label="Selected Campus" />
+        <Rock:CurrencyBox ID="cbOutputAmount" runat="server" Label="Output Amount" AutoPostBack="true" ReadOnly="true" OnTextChanged="cbInput_TextChanged" />
 
     </ContentTemplate>
 </asp:UpdatePanel>
