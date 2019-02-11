@@ -83,7 +83,14 @@ namespace Rock.Web.UI.Controls
 
         private static class RepeaterControlIds
         {
+            /// <summary>
+            /// The control ID for the hfAccountAmountMultiAccountId hidden field
+            /// </summary>
             internal const string ID_hfAccountAmountMultiAccountId = "hfAccountAmountMultiAccountId";
+
+            /// <summary>
+            /// The control ID for the nbAccountAmountMulti currency box
+            /// </summary>
             internal const string ID_nbAccountAmountMulti = "nbAccountAmountMulti";
         }
 
@@ -160,8 +167,47 @@ namespace Rock.Web.UI.Controls
             }
         }
 
+        /// <summary>
+        /// Class to specify an amount for a selected AccountId
+        /// </summary>
+        public class AccountIdAmount
+        {
+            /// <summary>
+            /// Initializes a new instance of the <see cref="AccountIdAmount"/> class.
+            /// </summary>
+            /// <param name="accountId">The account identifier.</param>
+            /// <param name="amount">The amount.</param>
+            public AccountIdAmount( int accountId, decimal? amount )
+            {
+                this.AccountId = accountId;
+                this.Amount = amount;
+            }
+
+            /// <summary>
+            /// Gets or sets the account identifier.
+            /// </summary>
+            /// <value>
+            /// The account identifier.
+            /// </value>
+            public int AccountId { get; set; }
+
+            /// <summary>
+            /// Gets or sets the amount.
+            /// </summary>
+            /// <value>
+            /// The amount.
+            /// </value>
+            public decimal? Amount { get; set; }
+        }
+
+        /// <summary>
+        /// The financial accounts cache
+        /// </summary>
         private Dictionary<int, FinancialAccountInfo> _financialAccountsCache;
 
+        /// <summary>
+        /// private class for lightweight FinancialAccountInfo
+        /// </summary>
         private class FinancialAccountInfo
         {
             public int Id { get; set; }
@@ -238,6 +284,12 @@ namespace Rock.Web.UI.Controls
             }
         }
 
+        /// <summary>
+        /// Gets or sets the selected account identifier for <seealso cref="AccountAmountEntryMode.SingleAccount"/> mode. For <seealso cref="AccountAmountEntryMode.MultipleAccounts"/> mode, use <seealso cref="AccountAmounts"/>
+        /// </summary>
+        /// <value>
+        /// The selected account identifier.
+        /// </value>
         public int? SelectedAccountId
         {
             get
@@ -252,13 +304,33 @@ namespace Rock.Web.UI.Controls
         }
 
         /// <summary>
+        /// Gets or sets the selected amount for <seealso cref="AccountAmountEntryMode.SingleAccount"/> mode. For <seealso cref="AccountAmountEntryMode.MultipleAccounts"/> mode, use <seealso cref="AccountAmounts"/>
+        /// </summary>
+        /// <value>
+        /// The selected amount.
+        /// </value>
+        public decimal? SelectedAmount
+        {
+            get
+            {
+                EnsureChildControls();
+                return _nbAmountAccountSingle.Text.AsDecimalOrNull();
+            }
+
+            set
+            {
+                EnsureChildControls();
+                _nbAmountAccountSingle.Text = value?.ToString( "N" );
+            }
+        }
+
+        /// <summary>
         /// Sets the campus and displayed account from selected account.
         /// </summary>
         /// <param name="selectedAccount">The selected account.</param>
         private void SetCampusAndDisplayedAccountFromSelectedAccount( int? selectedAccountId )
         {
             FinancialAccountInfo selectedAccount;
-            FinancialAccountInfo displayedAccount;
             if ( selectedAccountId.HasValue )
             {
                 selectedAccount = this.FinancialAccountsLookup.GetValueOrNull( selectedAccountId.Value );
@@ -267,8 +339,30 @@ namespace Rock.Web.UI.Controls
             {
                 selectedAccount = null;
             }
-    
+
             int? campusId = selectedAccount?.CampusId;
+            FinancialAccountInfo displayedAccount = GetDisplayedAccountFromSelectedAccount( selectedAccount );
+
+            this.CampusId = campusId;
+
+            if ( displayedAccount != null )
+            {
+                EnsureChildControls();
+                BindAccounts();
+                _ddlAccountSingle.SetValue( displayedAccount.Id );
+            }
+        }
+
+        /// <summary>
+        /// Gets the displayed account from selected account.
+        /// </summary>
+        /// <param name="selectedAccount">The selected account.</param>
+        /// <returns></returns>
+        private FinancialAccountInfo GetDisplayedAccountFromSelectedAccount( FinancialAccountInfo selectedAccount )
+        {
+            int? selectedAccountId = selectedAccount?.Id;
+
+            FinancialAccountInfo displayedAccount;
             if ( selectedAccountId.HasValue && this.SelectableAccountIds.Contains( selectedAccountId.Value ) )
             {
                 // if the selected account is one of the selectable accounts (displayed accounts) set the displayed account to the selected account (instead of displaying the parent account)
@@ -286,14 +380,7 @@ namespace Rock.Web.UI.Controls
                 displayedAccount = selectedAccount;
             }
 
-            this.CampusId = campusId;
-
-            if ( displayedAccount != null )
-            {
-                EnsureChildControls();
-                BindAccounts();
-                _ddlAccountSingle.SetValue( displayedAccount.Id );
-            }
+            return displayedAccount;
         }
 
         /// <summary>
@@ -479,55 +566,84 @@ namespace Rock.Web.UI.Controls
         #region Public Methods
 
         /// <summary>
-        /// Sets the selected amount, specify <paramref name="accountId"/> if <seealso cref="AmountEntryMode"/> = <seealso cref="AccountAmountEntryMode.MultipleAccounts"/>
+        /// Gets or sets a array of each selected AccountId and its Amount
         /// </summary>
-        /// <param name="amount">The amount.</param>
-        /// <param name="accountId">The account identifier.</param>
-        public void SetSelectedAmount( decimal? amount, int? accountId = null )
+        /// <value>
+        /// The account amounts.
+        /// </value>
+        public AccountIdAmount[] AccountAmounts
         {
-            EnsureChildControls();
-
-            // TODO
-            //_nbAmountAccountSingle.Text = amount?.ToString();
-
-            if ( AmountEntryMode == AccountAmountEntryMode.MultipleAccounts )
+            get
             {
-                // TODO
-            }
-        }
+                EnsureChildControls();
 
-        // TODO: GetSelectedAccountAmounts
-        // Dictionary...
+                var resultAccountAmounts = new List<AccountIdAmount>();
 
-        /// <summary>
-        /// Gets the selected amount, specify <paramref name="accountId"/> if <seealso cref="AmountEntryMode"/> = <seealso cref="AccountAmountEntryMode.MultipleAccounts"/>
-        /// </summary>
-        /// <param name="accountId">The account identifier.</param>
-        /// <returns></returns>
-        public decimal? GetSelectedAmount( int? accountId = null )
-        {
-            EnsureChildControls();
-
-            // TODO: Test
-
-            if ( AmountEntryMode == AccountAmountEntryMode.MultipleAccounts && accountId.HasValue )
-            {
-                foreach ( var item in _rptPromptForAccountAmountsMulti.Items.OfType<RepeaterItem>() )
+                if ( AmountEntryMode == AccountAmountEntryMode.MultipleAccounts )
                 {
-                    var hfAccountAmountMultiAccountId = item.FindControl( RepeaterControlIds.ID_hfAccountAmountMultiAccountId ) as HiddenField;
-                    if ( hfAccountAmountMultiAccountId.Value.AsDecimal() == accountId.Value )
+                    foreach ( var item in _rptPromptForAccountAmountsMulti.Items.OfType<RepeaterItem>() )
                     {
-                        var nbAccountAmountMulti = item.FindControl( RepeaterControlIds.ID_nbAccountAmountMulti ) as NumberBox;
-                        return nbAccountAmountMulti.Text.AsDecimalOrNull();
+                        var hfAccountAmountMultiAccountId = item.FindControl( RepeaterControlIds.ID_hfAccountAmountMultiAccountId ) as HiddenField;
+                        var displayedAccountId = hfAccountAmountMultiAccountId.Value.AsInteger();
+                        var displayedAccount = FinancialAccountsLookup.GetValueOrNull( displayedAccountId );
+                        var returnedAccountId = this.GetBestMatchingAccountIdForCampusFromDisplayedAccount( _ddlMultiAccountCampus.SelectedValue.AsInteger(), displayedAccount );
+                        var nbAccountAmountMulti = item.FindControl( RepeaterControlIds.ID_nbAccountAmountMulti ) as CurrencyBox;
+                        resultAccountAmounts.Add( new AccountIdAmount( returnedAccountId, nbAccountAmountMulti.Text.AsDecimalOrNull() ) );
                     }
                 }
-            }
-            else
-            {
-                return _nbAmountAccountSingle.Text.AsDecimalOrNull();
+                else
+                {
+                    var displayedAccountId = _ddlAccountSingle.SelectedValue.AsInteger();
+                    var displayedAccount = FinancialAccountsLookup.GetValueOrNull( displayedAccountId );
+                    var returnedAccountId = this.GetBestMatchingAccountIdForCampusFromDisplayedAccount( _ddlMultiAccountCampus.SelectedValue.AsInteger(), displayedAccount );
+
+                    resultAccountAmounts.Add( new AccountIdAmount( returnedAccountId, _nbAmountAccountSingle.Text.AsDecimalOrNull() ) );
+                }
+
+                return resultAccountAmounts.ToArray();
             }
 
-            return null;
+            set
+            {
+                EnsureChildControls();
+
+                if ( AmountEntryMode == AccountAmountEntryMode.MultipleAccounts )
+                {
+                    BindAccounts();
+                    foreach ( var selectedAccountAmount in value )
+                    {
+                        // get the best matching accountId for the specified selectedAccountId
+                        var displayedAccountId = GetDisplayedAccountFromSelectedAccount( FinancialAccountsLookup.GetValueOrNull( selectedAccountAmount.AccountId ) )?.Id;
+                        decimal? selectedAmount = selectedAccountAmount.Amount;
+
+                        // find the repeater item for the displayedAccountId then set the displayed amount for that account
+                        foreach ( var rptItem in _rptPromptForAccountAmountsMulti.Items.OfType<RepeaterItem>() )
+                        {
+                            var hfAccountAmountMultiAccountId = rptItem.FindControl( RepeaterControlIds.ID_hfAccountAmountMultiAccountId ) as HiddenField;
+                            int itemAccountId = hfAccountAmountMultiAccountId.Value.AsInteger();
+                            if ( itemAccountId == displayedAccountId )
+                            {
+                                var nbAccountAmountMulti = rptItem.FindControl( RepeaterControlIds.ID_nbAccountAmountMulti ) as CurrencyBox;
+                                nbAccountAmountMulti.Value = selectedAmount;
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    var selectedAccountAmount = value.FirstOrDefault();
+                    if ( selectedAccountAmount == null )
+                    {
+                        // an empty dictionary of a selectedAccountAmount was specified so assume they meant to set the selected amount to null
+                        _nbAmountAccountSingle.Text = string.Empty;
+                        return;
+                    }
+
+                    var displayedAccountId = GetDisplayedAccountFromSelectedAccount( FinancialAccountsLookup.GetValueOrNull( selectedAccountAmount.AccountId ) )?.Id;
+                    _ddlAccountSingle.SetValue( displayedAccountId );
+                    _nbAmountAccountSingle.Text = selectedAccountAmount.Amount?.ToString( "N2" );
+                }
+            }
         }
 
         #endregion
