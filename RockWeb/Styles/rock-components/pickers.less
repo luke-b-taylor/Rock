@@ -14,8 +14,8 @@
 
   .toggle-additional-search-fields {
     display: block;
-    font-size: 14px;
     float: right;
+    font-size: 14px;
 
     &.active {
       background-color: darken(@btn-default-bg, 10%);
@@ -39,11 +39,15 @@
     background-color: transparent;
     border: 1px solid @input-border;
     border-radius: @border-radius-base;
+    &:hover {
+      text-decoration: none;
+    }
 
     i {
       float: left;
-      margin-top: 2px;
       margin-right: 6px;
+      line-height: @line-height-computed;
+      vertical-align: bottom;
     }
 
     span {
@@ -51,7 +55,7 @@
       width: 140px;
       margin-right: 6px;
       overflow: hidden;
-      line-height: 18px;
+      line-height: @line-height-computed;
       text-overflow: ellipsis;
       white-space: nowrap;
     }
@@ -64,7 +68,8 @@
   .input-group-sm {
     > .form-control,
     > .input-group-addon {
-      .input-size((@input-height-xs + 4px); (@padding-xs-vertical + 2px); @padding-xs-horizontal; @font-size-small; @line-height-small; @input-border-radius-small);
+      height: (@input-height-xs + 4px);
+      padding: (@padding-xs-vertical + 2px) @padding-xs-horizontal;
     }
   }
 

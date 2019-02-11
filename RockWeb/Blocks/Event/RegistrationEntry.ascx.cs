@@ -217,7 +217,11 @@ namespace RockWeb.Blocks.Event
         /// <value>
         /// The step2 i frame URL.
         /// </value>
-        protected string Step2IFrameUrl { get; set; }
+        protected string Step2IFrameUrl
+        {
+            get { return ViewState["Step2IFrameUrl"] as string; }
+            set { ViewState["Step2IFrameUrl"] = value; }
+        }
 
         /// <summary>
         /// Gets or sets the minimum payment total after factoring in discounts, fees, and minimum payment amount per registrant
@@ -5165,11 +5169,24 @@ namespace RockWeb.Blocks.Event
                         RegistrationState.PaymentAmount.Value < minimumPayment.Value ||
                         RegistrationState.PaymentAmount.Value > balanceDue )
                     {
-                        if ( defaultPayment.HasValue && ( defaultPayment >= minimumPayment && defaultPayment <= balanceDue ) )
+                        if ( defaultPayment.HasValue )
                         {
-                            // if there is defaultPayment set, make that the payment amount as long it is more than the minimumPayment and not more than the balanceDue
                             // NOTE: if the configured 'Minimum Initial Payment' is null, the minimumPayment is the full amount, so the 'Default Payment Amount' option would be ignored
-                            RegistrationState.PaymentAmount = defaultPayment;
+                            if ( defaultPayment >= minimumPayment && defaultPayment <= balanceDue )
+                            {
+                                // default Payment is more than min and less than balance due, so we can use it
+                                RegistrationState.PaymentAmount = defaultPayment;
+                            }
+                            else if (defaultPayment <= minimumPayment)
+                            {
+                                // default Payment is less than min, so use min instead
+                                RegistrationState.PaymentAmount = minimumPayment;
+                            }
+                            else if (defaultPayment >= balanceDue)
+                            {
+                                // default Payment is more than balance due, so use balance due
+                                RegistrationState.PaymentAmount = balanceDue;
+                            }
                         }
                         else
                         {
