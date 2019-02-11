@@ -561,6 +561,7 @@ namespace RockWeb.Blocks.Communication
                 case "MDNEWMESSAGE":
                     ppRecipient.SetValue( null );
                     tbSMSTextMessage.Text = string.Empty;
+                    nbNoSms.Visible = false;
 
                     mdNewMessage.Hide();
                     break;
@@ -758,6 +759,19 @@ namespace RockWeb.Blocks.Communication
             
             HideDialog();
             LoadResponseListing();
+        }
+
+        protected void ppRecipient_SelectPerson( object sender, EventArgs e )
+        {
+            nbNoSms.Visible = false;
+
+            int toPersonAliasId = ppRecipient.PersonAliasId.Value;
+            var personAliasService = new PersonAliasService( new RockContext() );
+            var toPerson = personAliasService.GetPerson( toPersonAliasId );
+            if ( !toPerson.PhoneNumbers.Where( p => p.IsMessagingEnabled).Any())
+            {
+                nbNoSms.Visible = true;
+            }
         }
 
         /// <summary>
@@ -1027,5 +1041,7 @@ namespace RockWeb.Blocks.Communication
         }
 
         #endregion Link Conversation Modal
+
+
     }
 }
