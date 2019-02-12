@@ -29,7 +29,7 @@ namespace Rock.TransNational.Pi
         /// <summary>
         /// Creates the customer.
         /// https://sandbox.gotnpgateway.com/docs/api/#create-a-new-customer
-        /// NOTE: Pi Gateway supports multiple paymentment tokens per customer, but Rock will implement it as one Payment Method per Customer, and 0 or more Pi Customers per Rock Person.
+        /// NOTE: Pi Gateway supports multiple payment tokens per customer, but Rock will implement it as one Payment Method per Customer, and 0 or more Pi Customers per Rock Person.
         /// </summary>
         /// <param name="apiKey">The API key.</param>
         /// <param name="tokenizerToken">The tokenizer token.</param>
@@ -43,22 +43,20 @@ namespace Rock.TransNational.Pi
 
             var createCustomer = new CreateCustomerRequest
             {
-                description = "Test Description",
-                payment_method = new PaymentMethodRequest( tokenizerToken ),
-                billing_address = new BillingAddress
+                Description = paymentInfo.FullName,
+                PaymentMethod = new PaymentMethodRequest( tokenizerToken ),
+                BillingAddress = new BillingAddress
                 {
-                    first_name = paymentInfo.FirstName,
-                    last_name = paymentInfo.LastName,
-                    //company = "Some Business",
-                    address_line_1 = paymentInfo.Street1,
-                    address_line_2 = paymentInfo.Street2,
-                    city = paymentInfo.City,
-                    state = paymentInfo.State,
-                    postal_code = paymentInfo.PostalCode,
-                    country = paymentInfo.Country,
-                    email = paymentInfo.Email,
-                    phone = paymentInfo.Phone,
-                    //fax =  555555555
+                    FirstName = paymentInfo.FirstName,
+                    LastName = paymentInfo.LastName,
+                    AddressLine1 = paymentInfo.Street1,
+                    AddressLine2 = paymentInfo.Street2,
+                    City = paymentInfo.City,
+                    State = paymentInfo.State,
+                    PostalCode = paymentInfo.PostalCode,
+                    Country = paymentInfo.Country,
+                    Email = paymentInfo.Email,
+                    Phone = paymentInfo.Phone,
                 }
             };
 
@@ -84,7 +82,7 @@ namespace Rock.TransNational.Pi
         /// <param name="amount">The amount.</param>
         /// <param name="customerId">The customer identifier.</param>
         /// <returns></returns>
-        public CreateTransactionResponse PostTransaction( string apiKey, decimal? amount, string customerId )
+        public CreateTransactionResponse PostTransaction( string apiKey, decimal amount, string customerId )
         {
             var restClient = new RestClient( "https://sandbox.gotnpgateway.com" );
             RestRequest restRequest = new RestRequest( "api/transaction", Method.POST );
@@ -92,16 +90,9 @@ namespace Rock.TransNational.Pi
 
             var transaction = new Rock.TransNational.Pi.CreateTransaction
             {
-                type = "sale",
-                amount = ( int ) ( amount * 100 ),
-                payment_method = new Rock.TransNational.Pi.PaymentMethodRequest
-                {
-                    Customer = new Rock.TransNational.Pi.PaymentMethodCustomer
-                    {
-                        id = customerId
-                    }
-                    //token = hfResponseToken.Value
-                }
+                Type = "sale",
+                Amount = amount,
+                PaymentMethod = new Rock.TransNational.Pi.PaymentMethodRequest( new Rock.TransNational.Pi.PaymentMethodCustomer(customerId) )
             };
 
             restRequest.AddJsonBody( transaction );
@@ -169,6 +160,29 @@ namespace Rock.TransNational.Pi
 
         #endregion Plans
 
+        #region Transaction Query
+
+        /// <summary>
+        /// Queries the transaction status.
+        /// </summary>
+        /// <param name="apiKey">The API key.</param>
+        /// <param name="queryTransactionStatusRequest">The query transaction status request.</param>
+        /// <returns></returns>
+        public TransactionQueryResult QueryTransactionStatus( string apiKey,  QueryTransactionStatusRequest queryTransactionStatusRequest )
+        {
+            var restClient = new RestClient( "https://sandbox.gotnpgateway.com" );
+            RestRequest restRequest = new RestRequest( "api/transaction/search", Method.POST );
+            restRequest.AddHeader( "Authorization", apiKey );
+
+            restRequest.AddJsonBody( queryTransactionStatusRequest );
+
+            var response = restClient.Execute( restRequest );
+
+            return response.Content.FromJsonOrNull<TransactionQueryResult>();
+        }
+
+        #endregion
+
         #region Subscriptions
 
         /// <summary>
@@ -198,7 +212,6 @@ namespace Rock.TransNational.Pi
         // Derived from http://o2platform.wordpress.com/2010/10/20/dealing-with-the-server-committed-a-protocol-violation-sectionresponsestatusline/
         private void ToggleAllowUnsafeHeaderParsing( bool enable )
         {
-            //Get the assembly that contains the internal class
             var webConfigSettings = System.Web.Configuration.WebConfigurationManager.OpenWebConfiguration( "~" );
             var systemNetConfiguration = webConfigSettings.GetSection( "system.net/settings" ) as System.Net.Configuration.SettingsSection;
             //systemNetConfiguration.HttpWebRequest.UseUnsafeHeaderParsing = enable;

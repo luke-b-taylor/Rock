@@ -17,6 +17,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Linq;
 using System.Web.UI;
 using Newtonsoft.Json;
 using Rock;
@@ -125,7 +126,7 @@ namespace RockWeb.Blocks.Finance
         {
             var gateway = new Rock.TransNational.Pi.PiGateway();
             var apiKey = tbApiKey.Text;
-            var amount = cbAmount.Text.AsDecimalOrNull();
+            var amount = cbAmount.Text.AsDecimal();
             var customerId = tbCustomerId.Text;
             var transactionResponse = gateway.PostTransaction( apiKey, amount, customerId );
             ceSaleResponse.Text = transactionResponse.ToJson( Formatting.Indented );
@@ -162,7 +163,7 @@ namespace RockWeb.Blocks.Finance
             }
             else
             {
-                tbCustomerId.Text = customerResponse.Data.id;
+                tbCustomerId.Text = customerResponse.Data.Id;
             }
         }
 
@@ -249,6 +250,26 @@ namespace RockWeb.Blocks.Finance
             }
 
             ceCreateSubscriptionResponse.Text = createSubscriptionResponse.ToJson( Formatting.Indented );
+        }
+
+        /// <summary>
+        /// Handles the Click event of the btnGetCustomerTransactionStatus control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
+        protected void btnGetCustomerTransactionStatus_Click( object sender, EventArgs e )
+        {
+            var gateway = new Rock.TransNational.Pi.PiGateway();
+            var queryTransactionStatusRequest = new Rock.TransNational.Pi.QueryTransactionStatusRequest
+            {
+                CustomerIdSearch = new Rock.TransNational.Pi.QuerySearchString { ComparisonOperator = "=", SearchValue = tbCustomerId.Text }
+            };
+
+
+            var queryJson = queryTransactionStatusRequest.ToJson( Formatting.Indented );
+            var response = gateway.QueryTransactionStatus( tbApiKey.Text, queryTransactionStatusRequest );
+
+            ceQueryTransactionStatus.Text = response.ToJson( Formatting.Indented );
         }
     }
 }

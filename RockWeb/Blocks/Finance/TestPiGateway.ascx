@@ -94,6 +94,10 @@
                         <Rock:RockTextBox ID="tbCreateSubscriptionResponse_SubscriptionId" runat="server" Label="Subscription Id" />
                         <Rock:CodeEditor ID="ceCreateSubscriptionResponse" runat="server" EditorMode="JavaScript" Label="Create Subscription Response" EditorHeight="400" />
 
+                        <h1>Get Customer Transaction Statuses</h1>
+                        <asp:LinkButton ID="btnGetCustomerTransactionStatus" runat="server" CssClass="btn btn-primary" OnClick="btnGetCustomerTransactionStatus_Click" Text="Query Transactions"/>
+                        <Rock:CodeEditor ID="ceQueryTransactionStatus" runat="server" EditorMode="JavaScript" Label="CustomerTransactionStatus Response" EditorHeight="400" />
+
                         <h1>Process One-Time Sale</h1>
                         <asp:LinkButton ID="btnProcessSale" runat="server" CssClass="btn btn-primary" Text="Process Sale" OnClick="btnProcessSale_Click" />
                         <Rock:CodeEditor ID="ceSaleResponse" runat="server" EditorMode="JavaScript" Label="Sale Response" EditorHeight="400" />
