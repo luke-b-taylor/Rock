@@ -1,6 +1,12 @@
-﻿using Newtonsoft.Json;
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.ComponentModel.Composition;
+using Newtonsoft.Json;
 using RestSharp;
+using Rock.Attribute;
 using Rock.Financial;
+using Rock.Model;
 using Rock.Web.UI;
 
 // Use Newtonsoft RestRequest which is the same as RestSharp.RestRequest but uses the JSON.NET serializer
@@ -8,11 +14,49 @@ using RestRequest = RestSharp.Newtonsoft.Json.RestRequest;
 
 namespace Rock.TransNational.Pi
 {
-    //[Description( "TransNational Pi Gateway" )]
-    ///[Export( typeof( GatewayComponent ) )]
-    //[ExportMetadata( "ComponentName", "TransNational Pi Gateway" )]
-    public class PiGateway //: GatewayComponent
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <seealso cref="Rock.Financial.GatewayComponent" />
+    [Description( "TransNational Pi Gateway" )]
+    [Export( typeof( GatewayComponent ) )]
+    [ExportMetadata( "ComponentName", "TransNational Pi Gateway" )]
+
+    #region Component Attributes
+
+    [TextField(
+        "Private API Key",
+        Key = AttributeKey.PrivateApiKey,
+        Description = "The private API Key used for internal operations",
+        Order = 1 )]
+
+    [TextField(
+        "Public API Key",
+        Key = AttributeKey.PublicApiKey,
+        Description = "The public API Key used for web client operations",
+        Order = 1
+        )]
+
+    [TextField(
+        "API Base URL"
+        )]
+
+    #endregion Component Attributes
+    public class PiGateway : GatewayComponent
     {
+        #region Attribute Keys
+
+        /// <summary>
+        /// Keys to use for Component Attributes
+        /// </summary>
+        protected static class AttributeKey
+        {
+            public const string PrivateApiKey = "PrivateApiKey";
+            public const string PublicApiKey = "PublicApiKey";
+        }
+
+        #endregion Attribute Keys
+
         /// <summary>
         /// Initializes the block.
         /// </summary>
@@ -92,7 +136,7 @@ namespace Rock.TransNational.Pi
             {
                 Type = "sale",
                 Amount = amount,
-                PaymentMethod = new Rock.TransNational.Pi.PaymentMethodRequest( new Rock.TransNational.Pi.PaymentMethodCustomer(customerId) )
+                PaymentMethod = new Rock.TransNational.Pi.PaymentMethodRequest( new Rock.TransNational.Pi.PaymentMethodCustomer( customerId ) )
             };
 
             restRequest.AddJsonBody( transaction );
@@ -168,7 +212,7 @@ namespace Rock.TransNational.Pi
         /// <param name="apiKey">The API key.</param>
         /// <param name="queryTransactionStatusRequest">The query transaction status request.</param>
         /// <returns></returns>
-        public TransactionQueryResult QueryTransactionStatus( string apiKey,  QueryTransactionStatusRequest queryTransactionStatusRequest )
+        public TransactionQueryResult QueryTransactionStatus( string apiKey, QueryTransactionStatusRequest queryTransactionStatusRequest )
         {
             var restClient = new RestClient( "https://sandbox.gotnpgateway.com" );
             RestRequest restRequest = new RestRequest( "api/transaction/search", Method.POST );
@@ -218,5 +262,61 @@ namespace Rock.TransNational.Pi
         }
 
         #endregion utility
+
+        #region TODO Implement Rock.Financial.GatewayComponent
+
+        public override FinancialTransaction Charge( FinancialGateway financialGateway, PaymentInfo paymentInfo, out string errorMessage )
+        {
+            throw new NotImplementedException();
+        }
+
+        public override FinancialTransaction Credit( FinancialTransaction origTransaction, decimal amount, string comment, out string errorMessage )
+        {
+            throw new NotImplementedException();
+        }
+
+        public override FinancialScheduledTransaction AddScheduledPayment( FinancialGateway financialGateway, PaymentSchedule schedule, PaymentInfo paymentInfo, out string errorMessage )
+        {
+            throw new NotImplementedException();
+        }
+
+        public override bool UpdateScheduledPayment( FinancialScheduledTransaction transaction, PaymentInfo paymentInfo, out string errorMessage )
+        {
+            throw new NotImplementedException();
+        }
+
+        public override bool CancelScheduledPayment( FinancialScheduledTransaction transaction, out string errorMessage )
+        {
+            throw new NotImplementedException();
+        }
+
+        public override bool ReactivateScheduledPayment( FinancialScheduledTransaction transaction, out string errorMessage )
+        {
+            throw new NotImplementedException();
+        }
+
+        public override bool GetScheduledPaymentStatus( FinancialScheduledTransaction transaction, out string errorMessage )
+        {
+            throw new NotImplementedException();
+        }
+
+        public override List<Payment> GetPayments( FinancialGateway financialGateway, DateTime startDate, DateTime endDate, out string errorMessage )
+        {
+            throw new NotImplementedException();
+        }
+
+        public override string GetReferenceNumber( FinancialTransaction transaction, out string errorMessage )
+        {
+            throw new NotImplementedException();
+        }
+
+        public override string GetReferenceNumber( FinancialScheduledTransaction scheduledTransaction, out string errorMessage )
+        {
+            throw new NotImplementedException();
+        }
+
+        #endregion
+
+
     }
 }
