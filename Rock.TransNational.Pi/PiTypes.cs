@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 
@@ -54,26 +55,8 @@ namespace Rock.TransNational.Pi
     /// <summary>
     /// from https://sandbox.gotnpgateway.com/docs/api/#create-a-new-customer
     /// </summary>
-    public class CreateCustomerResponse
+    public class CreateCustomerResponse : BaseResponseData
     {
-        /// <summary>
-        /// Gets or sets the status.
-        /// </summary>
-        /// <value>
-        /// The status.
-        /// </value>
-        [JsonProperty( "status" )]
-        public string Status { get; set; }
-
-        /// <summary>
-        /// Gets or sets the message.
-        /// </summary>
-        /// <value>
-        /// The message.
-        /// </value>
-        [JsonProperty( "msg" )]
-        public string Message { get; set; }
-
         /// <summary>
         /// Gets or sets the data.
         /// </summary>
@@ -257,14 +240,20 @@ namespace Rock.TransNational.Pi
         /// <value>
         /// The card.
         /// </value>
-        [Newtonsoft.Json.JsonProperty( "card" )]
-        public CardInfoResponse Card { get; set; }
+        [Newtonsoft.Json.JsonProperty( "card", NullValueHandling = NullValueHandling.Ignore )]
+        public PaymentMethodCardResponse Card { get; set; }
+
+        [Newtonsoft.Json.JsonProperty( "ach", NullValueHandling = NullValueHandling.Ignore )]
+        public PaymentMethodACHResponse ACH { get; set; }
+
+        [Newtonsoft.Json.JsonExtensionData]
+        public string otherData { get; set; }
     }
 
     /// <summary>
     /// 
     /// </summary>
-    public class CardInfoResponse
+    public class PaymentMethodCardResponse
     {
         /// <summary>
         /// Gets or sets the identifier.
@@ -321,6 +310,87 @@ namespace Rock.TransNational.Pi
         public string ExpirationDate { get; set; }
 
         /// <summary>
+        /// Gets or sets the status.
+        /// </summary>
+        /// <value>
+        /// The status.
+        /// </value>
+        [JsonProperty( "status" )]
+        public string Status { get; set; }
+
+        /// <summary>
+        /// Gets or sets the authentication code.
+        /// </summary>
+        /// <value>
+        /// The authentication code.
+        /// </value>
+        [JsonProperty( "auth_code" )]
+        public string AuthCode { get; set; }
+
+        /// <summary>
+        /// Gets or sets the processor response code.
+        /// </summary>
+        /// <value>
+        /// The processor response code.
+        /// </value>
+        [JsonProperty( "processor_response_code" )]
+        public string ProcessorResponseCode { get; set; }
+
+        /// <summary>
+        /// Gets or sets the processor response text.
+        /// </summary>
+        /// <value>
+        /// The processor response text.
+        /// </value>
+        [JsonProperty( "processor_response_text" )]
+        public string ProcessorResponseText { get; set; }
+
+        /// <summary>
+        /// Gets or sets the type of the processor.
+        /// </summary>
+        /// <value>
+        /// The type of the processor.
+        /// </value>
+        [JsonProperty( "processor_type" )]
+        public string ProcessorType { get; set; }
+
+        /// <summary>
+        /// Gets or sets the processor identifier.
+        /// </summary>
+        /// <value>
+        /// The processor identifier.
+        /// </value>
+        [JsonProperty( "processor_id" )]
+        public string ProcessorId { get; set; }
+
+        /// <summary>
+        /// Gets or sets the avs response code.
+        /// </summary>
+        /// <value>
+        /// The avs response code.
+        /// </value>
+        [JsonProperty( "avs_response_code" )]
+        public string AVSResponseCode { get; set; }
+
+        /// <summary>
+        /// Gets or sets the CVV response code.
+        /// </summary>
+        /// <value>
+        /// The CVV response code.
+        /// </value>
+        [JsonProperty( "cvv_response_code" )]
+        public string CVVResponseCode { get; set; }
+
+        /// <summary>
+        /// Gets or sets the processor specific.
+        /// </summary>
+        /// <value>
+        /// The processor specific.
+        /// </value>
+        [JsonProperty( "processor_specific" )]
+        public Processor_Specific ProcessorSpecific { get; set; }
+
+        /// <summary>
         /// Gets or sets the created date time.
         /// </summary>
         /// <value>
@@ -337,7 +407,53 @@ namespace Rock.TransNational.Pi
         /// </value>
         [JsonProperty( "updated_at" )]
         public DateTime? UpdatedDateTime { get; set; }
+
+        [Newtonsoft.Json.JsonExtensionData]
+        public string otherData { get; set; }
     }
+
+    /////
+
+
+    /// <summary>
+    /// 
+    /// </summary>
+    public class PaymentMethodACHResponse
+    {
+        public string id { get; set; }
+
+        public string sec_code { get; set; }
+
+        public string account_type { get; set; }
+
+        public string masked_account_number { get; set; }
+
+        public string routing_number { get; set; }
+
+        public string auth_code { get; set; }
+
+        public string response { get; set; }
+
+        public int response_code { get; set; }
+
+        public string processor_response_code { get; set; }
+
+        public string processor_response_text { get; set; }
+
+        public string processor_type { get; set; }
+
+        public string processor_id { get; set; }
+
+        public string processor_specific { get; set; }
+
+        public string created_at { get; set; }
+
+        public string updated_at { get; set; }
+    }
+
+
+    ////
+
 
     #endregion Customer Related
 
@@ -566,6 +682,51 @@ namespace Rock.TransNational.Pi
         public int AmountCents { get; set; }
     }
 
+    /// <summary>
+    /// Fields that most responses include
+    /// </summary>
+    public class BaseResponseData
+    {
+        /// <summary>
+        /// Gets or sets the status.
+        /// </summary>
+        /// <value>
+        /// The status.
+        /// </value>
+        [JsonProperty( "status" )]
+        public string Status { get; set; }
+
+        /// <summary>
+        /// Determines whether [is success status].
+        /// </summary>
+        /// <returns>
+        ///   <c>true</c> if [is success status]; otherwise, <c>false</c>.
+        /// </returns>
+        public bool IsSuccessStatus()
+        {
+            return this.Status == "success";
+        }
+
+        /// <summary>
+        /// Gets or sets the message.
+        /// </summary>
+        /// <value>
+        /// The message.
+        /// </value>
+        [JsonProperty( "msg" )]
+        public string Message { get; set; }
+
+        /// <summary>
+        /// Newtonsoft.Json.JsonExtensionData instructs the Newtonsoft.Json.JsonSerializer to deserialize properties with no
+        /// matching class member into the specified collection
+        /// </summary>
+        /// <value>
+        /// The other data.
+        /// </value>
+        [Newtonsoft.Json.JsonExtensionData( ReadData = true, WriteData = false )]
+        public IDictionary<string, Newtonsoft.Json.Linq.JToken> _additionalData { get; set; }
+    }
+
     #endregion shared types
 
     #region Transactions 
@@ -582,7 +743,8 @@ namespace Rock.TransNational.Pi
         /// The type.
         /// </value>
         [JsonProperty( "type" )]
-        public string Type { get; set; }
+        [JsonConverter( typeof( StringEnumConverter ) )]
+        public TransactionType Type { get; set; }
 
         /// <summary>
         /// Gets or sets the amount in Dollars (and sets <seealso cref="AmountCents"/>)
@@ -727,26 +889,8 @@ namespace Rock.TransNational.Pi
     /// <summary>
     /// 
     /// </summary>
-    public class CreateTransactionResponse
+    public class CreateTransactionResponse : BaseResponseData
     {
-        /// <summary>
-        /// Gets or sets the status.
-        /// </summary>
-        /// <value>
-        /// The status.
-        /// </value>
-        [JsonProperty( "status" )]
-        public string Status { get; set; }
-
-        /// <summary>
-        /// Gets or sets the message.
-        /// </summary>
-        /// <value>
-        /// The message.
-        /// </value>
-        [JsonProperty( "msg" )]
-        public string Message { get; set; }
-
         /// <summary>
         /// Gets or sets the data.
         /// </summary>
@@ -908,7 +1052,7 @@ namespace Rock.TransNational.Pi
         /// The response body.
         /// </value>
         [JsonProperty( "response_body" )]
-        public TransactionPaymentInfo ResponseBody { get; set; }
+        public PaymentMethodResponse ResponseBody { get; set; }
 
         /// <summary>
         /// Gets or sets the status.
@@ -918,6 +1062,17 @@ namespace Rock.TransNational.Pi
         /// </value>
         [JsonProperty( "status" )]
         public string Status { get; set; }
+
+        /// <summary>
+        /// Determines whether the <see cref="ResponseCode"/> indicates success
+        /// </summary>
+        /// <returns>
+        ///   <c>true</c> if [is response code success]; otherwise, <c>false</c>.
+        /// </returns>
+        public bool IsResponseCodeSuccess()
+        {
+            return ResponseCode == 100;
+        }
 
         /// <summary>
         /// Gets or sets the response code.
@@ -978,185 +1133,80 @@ namespace Rock.TransNational.Pi
     /// <summary>
     /// 
     /// </summary>
-    public class TransactionPaymentInfo
-    {
-        /// <summary>
-        /// Gets or sets the card.
-        /// </summary>
-        /// <value>
-        /// The card.
-        /// </value>
-        [JsonProperty( "card" )]
-        public PaymentInfoCardResponse Card { get; set; }
-    }
-
-    /// <summary>
-    /// 
-    /// </summary>
-    public class PaymentInfoCardResponse
-    {
-        /// <summary>
-        /// Gets or sets the identifier.
-        /// </summary>
-        /// <value>
-        /// The identifier.
-        /// </value>
-        [JsonProperty( "id" )]
-        public string Id { get; set; }
-
-        /// <summary>
-        /// Gets or sets the type of the card.
-        /// </summary>
-        /// <value>
-        /// The type of the card.
-        /// </value>
-        [JsonProperty( "card_type" )]
-        public string CardType { get; set; }
-
-        /// <summary>
-        /// Gets or sets the first six.
-        /// </summary>
-        /// <value>
-        /// The first six.
-        /// </value>
-        [JsonProperty( "first_six" )]
-        public string FirstSix { get; set; }
-
-        /// <summary>
-        /// Gets or sets the last four.
-        /// </summary>
-        /// <value>
-        /// The last four.
-        /// </value>
-        [JsonProperty( "last_four" )]
-        public string LastFour { get; set; }
-
-        /// <summary>
-        /// Gets or sets the masked card.
-        /// </summary>
-        /// <value>
-        /// The masked card.
-        /// </value>
-        [JsonProperty( "masked_card" )]
-        public string MaskedCard { get; set; }
-
-        /// <summary>
-        /// Gets or sets the expiration date.
-        /// </summary>
-        /// <value>
-        /// The expiration date.
-        /// </value>
-        [JsonProperty( "expiration_date" )]
-        public string ExpirationDate { get; set; }
-
-        /// <summary>
-        /// Gets or sets the status.
-        /// </summary>
-        /// <value>
-        /// The status.
-        /// </value>
-        [JsonProperty( "status" )]
-        public string Status { get; set; }
-
-        /// <summary>
-        /// Gets or sets the authentication code.
-        /// </summary>
-        /// <value>
-        /// The authentication code.
-        /// </value>
-        [JsonProperty( "auth_code" )]
-        public string AuthCode { get; set; }
-
-        /// <summary>
-        /// Gets or sets the processor response code.
-        /// </summary>
-        /// <value>
-        /// The processor response code.
-        /// </value>
-        [JsonProperty( "processor_response_code" )]
-        public string ProcessorResponseCode { get; set; }
-
-        /// <summary>
-        /// Gets or sets the processor response text.
-        /// </summary>
-        /// <value>
-        /// The processor response text.
-        /// </value>
-        [JsonProperty( "processor_response_text" )]
-        public string ProcessorResponseText { get; set; }
-
-        /// <summary>
-        /// Gets or sets the type of the processor.
-        /// </summary>
-        /// <value>
-        /// The type of the processor.
-        /// </value>
-        [JsonProperty( "processor_type" )]
-        public string ProcessorType { get; set; }
-
-        /// <summary>
-        /// Gets or sets the processor identifier.
-        /// </summary>
-        /// <value>
-        /// The processor identifier.
-        /// </value>
-        [JsonProperty( "processor_id" )]
-        public string ProcessorId { get; set; }
-
-        /// <summary>
-        /// Gets or sets the avs response code.
-        /// </summary>
-        /// <value>
-        /// The avs response code.
-        /// </value>
-        [JsonProperty( "avs_response_code" )]
-        public string AVSResponseCode { get; set; }
-
-        /// <summary>
-        /// Gets or sets the CVV response code.
-        /// </summary>
-        /// <value>
-        /// The CVV response code.
-        /// </value>
-        [JsonProperty( "cvv_response_code" )]
-        public string CVVResponseCode { get; set; }
-
-        /// <summary>
-        /// Gets or sets the processor specific.
-        /// </summary>
-        /// <value>
-        /// The processor specific.
-        /// </value>
-        [JsonProperty( "processor_specific" )]
-        public Processor_Specific ProcessorSpecific { get; set; }
-
-        /// <summary>
-        /// Gets or sets the created date time.
-        /// </summary>
-        /// <value>
-        /// The created date time.
-        /// </value>
-        [JsonProperty( "created_at" )]
-        public DateTime? CreatedDateTime { get; set; }
-
-        /// <summary>
-        /// Gets or sets the updated date time.
-        /// </summary>
-        /// <value>
-        /// The updated date time.
-        /// </value>
-        [JsonProperty( "updated_at" )]
-        public DateTime? UpdatedDateTime { get; set; }
-    }
-
-    /// <summary>
-    /// 
-    /// </summary>
     public class Processor_Specific
     {
     }
 
+    /// <summary>
+    /// 
+    /// </summary>
+    public class TransactionRefundRequest
+    {
+        /// <summary>
+        /// Gets or sets the amount in Dollars (and sets <seealso cref="AmountCents"/>)
+        /// </summary>
+        /// <value>
+        /// The amount.
+        /// </value>
+        [JsonIgnore]
+        public decimal Amount
+        {
+            get => AmountCents / 100;
+            set => AmountCents = ( int ) ( value * 100 );
+        }
+
+        /// <summary>
+        /// Gets or sets the amount (in cents)
+        /// </summary>
+        /// <value>
+        /// The amount cents.
+        /// </value>
+        [JsonProperty( "amount" )]
+        public int AmountCents { get; set; }
+    }
+
+    public class TransactionVoidRefundResponse : BaseResponseData
+    {
+        /// <summary>
+        /// Gets or sets the data.
+        /// </summary>
+        /// <value>
+        /// The data.
+        /// </value>
+        [JsonProperty( "data" )]
+        public object Data { get; set; }
+    }
+
+
+
     #endregion Transactions
+
+    #region Transaction Status
+
+
+    public class TransactionStatusResponse : BaseResponseData
+    {
+        /// <summary>
+        /// The data
+        /// </summary>
+        [JsonProperty( "data" )]
+        public TransactionStatusResponseData[] Data { get; set; }
+
+        /// <summary>
+        /// Gets or sets the total count.
+        /// </summary>
+        /// <value>
+        /// The total count.
+        /// </value>
+        [JsonProperty( "total_count" )]
+        public int TotalCount { get; set; }
+    }
+
+    public class TransactionStatusResponseData : TransactionQueryResultData
+    {
+    }
+
+    #endregion
 
     #region Plans
 
@@ -1187,26 +1237,8 @@ namespace Rock.TransNational.Pi
     /// <summary>
     /// 
     /// </summary>
-    public class CreatePlanResponse
+    public class CreatePlanResponse : BaseResponseData
     {
-        /// <summary>
-        /// Gets or sets the status.
-        /// </summary>
-        /// <value>
-        /// The status.
-        /// </value>
-        [JsonProperty( "status" )]
-        public string Status { get; set; }
-
-        /// <summary>
-        /// Gets or sets the message.
-        /// </summary>
-        /// <value>
-        /// The message.
-        /// </value>
-        [JsonProperty( "msg" )]
-        public string Message { get; set; }
-
         /// <summary>
         /// Gets or sets the data.
         /// </summary>
@@ -1331,26 +1363,8 @@ namespace Rock.TransNational.Pi
     /// Result from GetPlans
     /// https://sandbox.gotnpgateway.com/docs/api/#get-all-plans
     /// </summary>
-    public class GetPlansResult
+    public class GetPlansResult : BaseResponseData
     {
-        /// <summary>
-        /// Gets or sets the status.
-        /// </summary>
-        /// <value>
-        /// The status.
-        /// </value>
-        [JsonProperty( "status" )]
-        public string Status { get; set; }
-
-        /// <summary>
-        /// Gets or sets the message.
-        /// </summary>
-        /// <value>
-        /// The message.
-        /// </value>
-        [JsonProperty( "msg" )]
-        public string Message { get; set; }
-
         /// <summary>
         /// The data
         /// </summary>
@@ -1372,9 +1386,10 @@ namespace Rock.TransNational.Pi
     #region Subscriptions
 
     /// <summary>
-    /// https://sandbox.gotnpgateway.com/docs/api/#create-a-subscription
+    /// https://sandbox.gotnpgateway.com/docs/api/#create-a-subscription and
+    /// https://sandbox.gotnpgateway.com/docs/api/#update-a-subscription
     /// </summary>
-    public class CreateSubscriptionParameters : BillingPlanParameters
+    public class SubscriptionRequestParameters : BillingPlanParameters
     {
         /// <summary>
         /// Gets or sets the plan identifier.
@@ -1432,26 +1447,8 @@ namespace Rock.TransNational.Pi
     /// <summary>
     /// https://sandbox.gotnpgateway.com/docs/api/#create-a-subscription
     /// </summary>
-    public class CreateSubscriptionResponse
+    public class SubscriptionResponse : BaseResponseData
     {
-        /// <summary>
-        /// Gets or sets the status.
-        /// </summary>
-        /// <value>
-        /// The status.
-        /// </value>
-        [JsonProperty( "status" )]
-        public string Status { get; set; }
-
-        /// <summary>
-        /// Gets or sets the message.
-        /// </summary>
-        /// <value>
-        /// The message.
-        /// </value>
-        [JsonProperty( "msg" )]
-        public string Message { get; set; }
-
         /// <summary>
         /// Gets or sets the data.
         /// </summary>
@@ -1615,7 +1612,7 @@ namespace Rock.TransNational.Pi
         /// The date range.
         /// </value>
         [JsonProperty( "created_at", NullValueHandling = NullValueHandling.Ignore )]
-        public QuerySearchInt DateRange { get; set; }
+        public QueryDateRange DateRange { get; set; }
 
         /// <summary>
         /// Maximum records to return (0-100, optional)
@@ -1689,29 +1686,40 @@ namespace Rock.TransNational.Pi
     }
 
     /// <summary>
-    /// 
+    /// Searches by created_at between the provided start_date and end_date. Dates in UTC "YYYY-MM-DDTHH:II:SSZ"
     /// </summary>
     public class QueryDateRange
     {
         /// <summary>
-        /// Gets or sets the start date.
+        /// Initializes a new instance of the <see cref="QueryDateRange"/> class.
+        /// </summary>
+        /// <param name="startDate">The start date.</param>
+        /// <param name="endDate">The end date.</param>
+        public QueryDateRange( DateTime? startDate, DateTime? endDate )
+        {
+            UTCStartDate = startDate?.ToUniversalTime();
+            UTCEndDate = endDate?.ToUniversalTime();
+        }
+
+        /// <summary>
+        /// Gets or sets the start date (in UTC time).
         /// </summary>
         /// <value>
         /// The start date.
         /// </value>
         [JsonConverter( typeof( RockJsonIsoDateConverter ) )]
         [JsonProperty( "start_date" )]
-        public DateTime? StartDate { get; set; }
+        public DateTime? UTCStartDate { get; set; }
 
         /// <summary>
-        /// Gets or sets the end date.
+        /// Gets or sets the end date (in UTC time).
         /// </summary>
         /// <value>
         /// The end date.
         /// </value>
         [JsonConverter( typeof( RockJsonIsoDateConverter ) )]
         [JsonProperty( "end_date" )]
-        public DateTime? EndDate { get; set; }
+        public DateTime? UTCEndDate { get; set; }
     }
 
     #endregion
@@ -1721,26 +1729,8 @@ namespace Rock.TransNational.Pi
     /// <summary>
     /// 
     /// </summary>
-    public class TransactionQueryResult
+    public class TransactionSearchResult : BaseResponseData
     {
-        /// <summary>
-        /// Gets or sets the status.
-        /// </summary>
-        /// <value>
-        /// The status.
-        /// </value>
-        [JsonProperty( "status" )]
-        public string Status { get; set; }
-
-        /// <summary>
-        /// Gets or sets the message.
-        /// </summary>
-        /// <value>
-        /// The message.
-        /// </value>
-        [JsonProperty( "msg" )]
-        public string Message { get; set; }
-
         /// <summary>
         /// Gets or sets the total count.
         /// </summary>
@@ -2010,10 +2000,12 @@ namespace Rock.TransNational.Pi
         /// The response body.
         /// </value>
         [JsonProperty( "response_body" )]
-        public object ResponseBody { get; set; }
+        public virtual PaymentMethodResponse PaymentMethodResponse { get; set; }
 
         /// <summary>
         /// Gets or sets the status.
+        /// https://sandbox.gotnpgateway.com/docs/api/#query-transactions.
+        /// possible values include: unknown, declined, authorized, pending_settlement, settled, voided, reversed, refunded
         /// </summary>
         /// <value>
         /// The status.
@@ -2022,13 +2014,24 @@ namespace Rock.TransNational.Pi
         public string Status { get; set; }
 
         /// <summary>
+        /// Determines whether [is pending settlement].
+        /// </summary>
+        /// <returns>
+        ///   <c>true</c> if [is pending settlement]; otherwise, <c>false</c>.
+        /// </returns>
+        public bool IsPendingSettlement()
+        {
+            return Status == "pending_settlement";
+        }
+
+        /// <summary>
         /// Gets or sets the response.
         /// </summary>
         /// <value>
         /// The response.
         /// </value>
         [JsonProperty( "response" )]
-        public string Response { get; set; }
+        public virtual string Response { get; set; }
 
         /// <summary>
         /// Gets or sets the response code.
@@ -2059,7 +2062,7 @@ namespace Rock.TransNational.Pi
         public ShippingAddress ShippingAddress { get; set; }
 
         /// <summary>
-        /// Searches by created_at between the provided start_date and end_date. Dates in UTC "YYYY-MM-DDTHH:II:SSZ"
+        /// Gets or sets the created date time.
         /// </summary>
         /// <value>
         /// The created date time.
@@ -2121,6 +2124,16 @@ namespace Rock.TransNational.Pi
     {
         monthly,
         twice_monthly
+    }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    public enum TransactionType
+    {
+        sale,
+        authorize,
+        credit
     }
 
     #endregion Rock Wrapper Types
